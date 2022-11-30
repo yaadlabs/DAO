@@ -1,0 +1,64 @@
+cabal-version: 2.4
+name:          triphut
+version:       1.0.0.0
+license: MIT
+author:        Jonathan Fischoff
+maintainer:    jonathan@Canonicalllc.com
+build-type:    Simple
+copyright: 2021 Canonical LLC
+
+common lang
+  build-depends:    base ^>=4.14
+  default-language: Haskell2010
+  default-extensions:
+    DataKinds
+    MultiParamTypeClasses
+    OverloadedStrings
+    ScopedTypeVariables
+    RecordWildCards
+    TemplateHaskell
+    TypeApplications
+    TypeFamilies
+    NamedFieldPuns
+    NumericUnderscores
+    LambdaCase
+    BangPatterns
+    NoImplicitPrelude
+    CPP
+    DeriveGeneric
+
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+    -Wunused-packages
+
+library
+  import:          lang
+  exposed-modules:
+    Canonical.ConfigurationNft
+  build-depends:
+    , aeson
+    , bytestring
+    , cardano-api
+    , containers
+    , plutus-ledger-api
+    , plutus-tx
+    , plutus-tx-plugin
+    , serialise
+    , plutonomy
+
+  hs-source-dirs:  src
+  ghc-options:
+    -fobject-code -fno-ignore-interface-pragmas
+    -fno-omit-interface-pragmas -Wno-unused-packages -Wall -Werror
+
+executable create-sc
+  import:         lang
+  hs-source-dirs: app
+  main-is:        Main.hs
+  ghc-options:    -threaded -rtsopts -with-rtsopts=-T -Wall -Werror
+  build-depends:
+    , cardano-api
+    , optparse-generic
+    , triphut
+    , plutus-ledger-api
