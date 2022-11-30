@@ -8,6 +8,8 @@ import           Cardano.Api.Shelley (PlutusScript(..), PlutusScriptV2)
 import           Codec.Serialise (serialise)
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Short as BSS
+import           Plutus.V1.Ledger.Credential
+import           Plutus.V1.Ledger.Crypto
 import           Plutus.V2.Ledger.Contexts
 import           Plutus.V1.Ledger.Scripts
 import           Plutus.V2.Ledger.Tx
@@ -15,6 +17,7 @@ import           Plutus.V1.Ledger.Value
 import           PlutusTx
 import qualified PlutusTx.AssocMap as M
 import           PlutusTx.Prelude
+import qualified Plutonomy
 import qualified Cardano.Api.Shelley as Shelly
 
 type WrappedMintingPolicyType = BuiltinData -> BuiltinData -> ()
@@ -25,6 +28,14 @@ data NftConfig = NftConfig
   }
 
 data DynamicConfig = DynamicConfig
+  { dcTallyIndexNft                 :: CurrencySymbol
+  , dcTallyNft                      :: CurrencySymbol
+  , dcUpgradeProposal               :: CurrencySymbol
+  , dcUpgradeMajorityPercent        :: Integer
+  , dcUpgradRelativeMajorityPercent :: Integer
+  , dcTreasuryValidator             :: ValidatorHash
+  , dcConfigurationValidator        :: ValidatorHash
+  }
 
 unstableMakeIsData ''DynamicConfig
 makeLift ''NftConfig
@@ -139,3 +150,110 @@ nftMinter
   . BSS.toShort
   . BSL.toStrict
   . scriptAsCbor
+
+-------------------------------------------------------------------------------
+-- Validator
+-- The validator makes sure the config cannot be changed unless an upgrade
+-- request is present
+-- The idea is that
+-- I need to get a reference to a tally nft
+-- That includes datum that has a reference utxo
+-- That Utxo includes an upgrade proposal
+-- The upgrade proposal has a datum that includes a minter
+-- That if everything is good unlocks the treasury
+-- and makes sure a token is minted to validate the upgrade
+-------------------------------------------------------------------------------
+
+data ConfigurationAddress = ConfigurationAddress
+  { cAddressCredential        :: Credential
+  , cAddressStakingCredential :: BuiltinData
+  }
+
+data ConfigurationTxOut = ConfigurationTxOut
+  { cTxOutAddress             :: ConfigurationAddress
+  , cTxOutValue               :: Value
+  , cTxOutDatum               :: BuiltinData
+  , cTxOutReferenceScript     :: BuiltinData
+  }
+
+data ConfigurationTxInInfo = ConfigurationTxInInfo
+  { cTxInInfoOutRef   :: BuiltinData
+  , cTxInInfoResolved :: ConfigurationTxOut
+  }
+
+data ConfigurationScriptContext = ConfigurationScriptContext
+  { cScriptContextTxInfo  :: ConfigurationTxInfo
+  , cScriptContextPurpose :: BuiltinData
+  }
+
+data ConfigurationTxInfo = ConfigurationTxInfo
+  { cTxInfoInputs             :: [ConfigurationTxInInfo]
+  , cTxInfoReferenceInputs    :: BuiltinData
+  , cTxInfoOutputs            :: [ConfigurationTxOut]
+  , cTxInfoFee                :: BuiltinData
+  , cTxInfoMint               :: BuiltinData
+  , cTxInfoDCert              :: BuiltinData
+  , cTxInfoWdrl               :: BuiltinData
+  , cTxInfoValidRange         :: BuiltinData
+  , cTxInfoSignatories        :: [PubKeyHash]
+  , cTxInfoRedeemers          :: BuiltinData
+  , cTxInfoData               :: BuiltinData
+  , cTxInfoId                 :: BuiltinData
+  }
+
+-------------------------------------------------------------------------------
+-- Input Types
+-------------------------------------------------------------------------------
+data ConfigurationAction
+  = Upgrade
+
+unstableMakeIsData ''ConfigurationAddress
+unstableMakeIsData ''ConfigurationTxOut
+unstableMakeIsData ''ConfigurationTxInInfo
+unstableMakeIsData ''ConfigurationScriptContext
+unstableMakeIsData ''ConfigurationTxInfo
+unstableMakeIsData ''ConfigurationAction
+
+validateConfiguration
+  :: DynamicConfig
+  -> ConfigurationAction
+  -> ConfigurationScriptContext
+  -> Bool
+validateConfiguration
+  DynamicConfig {} _
+  ConfigurationScriptContext
+    { cScriptContextTxInfo = ConfigurationTxInfo {}
+    } = error ()
+
+validatorHash :: Validator -> ValidatorHash
+validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator
+
+wrapValidateConfiguration
+    :: BuiltinData
+    -> BuiltinData
+    -> BuiltinData
+    -> ()
+wrapValidateConfiguration x y z = check (
+  validateConfiguration
+    (unsafeFromBuiltinData x)
+    (unsafeFromBuiltinData y)
+    (unsafeFromBuiltinData z) )
+
+escrowValidator :: Validator
+escrowValidator = let
+    optimizerSettings = Plutonomy.defaultOptimizerOptions
+      { Plutonomy.ooSplitDelay = False
+      }
+  in Plutonomy.optimizeUPLCWith optimizerSettings $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
+    $$(PlutusTx.compile [|| wrapValidateConfiguration ||])
+
+escrowValidatorHash :: ValidatorHash
+escrowValidatorHash = validatorHash escrowValidator
+
+escrowScript :: PlutusScript PlutusScriptV2
+escrowScript
+  = PlutusScriptSerialised
+  . BSS.toShort
+  . BSL.toStrict
+  $ serialise
+    escrowValidator
