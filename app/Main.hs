@@ -29,10 +29,12 @@ instance ParseField ValidatorHash
 instance ParseFields ValidatorHash
 
 data Options = Options
-  { configurationNftOutput         :: FilePath
-  , configurationNftPolicyIdOutput :: FilePath
-  , configurationNftTokenName      :: TokenName
-  , configurationNftInitialUtxo    :: TxOutRef
+  { configurationNftOutput           :: FilePath
+  , configurationNftPolicyIdOutput   :: FilePath
+  , configurationNftTokenName        :: TokenName
+  , configurationNftInitialUtxo      :: TxOutRef
+  , configurationValidatorOutput     :: FilePath
+  , configurationValidatorHashOutput :: FilePath
   } deriving (Show, Generic)
 
 instance ParseField PubKeyHash where
@@ -80,3 +82,9 @@ run Options{..} = do
   let theConfigurationNftPolicyId = nftMinterPolicyId nftConfig
 
   writeFile configurationNftPolicyIdOutput $ show theConfigurationNftPolicyId
+
+  ----
+
+  writeSource configurationValidatorOutput configurationScript
+
+  writeFile configurationValidatorHashOutput $ show configurationValidatorHashOutput

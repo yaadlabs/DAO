@@ -239,21 +239,21 @@ wrapValidateConfiguration x y z = check (
     (unsafeFromBuiltinData y)
     (unsafeFromBuiltinData z) )
 
-escrowValidator :: Validator
-escrowValidator = let
+configurationValidator :: Validator
+configurationValidator = let
     optimizerSettings = Plutonomy.defaultOptimizerOptions
       { Plutonomy.ooSplitDelay = False
       }
   in Plutonomy.optimizeUPLCWith optimizerSettings $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
     $$(PlutusTx.compile [|| wrapValidateConfiguration ||])
 
-escrowValidatorHash :: ValidatorHash
-escrowValidatorHash = validatorHash escrowValidator
+configurationValidatorHash :: ValidatorHash
+configurationValidatorHash = validatorHash configurationValidator
 
-escrowScript :: PlutusScript PlutusScriptV2
-escrowScript
+configurationScript :: PlutusScript PlutusScriptV2
+configurationScript
   = PlutusScriptSerialised
   . BSS.toShort
   . BSL.toStrict
   $ serialise
-    escrowValidator
+    configurationValidator

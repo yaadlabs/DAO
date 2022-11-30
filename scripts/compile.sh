@@ -11,7 +11,9 @@ cabal run exe:create-sc -- \
   --configuration-nft-output=scripts/configuration-nft.plutus \
   --configuration-nft-policy-id-output=scripts/configuration-nft-policy-id.txt \
   --configuration-nft-token-name=CONFIG \
-  --configuration-nft-initial-utxo=$initialConfigurationUtxo
+  --configuration-nft-initial-utxo=$initialConfigurationUtxo \
+  --configuration-validator-output=scripts/configuration.plutus \
+  --configuration-validator-hash-output=scripts/configuration-hash.txt
 )
 
 $thisDir/hash-plutus.sh
