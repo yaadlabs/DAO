@@ -16,9 +16,11 @@ import           Plutus.V2.Ledger.Tx
 import           Plutus.V1.Ledger.Value
 import           PlutusTx
 import qualified PlutusTx.AssocMap as M
+import           PlutusTx.AssocMap (Map)
 import           PlutusTx.Prelude
 import qualified Plutonomy
 import qualified Cardano.Api.Shelley as Shelly
+import           Canonical.Types
 
 type WrappedMintingPolicyType = BuiltinData -> BuiltinData -> ()
 
@@ -30,11 +32,13 @@ data NftConfig = NftConfig
 data DynamicConfig = DynamicConfig
   { dcTallyIndexNft                 :: CurrencySymbol
   , dcTallyNft                      :: CurrencySymbol
+  , dcTallyValidator                :: ValidatorHash
   , dcUpgradeProposal               :: CurrencySymbol
-  , dcUpgradeMajorityPercent        :: Integer
-  , dcUpgradRelativeMajorityPercent :: Integer
   , dcTreasuryValidator             :: ValidatorHash
   , dcConfigurationValidator        :: ValidatorHash
+  , dcUpgradeMajorityPercent        :: Integer -- times a 1000
+  , dcUpgradRelativeMajorityPercent :: Integer -- times a 1000
+  , dcTotalVotes                    :: Integer
   }
 
 unstableMakeIsData ''DynamicConfig
@@ -172,23 +176,25 @@ data ConfigurationAddress = ConfigurationAddress
 data ConfigurationTxOut = ConfigurationTxOut
   { cTxOutAddress             :: ConfigurationAddress
   , cTxOutValue               :: Value
-  , cTxOutDatum               :: BuiltinData
+  , cTxOutDatum               :: OutputDatum
   , cTxOutReferenceScript     :: BuiltinData
   }
 
 data ConfigurationTxInInfo = ConfigurationTxInInfo
-  { cTxInInfoOutRef   :: BuiltinData
+  { cTxInInfoOutRef   :: TxOutRef
   , cTxInInfoResolved :: ConfigurationTxOut
   }
 
+data ConfigurationScriptPurpose = ConfigurationSpend TxOutRef
+
 data ConfigurationScriptContext = ConfigurationScriptContext
   { cScriptContextTxInfo  :: ConfigurationTxInfo
-  , cScriptContextPurpose :: BuiltinData
+  , cScriptContextPurpose :: ConfigurationScriptPurpose
   }
 
 data ConfigurationTxInfo = ConfigurationTxInfo
   { cTxInfoInputs             :: [ConfigurationTxInInfo]
-  , cTxInfoReferenceInputs    :: BuiltinData
+  , cTxInfoReferenceInputs    :: [ConfigurationTxInInfo]
   , cTxInfoOutputs            :: [ConfigurationTxOut]
   , cTxInfoFee                :: BuiltinData
   , cTxInfoMint               :: BuiltinData
@@ -197,7 +203,7 @@ data ConfigurationTxInfo = ConfigurationTxInfo
   , cTxInfoValidRange         :: BuiltinData
   , cTxInfoSignatories        :: [PubKeyHash]
   , cTxInfoRedeemers          :: BuiltinData
-  , cTxInfoData               :: BuiltinData
+  , cTxInfoData               :: Map DatumHash Datum
   , cTxInfoId                 :: BuiltinData
   }
 
@@ -207,53 +213,147 @@ data ConfigurationTxInfo = ConfigurationTxInfo
 data ConfigurationAction
   = Upgrade
 
+data ConfigurationValidatorConfig = ConfigurationValidatorConfig
+  { cvcConfigNftCurrencySymbol :: CurrencySymbol
+  , cvcConfigNftTokenName      :: TokenName
+  }
+
 unstableMakeIsData ''ConfigurationAddress
 unstableMakeIsData ''ConfigurationTxOut
 unstableMakeIsData ''ConfigurationTxInInfo
+makeIsDataIndexed  ''ConfigurationScriptPurpose [('ConfigurationSpend,1)]
 unstableMakeIsData ''ConfigurationScriptContext
 unstableMakeIsData ''ConfigurationTxInfo
 unstableMakeIsData ''ConfigurationAction
+makeLift ''ConfigurationValidatorConfig
+
+ownValue :: [ConfigurationTxInInfo] -> TxOutRef -> Value
+ownValue ins txOutRef = go ins where
+  go = \case
+    [] -> traceError "The impossible happened"
+    ConfigurationTxInInfo {cTxInInfoOutRef, cTxInInfoResolved = ConfigurationTxOut{cTxOutValue}} :xs ->
+      if cTxInInfoOutRef == txOutRef then
+        cTxOutValue
+      else
+        go xs
 
 validateConfiguration
-  :: DynamicConfig
+  :: ConfigurationValidatorConfig
+  -> DynamicConfig
   -> ConfigurationAction
   -> ConfigurationScriptContext
   -> Bool
 validateConfiguration
-  DynamicConfig {} _
+  ConfigurationValidatorConfig {..}
+  DynamicConfig {..}
+  _
   ConfigurationScriptContext
-    { cScriptContextTxInfo = ConfigurationTxInfo {}
-    } = error ()
+    { cScriptContextTxInfo = ConfigurationTxInfo {..}
+    , cScriptContextPurpose = ConfigurationSpend thisOutRef
+    } =
+  let
+    thisScriptValue :: Value
+    !thisScriptValue = ownValue cTxInfoInputs thisOutRef
+
+    hasConfigurationNft :: Bool
+    !hasConfigurationNft = case M.lookup cvcConfigNftCurrencySymbol (getValue thisScriptValue) of
+      Nothing -> False
+      Just m  -> case M.lookup cvcConfigNftTokenName m of
+        Nothing -> False
+        Just c -> c == 1
+
+    -- Filter all the reference inputs for a tally nft
+    -- make sure the token name equals the tally validator hash
+    toTokenName :: ValidatorHash -> TokenName
+    toTokenName (ValidatorHash v) = TokenName v
+
+    hasTallyNft :: Value -> Bool
+    hasTallyNft (Value v) = case M.lookup dcTallyNft v of
+      Nothing -> False
+      Just m  -> case M.lookup (toTokenName dcTallyValidator) m of
+        Nothing -> False
+        Just c -> c == 1
+
+    TallyState {..} = case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
+      [] -> traceError "Missing NFT"
+      [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> unsafeFromBuiltinData $ case cTxOutDatum of
+        OutputDatum (Datum dbs) -> dbs
+        OutputDatumHash dh -> case M.lookup dh cTxInfoData of
+          Just (Datum dbs) -> dbs
+          _ -> traceError "Missing datum"
+        NoOutputDatum -> traceError "Script input missing datum hash"
+      _ -> traceError "Too many NFT values"
+
+    totalVotes :: Integer
+    !totalVotes = tsFor + tsAgainst
+
+    relativeMajority :: Integer
+    !relativeMajority = (totalVotes * 1000) `divide` dcTotalVotes
+
+    majorityPercent :: Integer
+    !majorityPercent = (tsFor * 1000) `divide` totalVotes
+
+    hasEnoughVotes :: Bool
+    !hasEnoughVotes
+      =  traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradRelativeMajorityPercent)
+      && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
+
+    -- Find a the reference input with using the tsProposal TxOutRef
+    UpgradeProposal {..} = case filter ((==tsProposal) . cTxInInfoOutRef) cTxInfoReferenceInputs of
+      [] -> traceError "Missing NFT"
+      [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> unsafeFromBuiltinData $ case cTxOutDatum of
+        OutputDatum (Datum dbs) -> dbs
+        OutputDatumHash dh -> case M.lookup dh cTxInfoData of
+          Just (Datum dbs) -> dbs
+          _ -> traceError "Missing datum"
+        NoOutputDatum -> traceError "Script input missing datum hash"
+      _ -> traceError "Too many NFT values"
+
+    -- Make sure the upgrade token was minted
+    hasUpgradeMinterToken :: Bool
+    !hasUpgradeMinterToken = case M.lookup upUpgradeMinter (getValue thisScriptValue) of
+      Nothing -> False
+      Just m  -> case M.toList m of
+        [(_, c)] -> c == 1
+        _ -> False
+
+  in traceIfFalse "Missing configuration nft" hasConfigurationNft
+  && traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
+  && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
 
 validatorHash :: Validator -> ValidatorHash
 validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator
 
 wrapValidateConfiguration
-    :: BuiltinData
+    :: ConfigurationValidatorConfig
+    -> BuiltinData
     -> BuiltinData
     -> BuiltinData
     -> ()
-wrapValidateConfiguration x y z = check (
+wrapValidateConfiguration cfg x y z = check (
   validateConfiguration
+    cfg
     (unsafeFromBuiltinData x)
     (unsafeFromBuiltinData y)
     (unsafeFromBuiltinData z) )
 
-configurationValidator :: Validator
-configurationValidator = let
+configurationValidator :: ConfigurationValidatorConfig -> Validator
+configurationValidator cfg = let
     optimizerSettings = Plutonomy.defaultOptimizerOptions
       { Plutonomy.ooSplitDelay = False
       }
   in Plutonomy.optimizeUPLCWith optimizerSettings $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
     $$(PlutusTx.compile [|| wrapValidateConfiguration ||])
+    `applyCode`
+    liftCode cfg
 
-configurationValidatorHash :: ValidatorHash
-configurationValidatorHash = validatorHash configurationValidator
+configurationValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
+configurationValidatorHash = validatorHash . configurationValidator
 
-configurationScript :: PlutusScript PlutusScriptV2
+configurationScript :: ConfigurationValidatorConfig ->  PlutusScript PlutusScriptV2
 configurationScript
   = PlutusScriptSerialised
   . BSS.toShort
   . BSL.toStrict
-  $ serialise
-    configurationValidator
+  . serialise
+  . configurationValidator

@@ -1,1 +1,1 @@
-"scripts/configuration-hash.txt"
+0a37f08ae27aa598addf014acca0fdaf0737e1aba0ebded3cbe3c235

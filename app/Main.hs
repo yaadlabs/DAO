@@ -84,7 +84,11 @@ run Options{..} = do
   writeFile configurationNftPolicyIdOutput $ show theConfigurationNftPolicyId
 
   ----
+  let configurationValidatorConfig = ConfigurationValidatorConfig
+        { cvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , cvcConfigNftTokenName      = configurationNftTokenName
+        }
 
-  writeSource configurationValidatorOutput configurationScript
+  writeSource configurationValidatorOutput (configurationScript configurationValidatorConfig)
 
-  writeFile configurationValidatorHashOutput $ show configurationValidatorHashOutput
+  writeFile configurationValidatorHashOutput $ show (configurationValidatorHash configurationValidatorConfig)
