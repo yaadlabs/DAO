@@ -31,6 +31,9 @@ data VoteDirection = For | Against
 data Vote = Vote
   { vProposal  :: TxOutRef
   , vDirection :: VoteDirection
+  , vCounted   :: Bool
+  , vOwner     :: Address
+  , vReturnAda :: Integer
   }
 
 unstableMakeIsData ''VoteDirection
@@ -94,10 +97,18 @@ mkVoteMinter VoteMinterConfig {..} _ ScriptContext
             -> traceIfFalse "Impossible. Vote NFT is not an NFT" (c == 1)
           _ -> traceError "Wrong number of vote NFTs"
 
+    voteIsNotCounted :: Bool
+    !voteIsNotCounted = not vCounted
+
+    totalAdaIsGreaterThanReturnAda :: Bool
+    !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > vReturnAda
+
   in traceIfFalse "Proposal has expired"             proposalIsActive
   && traceIfFalse "Vote Nft is missing"              hasVoteNft
   && traceIfFalse "Missing witness on output"        hasWitness
   && traceIfFalse "Wrong number of witnesses minted" onlyMintedOne
+  && traceIfFalse "Vote is counted"                  voteIsNotCounted
+  && traceIfFalse "Total ada is not enough"          totalAdaIsGreaterThanReturnAda
 
 mkVoteMinter _ _ _ = traceError "wrong type of script purpose!"
 
@@ -202,10 +213,22 @@ validateVote
 validateVote
   VoteValidatorConfig {}
   _
-  _
+  action
   VoteScriptContext
     { vScriptContextTxInfo = VoteTxInfo {}
-    } = error ()
+    } = case action of
+  Count -> error ()
+    -- check if the tally script is there
+    -- if so unlock otherwise fail
+  Disburse -> error ()
+  -- do test for first script index
+  -- further deserialize
+  -- make sure only type of script is vote
+  -- make sure all votes are uncounted
+  -- construct payment map
+  -- all non-native tokens are returned
+  -- add specified is returned
+  -- then send back the contents of the utxo to the user
 
 validatorHash :: Validator -> ValidatorHash
 validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator
