@@ -38,6 +38,7 @@ library
     Canonical.ConfigurationNft
     Canonical.Vote
     Canonical.Types
+    Canonical.Shared
   build-depends:
     , aeson
     , bytestring

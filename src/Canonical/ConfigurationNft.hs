@@ -19,10 +19,8 @@ import qualified PlutusTx.AssocMap as M
 import           PlutusTx.AssocMap (Map)
 import           PlutusTx.Prelude
 import qualified Plutonomy
-import qualified Cardano.Api.Shelley as Shelly
 import           Canonical.Types
-
-type WrappedMintingPolicyType = BuiltinData -> BuiltinData -> ()
+import           Canonical.Shared
 
 data NftConfig = NftConfig
   { ncInitialUtxo :: TxOutRef
@@ -36,6 +34,9 @@ data DynamicConfig = DynamicConfig
   , dcUpgradeProposal               :: CurrencySymbol
   , dcTreasuryValidator             :: ValidatorHash
   , dcConfigurationValidator        :: ValidatorHash
+  , dcVoteCurrencySymbol            :: CurrencySymbol
+  , dcVoteTokenName                 :: TokenName
+  , dcVoteValidator                 :: ValidatorHash
   , dcUpgradeMajorityPercent        :: Integer -- times a 1000
   , dcUpgradRelativeMajorityPercent :: Integer -- times a 1000
   , dcTotalVotes                    :: Integer
@@ -43,26 +44,6 @@ data DynamicConfig = DynamicConfig
 
 unstableMakeIsData ''DynamicConfig
 makeLift ''NftConfig
-
-extractDatumBytes :: [(DatumHash, Datum)] -> DatumHash -> BuiltinData
-extractDatumBytes datums dh = getDatum $ extractDatum datums dh
-
-extractDatum :: [(DatumHash, Datum)] -> DatumHash -> Datum
-extractDatum datums dh = go datums where
-  go = \case
-    [] -> traceError "Failed to find datum"
-    (x, y):xs ->
-      if x == dh then
-        y
-      else
-        go xs
-
-hasSingleToken :: Value -> CurrencySymbol -> TokenName -> Bool
-hasSingleToken (Value v) s t = case M.lookup s v of
-  Just m -> case M.toList m of
-    [(t', c)] -> t' == t && c == 1
-    _ -> traceError "wrong number of tokens with policy id"
-  _ -> False
 
 mkNftMinter :: NftConfig -> BuiltinData -> ScriptContext -> Bool
 mkNftMinter NftConfig {..} _ ScriptContext
@@ -78,11 +59,11 @@ mkNftMinter NftConfig {..} _ ScriptContext
       _ -> False
 
     hasUTxO :: Bool
-    hasUTxO = any (\i -> txInInfoOutRef i == ncInitialUtxo) txInfoInputs
+    !hasUTxO = any (\i -> txInInfoOutRef i == ncInitialUtxo) txInfoInputs
 
     -- This errors if more than one token is used as an output with this policy id
     _newOutput :: DynamicConfig
-    _newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
+    !_newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
       [ TxOut { txOutDatum }
         ] -> unsafeFromBuiltinData $ case txOutDatum of
           OutputDatum (Datum dbs) -> dbs
@@ -91,7 +72,7 @@ mkNftMinter NftConfig {..} _ ScriptContext
       _ -> traceError "Impossible. No minted output."
 
     onlyOneTokenMinted :: Bool
-    onlyOneTokenMinted =
+    !onlyOneTokenMinted =
       hasSingleToken
         txInfoMint
         thisCurrencySymbol
@@ -101,31 +82,6 @@ mkNftMinter NftConfig {..} _ ScriptContext
   && traceIfFalse "Wrong mint amount!" onlyOneTokenMinted
 
 mkNftMinter _ _ _ = traceError "wrong type of script purpose!"
-
-toCardanoApiScript :: Script -> Shelly.Script Shelly.PlutusScriptV2
-toCardanoApiScript
-  = Shelly.PlutusScript Shelly.PlutusScriptV2
-  . Shelly.PlutusScriptSerialised
-  . BSS.toShort
-  . BSL.toStrict
-  . serialise
-
-scriptHash :: Script -> ScriptHash
-scriptHash =
-    ScriptHash
-    . toBuiltin
-    . Shelly.serialiseToRawBytes
-    . Shelly.hashScript
-    . toCardanoApiScript
-
-mintingPolicyHash :: MintingPolicy -> MintingPolicyHash
-mintingPolicyHash
-  = MintingPolicyHash
-  . getScriptHash
-  . scriptHash
-  . getValidator
-  . Validator
-  . getMintingPolicy
 
 wrappedPolicy :: NftConfig -> WrappedMintingPolicyType
 wrappedPolicy config a b = check (mkNftMinter config a (unsafeFromBuiltinData b))

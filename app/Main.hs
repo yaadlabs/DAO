@@ -5,6 +5,7 @@ module Main where
 import           Cardano.Api hiding (TxId)
 import           Options.Generic
 import           Canonical.ConfigurationNft
+import           Canonical.Vote
 import           Prelude
 import           Plutus.V1.Ledger.Bytes
 import           Plutus.V1.Ledger.Crypto
@@ -96,3 +97,25 @@ run Options{..} = do
   writeSource configurationValidatorOutput (configurationScript configurationValidatorConfig)
 
   writeFile configurationValidatorHashOutput $ show (configurationValidatorHash configurationValidatorConfig)
+
+  ----
+  let voteMinterConfig = VoteMinterConfig
+        { vmcConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , vmcConfigNftTokenName      = configurationNftTokenName
+        }
+
+  writeSource configurationNftOutput $ voteMinter voteMinterConfig
+
+  let theVoteMinterPolicyId = voteMinterPolicyId voteMinterConfig
+
+  writeFile configurationNftPolicyIdOutput $ show theVoteMinterPolicyId
+
+  ----
+  let voteValidatorConfig = VoteValidatorConfig
+        { vvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , vvcConfigNftTokenName      = configurationNftTokenName
+        }
+
+  writeSource voteValidatorOutput (voteScript voteValidatorConfig)
+
+  writeFile voteValidatorHashOutput $ show (voteValidatorHash voteValidatorConfig)
