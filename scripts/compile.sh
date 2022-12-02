@@ -13,7 +13,11 @@ cabal run exe:create-sc -- \
   --configuration-nft-token-name=CONFIG \
   --configuration-nft-initial-utxo=$initialConfigurationUtxo \
   --configuration-validator-output=scripts/configuration.plutus \
-  --configuration-validator-hash-output=scripts/configuration-hash.txt
+  --configuration-validator-hash-output=scripts/configuration-hash.txt \
+  --vote-minter-output=scripts/vote-minter.plutus \
+  --vote-minter-policy-id-output=scripts/vote-minter-policy-id.txt \
+  --vote-validator-output=scripts/vote-validator.plutus \
+  --vote-validator-hash-output=scripts/vote-validator-hash.txt
 )
 
 $thisDir/hash-plutus.sh

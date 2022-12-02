@@ -35,6 +35,10 @@ data Options = Options
   , configurationNftInitialUtxo      :: TxOutRef
   , configurationValidatorOutput     :: FilePath
   , configurationValidatorHashOutput :: FilePath
+  , voteMinterOutput                 :: FilePath
+  , voteMinterPolicyIdOutput         :: FilePath
+  , voteValidatorOutput              :: FilePath
+  , voteValidatorHashOutput          :: FilePath
   } deriving (Show, Generic)
 
 instance ParseField PubKeyHash where

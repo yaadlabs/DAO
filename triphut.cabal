@@ -36,6 +36,7 @@ library
   import:          lang
   exposed-modules:
     Canonical.ConfigurationNft
+    Canonical.Vote
     Canonical.Types
   build-depends:
     , aeson
