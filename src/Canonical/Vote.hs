@@ -1,0 +1,1 @@
+module Canonical.Vote where
