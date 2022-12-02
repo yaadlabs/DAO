@@ -27,22 +27,6 @@ data NftConfig = NftConfig
   , ncTokenName   :: TokenName
   }
 
-data DynamicConfig = DynamicConfig
-  { dcTallyIndexNft                 :: CurrencySymbol
-  , dcTallyNft                      :: CurrencySymbol
-  , dcTallyValidator                :: ValidatorHash
-  , dcUpgradeProposal               :: CurrencySymbol
-  , dcTreasuryValidator             :: ValidatorHash
-  , dcConfigurationValidator        :: ValidatorHash
-  , dcVoteCurrencySymbol            :: CurrencySymbol
-  , dcVoteTokenName                 :: TokenName
-  , dcVoteValidator                 :: ValidatorHash
-  , dcUpgradeMajorityPercent        :: Integer -- times a 1000
-  , dcUpgradRelativeMajorityPercent :: Integer -- times a 1000
-  , dcTotalVotes                    :: Integer
-  }
-
-unstableMakeIsData ''DynamicConfig
 makeLift ''NftConfig
 
 mkNftMinter :: NftConfig -> BuiltinData -> ScriptContext -> Bool
@@ -64,11 +48,7 @@ mkNftMinter NftConfig {..} _ ScriptContext
     -- This errors if more than one token is used as an output with this policy id
     _newOutput :: DynamicConfig
     !_newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
-      [ TxOut { txOutDatum }
-        ] -> unsafeFromBuiltinData $ case txOutDatum of
-          OutputDatum (Datum dbs) -> dbs
-          OutputDatumHash dh0 -> extractDatumBytes (M.toList txInfoData) dh0
-          NoOutputDatum -> traceError "Script output missing datum"
+      [ TxOut { txOutDatum } ] -> convertDatum txInfoData txOutDatum
       _ -> traceError "Impossible. No minted output."
 
     onlyOneTokenMinted :: Bool
@@ -166,8 +146,6 @@ data ConfigurationTxInfo = ConfigurationTxInfo
 -------------------------------------------------------------------------------
 -- Input Types
 -------------------------------------------------------------------------------
-data ConfigurationAction
-  = Upgrade
 
 data ConfigurationValidatorConfig = ConfigurationValidatorConfig
   { cvcConfigNftCurrencySymbol :: CurrencySymbol
@@ -180,7 +158,6 @@ unstableMakeIsData ''ConfigurationTxInInfo
 makeIsDataIndexed  ''ConfigurationScriptPurpose [('ConfigurationSpend,1)]
 unstableMakeIsData ''ConfigurationScriptContext
 unstableMakeIsData ''ConfigurationTxInfo
-unstableMakeIsData ''ConfigurationAction
 makeLift ''ConfigurationValidatorConfig
 
 ownValue :: [ConfigurationTxInInfo] -> TxOutRef -> Value
@@ -196,7 +173,7 @@ ownValue ins txOutRef = go ins where
 validateConfiguration
   :: ConfigurationValidatorConfig
   -> DynamicConfig
-  -> ConfigurationAction
+  -> BuiltinData
   -> ConfigurationScriptContext
   -> Bool
 validateConfiguration
@@ -255,19 +232,14 @@ validateConfiguration
       && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
 
     -- Find a the reference input with using the tsProposal TxOutRef
-    UpgradeProposal {..} = case filter ((==tsProposal) . cTxInInfoOutRef) cTxInfoReferenceInputs of
+    Proposal {pType = Upgrade {ptUpgradeMinter}} = case filter ((==tsProposal) . cTxInInfoOutRef) cTxInfoReferenceInputs of
       [] -> traceError "Missing NFT"
-      [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> unsafeFromBuiltinData $ case cTxOutDatum of
-        OutputDatum (Datum dbs) -> dbs
-        OutputDatumHash dh -> case M.lookup dh cTxInfoData of
-          Just (Datum dbs) -> dbs
-          _ -> traceError "Missing datum"
-        NoOutputDatum -> traceError "Script input missing datum hash"
+      [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> convertDatum cTxInfoData cTxOutDatum
       _ -> traceError "Too many NFT values"
 
     -- Make sure the upgrade token was minted
     hasUpgradeMinterToken :: Bool
-    !hasUpgradeMinterToken = case M.lookup upUpgradeMinter (getValue thisScriptValue) of
+    !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue thisScriptValue) of
       Nothing -> False
       Just m  -> case M.toList m of
         [(_, c)] -> c == 1

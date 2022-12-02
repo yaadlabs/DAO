@@ -2,6 +2,7 @@ module Canonical.Types where
 import           Plutus.V1.Ledger.Time
 import           Plutus.V1.Ledger.Tx
 import           Plutus.V1.Ledger.Value
+import           Plutus.V1.Ledger.Scripts
 import           PlutusTx.Prelude
 import           PlutusTx
 
@@ -11,10 +12,35 @@ data TallyState = TallyState
   , tsAgainst  :: Integer
   }
 
-data UpgradeProposal = UpgradeProposal
-  { upUpgradeMinter :: CurrencySymbol
-  , upEndTime       :: POSIXTime
+data ProposalType
+  = Upgrade
+      { ptUpgradeMinter :: CurrencySymbol
+      }
+
+data Proposal = Proposal
+  { pEndTime :: POSIXTime
+  , pType    :: ProposalType
+  }
+
+data DynamicConfig = DynamicConfig
+  { dcTallyIndexNft                 :: CurrencySymbol
+  , dcTallyNft                      :: CurrencySymbol
+  , dcTallyValidator                :: ValidatorHash
+  , dcUpgradeProposal               :: CurrencySymbol
+  , dcTreasuryValidator             :: ValidatorHash
+  , dcConfigurationValidator        :: ValidatorHash
+  , dcVoteCurrencySymbol            :: CurrencySymbol
+  , dcVoteTokenName                 :: TokenName
+  , dcVoteValidator                 :: ValidatorHash
+  , dcUpgradeMajorityPercent        :: Integer -- times a 1000
+  , dcUpgradRelativeMajorityPercent :: Integer -- times a 1000
+  , dcTotalVotes                    :: Integer
+  , dcVoteNft                       :: CurrencySymbol
+  , dcVoteFungibleCurrencySymbol    :: CurrencySymbol
+  , dcVoteFungibleTokenName         :: TokenName
   }
 
 unstableMakeIsData ''TallyState
-unstableMakeIsData ''UpgradeProposal
+unstableMakeIsData ''ProposalType
+unstableMakeIsData ''Proposal
+unstableMakeIsData ''DynamicConfig
