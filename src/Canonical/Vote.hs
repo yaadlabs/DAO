@@ -108,7 +108,7 @@ mkVoteMinter VoteMinterConfig {..} _ ScriptContext
   && traceIfFalse "Missing witness on output"        hasWitness
   && traceIfFalse "Wrong number of witnesses minted" onlyMintedOne
   && traceIfFalse "Vote is counted"                  voteIsNotCounted
-  && traceIfFalse "Total ada is not enough"          totalAdaIsGreaterThanReturnAda
+  && traceIfFalse "Total ada not high enough"        totalAdaIsGreaterThanReturnAda
 
 mkVoteMinter _ _ _ = traceError "wrong type of script purpose!"
 
@@ -187,7 +187,7 @@ data VoteTxInfo = VoteTxInfo
 -------------------------------------------------------------------------------
 data VoteAction
   = Count
-  | Disburse
+  | Cancel
 
 data VoteValidatorConfig = VoteValidatorConfig
   { vvcConfigNftCurrencySymbol :: CurrencySymbol
@@ -211,24 +211,38 @@ validateVote
   -> VoteScriptContext
   -> Bool
 validateVote
-  VoteValidatorConfig {}
-  _
+  VoteValidatorConfig {..}
+  Vote {..}
   action
   VoteScriptContext
-    { vScriptContextTxInfo = VoteTxInfo {}
+    { vScriptContextTxInfo = VoteTxInfo {..}
     } = case action of
-  Count -> error ()
-    -- check if the tally script is there
-    -- if so unlock otherwise fail
-  Disburse -> error ()
-  -- do test for first script index
-  -- further deserialize
-  -- make sure only type of script is vote
-  -- make sure all votes are uncounted
-  -- construct payment map
-  -- all non-native tokens are returned
-  -- add specified is returned
-  -- then send back the contents of the utxo to the user
+  Count ->
+    let
+      hasConfigurationNft :: Value -> Bool
+      hasConfigurationNft (Value v) = case M.lookup vvcConfigNftCurrencySymbol v of
+        Nothing -> False
+        Just m  -> case M.lookup vvcConfigNftTokenName m of
+          Nothing -> False
+          Just c -> c == 1
+
+      DynamicConfig {..} = case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
+        [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
+        _ -> traceError "Too many NFT values"
+
+    in traceIfFalse
+        "Missing Tally Validator input"
+        (any
+          ( (== ScriptCredential dcTallyValidator)
+          . vAddressCredential
+          . vTxOutAddress
+          . vTxInInfoResolved
+          )
+          vTxInfoInputs
+        )
+  Cancel -> traceIfFalse
+    "Not signed by owner"
+    (any ((== addressCredential vOwner) . PubKeyCredential) vTxInfoSignatories)
 
 validatorHash :: Validator -> ValidatorHash
 validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator
