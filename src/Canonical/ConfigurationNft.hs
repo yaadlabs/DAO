@@ -204,7 +204,7 @@ validateConfiguration
         Just c -> c == 1
 
     TallyState {..} = case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
-      [] -> traceError "Missing NFT"
+      [] -> traceError "Missing tally NFT"
       [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> unsafeFromBuiltinData $ case cTxOutDatum of
         OutputDatum (Datum dbs) -> dbs
         OutputDatumHash dh -> case M.lookup dh cTxInfoData of
@@ -229,7 +229,7 @@ validateConfiguration
 
     -- Find a the reference input with using the tsProposal TxOutRef
     Proposal {pType = Upgrade {ptUpgradeMinter}} = case filter ((==tsProposal) . cTxInInfoOutRef) cTxInfoReferenceInputs of
-      [] -> traceError "Missing NFT"
+      [] -> traceError "Missing proposal NFT"
       [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> convertDatum cTxInfoData cTxOutDatum
       _ -> traceError "Too many NFT values"
 
