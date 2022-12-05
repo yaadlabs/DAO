@@ -5,6 +5,7 @@ import           Codec.Serialise (serialise)
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Short as SBS
 import           Plutus.V1.Ledger.Scripts
+import           Plutus.V2.Ledger.Contexts
 import           PlutusTx
 import           PlutusTx.Prelude
 
@@ -28,8 +29,8 @@ succeed = PlutusScriptSerialised . SBS.toShort . LB.toStrict . serialise $ valid
 succeedHash :: ValidatorHash
 succeedHash = validatorHash validator
 
-succeedValidator1 :: BuiltinData -> BuiltinData -> BuiltinData -> Bool
-succeedValidator1 _ _ _ = (0 :: Integer) == 0
+succeedValidator1 :: BuiltinData -> BuiltinData -> ScriptContext -> Bool
+succeedValidator1 _ _ ScriptContext {scriptContextTxInfo = TxInfo {..}} = txInfoId == txInfoId
 
 succeedWrapped1 :: BuiltinData -> BuiltinData -> BuiltinData -> ()
 succeedWrapped1 x y z = check
@@ -40,7 +41,7 @@ succeedWrapped1 x y z = check
   )
 
 validator1 :: Validator
-validator1 = mkValidatorScript $$(PlutusTx.compile [|| succeedWrapped ||])
+validator1 = mkValidatorScript $$(PlutusTx.compile [|| succeedWrapped1 ||])
 
 succeed1 :: PlutusScript PlutusScriptV2
 succeed1 = PlutusScriptSerialised . SBS.toShort . LB.toStrict . serialise $ validator1
