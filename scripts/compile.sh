@@ -8,6 +8,8 @@ initialConfigurationUtxo=$(./scripts/query/configuration-nft-deployer.sh | tail 
 (
 cd $mainDir
 cabal run exe:create-sc -- \
+  --always-succeed-output=always-succeed.plutus \
+  --always-succeed-hash-output=always-succeed-hash.txt \
   --configuration-nft-output=scripts/configuration-nft.plutus \
   --configuration-nft-policy-id-output=scripts/configuration-nft-policy-id.txt \
   --configuration-nft-token-name=CONFIG \

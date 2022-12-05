@@ -244,9 +244,6 @@ validateVote
     "Not signed by owner"
     (any ((== addressCredential vOwner) . PubKeyCredential) vTxInfoSignatories)
 
-validatorHash :: Validator -> ValidatorHash
-validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator
-
 wrapValidateVote
     :: VoteValidatorConfig
     -> BuiltinData

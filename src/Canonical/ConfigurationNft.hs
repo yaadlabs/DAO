@@ -249,9 +249,6 @@ validateConfiguration
   && traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
   && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
 
-validatorHash :: Validator -> ValidatorHash
-validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator
-
 wrapValidateConfiguration
     :: ConfigurationValidatorConfig
     -> BuiltinData

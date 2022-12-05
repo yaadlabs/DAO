@@ -10,8 +10,8 @@ mkdir -p $tempDir/$BLOCKCHAIN_PREFIX/redeemers/$prefix
 $thisDir/hash-plutus.sh
 
 
-tallyIndexNft=$(cat $thisDir/configuration-hash.txt)
-tallyNft=$(cat $thisDir/configuration-hash.txt)
+tallyIndexNft=d6cfdbedd242056674c0e51ead01785497e3a48afbbb146dc72ee1e2
+tallyNft=d6cfdbedd242056674c0e51ead01785497e3a48afbbb146dc72ee1e2
 tallyValidator=$(cat $thisDir/configuration-hash.txt)
 treasuryValidator=$(cat $thisDir/configuration-hash.txt)
 configurationValidator=$(cat $thisDir/configuration-hash.txt)

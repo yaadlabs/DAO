@@ -4,6 +4,7 @@
 module Main where
 import           Cardano.Api hiding (TxId)
 import           Options.Generic
+import           Canonical.AlwaysSucceed
 import           Canonical.ConfigurationNft
 import           Canonical.Vote
 import           Prelude
@@ -30,7 +31,9 @@ instance ParseField ValidatorHash
 instance ParseFields ValidatorHash
 
 data Options = Options
-  { configurationNftOutput           :: FilePath
+  { alwaysSucceedOutput              :: FilePath
+  , alwaysSucceedHashOutput          :: FilePath
+  , configurationNftOutput           :: FilePath
   , configurationNftPolicyIdOutput   :: FilePath
   , configurationNftTokenName        :: TokenName
   , configurationNftInitialUtxo      :: TxOutRef
@@ -77,6 +80,11 @@ writeSource outputPath source =
 
 run :: Options -> IO ()
 run Options{..} = do
+
+  writeSource alwaysSucceedOutput succeed
+
+  writeFile alwaysSucceedHashOutput $ show succeedHash
+
   let nftConfig = NftConfig
         { ncInitialUtxo = configurationNftInitialUtxo
         , ncTokenName   = configurationNftTokenName
