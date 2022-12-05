@@ -33,6 +33,8 @@ instance ParseFields ValidatorHash
 data Options = Options
   { alwaysSucceedOutput              :: FilePath
   , alwaysSucceedHashOutput          :: FilePath
+  , alwaysSucceed1Output             :: FilePath
+  , alwaysSucceed1HashOutput         :: FilePath
   , configurationNftOutput           :: FilePath
   , configurationNftPolicyIdOutput   :: FilePath
   , configurationNftTokenName        :: TokenName
@@ -84,6 +86,10 @@ run Options{..} = do
   writeSource alwaysSucceedOutput succeed
 
   writeFile alwaysSucceedHashOutput $ show succeedHash
+
+  writeSource alwaysSucceed1Output succeed1
+
+  writeFile alwaysSucceed1HashOutput $ show succeedHash1
 
   let nftConfig = NftConfig
         { ncInitialUtxo = configurationNftInitialUtxo
