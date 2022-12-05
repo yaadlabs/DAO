@@ -76,5 +76,53 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-configuration.js
 
 EOF
 
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/invalid-configuration.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "bytes" : "$tallyIndexNft"
+    },
+    {
+      "bytes" : "$tallyNft"
+    },
+    {
+      "bytes" : "$tallyValidator"
+    },
+    {
+      "bytes" : "$treasuryValidator"
+    },
+    {
+      "bytes" : "$configurationValidator"
+    },
+    {
+      "bytes" : "$voteCurrencySymbol"
+    },
+    {
+      "bytes" : "$voteTokenName"
+    },
+    {
+      "bytes" : "$voteValidator"
+    },
+    {
+      "int" : $updateMajoriyPercent
+    },
+    {
+      "int" : $upgradeRelativeMajorityPercent
+    },
+    {
+      "int" : $totalVotes
+    },
+    {
+      "bytes": "$voteNft"
+    },
+    {
+      "bytes": "$voteFungibleCurrencySymbol"
+    }
+  ]
+}
+
+EOF
+
 
 $thisDir/hash-datums.sh
