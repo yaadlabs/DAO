@@ -19,7 +19,12 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/final-upgrade-tally.json
       "constructor": 0,
       "fields" : [
         {
-          "bytes" : "$txOutRefTxId"
+          "constructor": 0,
+          "fields" : [
+              {
+                "bytes" : "$txOutRefTxId"
+              }
+            ]
         },
         {
           "int": $txOutRefIndex

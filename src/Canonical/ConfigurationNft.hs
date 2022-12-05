@@ -133,7 +133,7 @@ data ConfigurationTxInfo = ConfigurationTxInfo
   , cTxInfoReferenceInputs    :: [ConfigurationTxInInfo]
   , cTxInfoOutputs            :: [ConfigurationTxOut]
   , cTxInfoFee                :: BuiltinData
-  , cTxInfoMint               :: BuiltinData
+  , cTxInfoMint               :: Value
   , cTxInfoDCert              :: BuiltinData
   , cTxInfoWdrl               :: BuiltinData
   , cTxInfoValidRange         :: BuiltinData
@@ -170,6 +170,7 @@ ownValue ins txOutRef = go ins where
       else
         go xs
 
+-- TODO is after the tally final time
 validateConfiguration
   :: ConfigurationValidatorConfig
   -> DynamicConfig
@@ -195,15 +196,10 @@ validateConfiguration
         Nothing -> False
         Just c -> c == 1
 
-    -- Filter all the reference inputs for a tally nft
-    -- make sure the token name equals the tally validator hash
-    toTokenName :: ValidatorHash -> TokenName
-    toTokenName (ValidatorHash v) = TokenName v
-
     hasTallyNft :: Value -> Bool
     hasTallyNft (Value v) = case M.lookup dcTallyNft v of
       Nothing -> False
-      Just m  -> case M.lookup (toTokenName dcTallyValidator) m of
+      Just m  -> case M.lookup dcTallyTokenName m of
         Nothing -> False
         Just c -> c == 1
 
@@ -239,7 +235,7 @@ validateConfiguration
 
     -- Make sure the upgrade token was minted
     hasUpgradeMinterToken :: Bool
-    !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue thisScriptValue) of
+    !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue cTxInfoMint) of
       Nothing -> False
       Just m  -> case M.toList m of
         [(_, c)] -> c == 1

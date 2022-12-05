@@ -18,5 +18,5 @@ $baseDir/core/dummy-tally-lock.sh \
   $tempDir/$BLOCKCHAIN_PREFIX/datums/$DATUM_PREFIX/final-upgrade-tally.json \
   $(cat $baseDir/$BLOCKCHAIN_PREFIX/always-succeed.addr) \
   ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e \
-  33 \
+  54414C4C59 \
   $baseDir/test-policies/test-policy-0.plutus

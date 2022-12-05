@@ -18,6 +18,7 @@ endTime=$(($nowSeconds*1000+$offset))
 
 tallyIndexNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
 tallyNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
+tallyTokenName=54414C4C59
 tallyValidator=$(cat $thisDir/always-succeed-hash.txt)
 treasuryValidator=$(cat $thisDir/always-succeed-hash.txt)
 configurationValidator=$(cat $thisDir/configuration-hash.txt)
@@ -40,6 +41,9 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-configuration.js
     },
     {
       "bytes" : "$tallyNft"
+    },
+    {
+      "bytes" : "$tallyTokenName"
     },
     {
       "bytes" : "$tallyValidator"

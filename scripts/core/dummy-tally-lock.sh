@@ -19,9 +19,6 @@ bodyFile=$tempDir/sell-tx-body.01
 outFile=$tempDir/sell-tx.01
 changeOutput=$(cardano-cli-balance-fixer change --address $tallyAddress $BLOCKCHAIN)
 
-currentSlot=$(cardano-cli query tip $BLOCKCHAIN | jq .slot)
-startSlot=$currentSlot
-nextTenSlots=$(($currentSlot+45))
 
 extraOutput=""
 if [ "$changeOutput" != "" ];then
@@ -35,7 +32,7 @@ cardano-cli transaction build \
     $BLOCKCHAIN \
     $(cardano-cli-balance-fixer input --address $tallyAddress $BLOCKCHAIN) \
     --tx-in-collateral $(cardano-cli-balance-fixer collateral --address $tallyAddress $BLOCKCHAIN) \
-    --tx-out "$scriptAddr + 2323090 lovelace + $mintValue" \
+    --tx-out "$scriptAddr + 2823090 lovelace + $mintValue" \
     --tx-out-inline-datum-file $datumFile \
     --tx-out "$tallyAddress + 2137884 lovelace $extraOutput" \
     --required-signer $signingKey \
@@ -44,8 +41,6 @@ cardano-cli transaction build \
     --mint "$mintValue" \
     --mint-script-file $tallyNftMintScript \
     --mint-redeemer-value [] \
-    --invalid-before $startSlot\
-    --invalid-hereafter $nextTenSlots \
     --out-file $bodyFile
 
 echo "saved transaction to $bodyFile"

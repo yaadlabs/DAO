@@ -22,9 +22,11 @@ data Proposal = Proposal
   , pType    :: ProposalType
   }
 
+-- TODO add a configuration for the final time offset
 data DynamicConfig = DynamicConfig
   { dcTallyIndexNft                 :: CurrencySymbol
   , dcTallyNft                      :: CurrencySymbol
+  , dcTallyTokenName                :: TokenName
   , dcTallyValidator                :: ValidatorHash
   , dcTreasuryValidator             :: ValidatorHash
   , dcConfigurationValidator        :: ValidatorHash

@@ -25,7 +25,7 @@ cardano-cli transaction build \
     $BLOCKCHAIN \
     $(cardano-cli-balance-fixer input --address $tallyAddress $BLOCKCHAIN) \
     --tx-in-collateral $(cardano-cli-balance-fixer collateral --address $tallyAddress $BLOCKCHAIN) \
-    --tx-out "$outputAddr + 2323090 lovelace" \
+    --tx-out "$outputAddr + 2823090 lovelace" \
     --tx-out-inline-datum-file $datumFile \
     --tx-out "$tallyAddress + 2137884 lovelace $extraOutput" \
     --required-signer $signingKey \
