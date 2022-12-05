@@ -26,7 +26,6 @@ data DynamicConfig = DynamicConfig
   { dcTallyIndexNft                 :: CurrencySymbol
   , dcTallyNft                      :: CurrencySymbol
   , dcTallyValidator                :: ValidatorHash
-  , dcUpgradeProposal               :: CurrencySymbol
   , dcTreasuryValidator             :: ValidatorHash
   , dcConfigurationValidator        :: ValidatorHash
   , dcVoteCurrencySymbol            :: CurrencySymbol

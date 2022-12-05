@@ -29,6 +29,7 @@ data NftConfig = NftConfig
 
 makeLift ''NftConfig
 
+-- TODO ensure that the output is the configuration validator
 mkNftMinter :: NftConfig -> BuiltinData -> ScriptContext -> Bool
 mkNftMinter NftConfig {..} _ ScriptContext
   { scriptContextTxInfo = TxInfo {..}

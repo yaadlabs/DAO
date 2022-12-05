@@ -98,19 +98,18 @@ run Options{..} = do
 
   writeFile configurationValidatorHashOutput $ show (configurationValidatorHash configurationValidatorConfig)
 
-  ----
+  ---
   let voteMinterConfig = VoteMinterConfig
         { vmcConfigNftCurrencySymbol = theConfigurationNftPolicyId
         , vmcConfigNftTokenName      = configurationNftTokenName
         }
 
-  writeSource configurationNftOutput $ voteMinter voteMinterConfig
+  writeSource voteMinterOutput (voteMinter voteMinterConfig)
 
-  let theVoteMinterPolicyId = voteMinterPolicyId voteMinterConfig
+  let theVoteMinterCurrencySymbol = voteMinterPolicyId voteMinterConfig
 
-  writeFile configurationNftPolicyIdOutput $ show theVoteMinterPolicyId
+  writeFile voteMinterPolicyIdOutput $ show theVoteMinterCurrencySymbol
 
-  ----
   let voteValidatorConfig = VoteValidatorConfig
         { vvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
         , vvcConfigNftTokenName      = configurationNftTokenName
