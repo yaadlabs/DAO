@@ -19,7 +19,6 @@ bodyFile=$tempDir/sell-tx-body.01
 outFile=$tempDir/sell-tx.01
 changeOutput=$(cardano-cli-balance-fixer change --address $tallyAddress $BLOCKCHAIN)
 
-
 extraOutput=""
 if [ "$changeOutput" != "" ];then
   extraOutput="+ $changeOutput"

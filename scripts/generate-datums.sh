@@ -9,7 +9,7 @@ mkdir -p $tempDir/$BLOCKCHAIN_PREFIX/redeemers/$prefix
 
 $thisDir/hash-plutus.sh
 
-offset=${2:-180000}
+offset=${2:-10000}
 
 nowSeconds=$(date +%s)
 now=$(($nowSeconds*1000))
@@ -80,6 +80,9 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-configuration.js
     },
     {
       "bytes": "$voteFungibleTokenName"
+    },
+    {
+      "int": $offset
     }
   ]
 }

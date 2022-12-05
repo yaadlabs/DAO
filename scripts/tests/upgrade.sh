@@ -52,4 +52,16 @@ if [ $detected == false ]; then
   exit 1
 fi
 
+detected=false
+
+"$baseDir/happy-path/upgrade-configuration.sh" || {
+    detected=true
+}
+
+if [ $detected == false ]; then
+  exit 1
+fi
+
+sleep 10
+
 $baseDir/happy-path/upgrade-configuration.sh

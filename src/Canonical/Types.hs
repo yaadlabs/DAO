@@ -22,7 +22,6 @@ data Proposal = Proposal
   , pType    :: ProposalType
   }
 
--- TODO add a configuration for the final time offset
 data DynamicConfig = DynamicConfig
   { dcTallyIndexNft                 :: CurrencySymbol
   , dcTallyNft                      :: CurrencySymbol
@@ -39,6 +38,7 @@ data DynamicConfig = DynamicConfig
   , dcVoteNft                       :: CurrencySymbol
   , dcVoteFungibleCurrencySymbol    :: CurrencySymbol
   , dcVoteFungibleTokenName         :: TokenName
+  , dcProposalTallyEndOffset        :: Integer -- in milliseconds
   }
 
 unstableMakeIsData ''TallyState

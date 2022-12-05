@@ -32,6 +32,9 @@ fi
 
 mintValue="1 $upgradeMinterId.$upgradeTokenName"
 
+currentSlot=$(cardano-cli query tip $BLOCKCHAIN | jq .slot)
+startSlot=$(($currentSlot-1))
+nextTenSlots=$(($currentSlot+10))
 
 cardano-cli transaction build \
     --babbage-era \
@@ -51,6 +54,8 @@ cardano-cli transaction build \
     --mint "$mintValue" \
     --mint-script-file $upgradeScript \
     --mint-redeemer-value '[]' \
+    --invalid-before $startSlot\
+    --invalid-hereafter $nextTenSlots \
     --out-file $bodyFile
 
 echo "saved transaction to $bodyFile"

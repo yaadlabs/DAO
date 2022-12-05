@@ -1,8 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module Canonical.ConfigurationNft where
 import           Cardano.Api.Shelley (PlutusScript(..), PlutusScriptV2)
 import           Codec.Serialise (serialise)
@@ -11,6 +6,8 @@ import qualified Data.ByteString.Short as BSS
 import           Plutus.V1.Ledger.Credential
 import           Plutus.V1.Ledger.Crypto
 import           Plutus.V2.Ledger.Contexts
+import           Plutus.V1.Ledger.Interval
+import           Plutus.V1.Ledger.Time
 import           Plutus.V1.Ledger.Scripts
 import           Plutus.V2.Ledger.Tx
 import           Plutus.V1.Ledger.Value
@@ -136,7 +133,7 @@ data ConfigurationTxInfo = ConfigurationTxInfo
   , cTxInfoMint               :: Value
   , cTxInfoDCert              :: BuiltinData
   , cTxInfoWdrl               :: BuiltinData
-  , cTxInfoValidRange         :: BuiltinData
+  , cTxInfoValidRange         :: POSIXTimeRange
   , cTxInfoSignatories        :: [PubKeyHash]
   , cTxInfoRedeemers          :: BuiltinData
   , cTxInfoData               :: Map DatumHash Datum
@@ -170,7 +167,6 @@ ownValue ins txOutRef = go ins where
       else
         go xs
 
--- TODO is after the tally final time
 validateConfiguration
   :: ConfigurationValidatorConfig
   -> DynamicConfig
@@ -228,7 +224,7 @@ validateConfiguration
       && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
 
     -- Find a the reference input with using the tsProposal TxOutRef
-    Proposal {pType = Upgrade {ptUpgradeMinter}} = case filter ((==tsProposal) . cTxInInfoOutRef) cTxInfoReferenceInputs of
+    Proposal {pType = Upgrade {ptUpgradeMinter}, ..} = case filter ((==tsProposal) . cTxInInfoOutRef) cTxInfoReferenceInputs of
       [] -> traceError "Missing proposal NFT"
       [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> convertDatum cTxInfoData cTxOutDatum
       _ -> traceError "Too many NFT values"
@@ -241,9 +237,13 @@ validateConfiguration
         [(_, c)] -> c == 1
         _ -> False
 
+    isAfterTallyEndTime :: Bool
+    isAfterTallyEndTime = (pEndTime + POSIXTime dcProposalTallyEndOffset) `before` cTxInfoValidRange
+
   in traceIfFalse "Missing configuration nft" hasConfigurationNft
   && traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
   && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
+  && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 
 wrapValidateConfiguration
     :: ConfigurationValidatorConfig
