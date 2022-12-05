@@ -9,11 +9,17 @@ mkdir -p $tempDir/$BLOCKCHAIN_PREFIX/redeemers/$prefix
 
 $thisDir/hash-plutus.sh
 
+offset=${2:-180000}
 
-tallyIndexNft=d6cfdbedd242056674c0e51ead01785497e3a48afbbb146dc72ee1e2
-tallyNft=d6cfdbedd242056674c0e51ead01785497e3a48afbbb146dc72ee1e2
-tallyValidator=$(cat $thisDir/configuration-hash.txt)
-treasuryValidator=$(cat $thisDir/configuration-hash.txt)
+nowSeconds=$(date +%s)
+now=$(($nowSeconds*1000))
+endTime=$(($nowSeconds*1000+$offset))
+
+
+tallyIndexNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
+tallyNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
+tallyValidator=$(cat $thisDir/always-succeed-hash.txt)
+treasuryValidator=$(cat $thisDir/always-succeed-hash.txt)
 configurationValidator=$(cat $thisDir/configuration-hash.txt)
 voteCurrencySymbol=$(cat $thisDir/vote-minter-policy-id.txt)
 voteTokenName=564F5445
@@ -21,7 +27,7 @@ voteValidator=$(cat $thisDir/vote-validator-hash.txt)
 updateMajoriyPercent=500 # 50 percent
 upgradeRelativeMajorityPercent=100 # ten percent
 totalVotes=10
-voteNft=d6cfdbedd242056674c0e51ead01785497e3a48afbbb146dc72ee1e2
+voteNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
 voteFungibleCurrencySymbol=a37767c537bbf908aa2bf5abf49ef3fd67e749cbca3225d31bd166e0
 voteFungibleTokenName=544F4B454E
 
@@ -124,5 +130,24 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/invalid-configuration.js
 
 EOF
 
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/always-succeed-upgrade-proposal.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "int": $endTime
+    },
+    {
+      "constructor": 0,
+      "fields": [
+        {
+          "bytes": "ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e"
+        }
+      ]
+    }
+  ]
+}
+
+EOF
 
 $thisDir/hash-datums.sh

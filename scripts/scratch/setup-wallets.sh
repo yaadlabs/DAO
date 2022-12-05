@@ -10,7 +10,7 @@ cardano-cli transaction build \
   --babbage-era \
   $BLOCKCHAIN \
   $(cardano-cli-balance-fixer input --address $senderAddr $BLOCKCHAIN ) \
-  --tx-out "$configurationNftDeployer + 10000000 lovelace" \
+  --tx-out "$configurationNftDeployer + 100000000 lovelace" \
   --change-address $senderAddr \
   --protocol-params-file scripts/$BLOCKCHAIN_PREFIX/protocol-parameters.json \
   --out-file $bodyFile
