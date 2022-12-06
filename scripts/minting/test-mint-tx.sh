@@ -7,8 +7,8 @@ policyScript=$2
 policyId=$3
 tokenName=$4
 mintCount=$5
-address=$(cat ~/$BLOCKCHAIN_PREFIX/seller.addr)
-holderAddress=$(cat ~/$BLOCKCHAIN_PREFIX/seller.addr)
+address=$(cat ~/$BLOCKCHAIN_PREFIX/voter-0.addr)
+holderAddress=$(cat ~/$BLOCKCHAIN_PREFIX/voter-0.addr)
 
 cardano-cli transaction build \
   --babbage-era \
@@ -24,7 +24,7 @@ cardano-cli transaction build \
   --out-file temp/mint_tx.body
 
 cardano-cli transaction sign  \
-  --signing-key-file ~/$BLOCKCHAIN_PREFIX/seller.skey  \
+  --signing-key-file ~/$BLOCKCHAIN_PREFIX/voter-0.skey  \
   $BLOCKCHAIN \
   --tx-body-file temp/mint_tx.body \
   --out-file temp/mint_tx.signed

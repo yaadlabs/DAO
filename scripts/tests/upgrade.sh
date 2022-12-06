@@ -16,11 +16,11 @@ if [ $detected == false ]; then
 fi
 
 $baseDir/happy-path/mint-configuration-nft-tx.sh
-sleep 3
+$baseDir/wait/until-next-block.sh
 $baseDir/happy-path/lock-upgrade-proposal.sh
-sleep 3
+$baseDir/wait/until-next-block.sh
 $baseDir/happy-path/dummy-tally-lock.sh
-sleep 3
+$baseDir/wait/until-next-block.sh
 
 detected=false
 
@@ -62,6 +62,6 @@ if [ $detected == false ]; then
   exit 1
 fi
 
-sleep 10
+sleep 20
 
 $baseDir/happy-path/upgrade-configuration.sh

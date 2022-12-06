@@ -78,19 +78,18 @@ mkVoteMinter VoteMinterConfig {..} _ ScriptContext
         Nothing -> False
         Just c -> c == 1
 
+
     onlyMintedOne :: Bool
-    !onlyMintedOne = case M.toList (getValue txInfoMint) of
-      [(p, m)]
-        | p == thisCurrencySymbol -> case M.toList m of
-          [(t, c)]
-            -> traceIfFalse "Wrong number of witnesses minted" (c == 1)
-            && traceIfFalse "Wrong token name" (t == dcVoteTokenName)
-          _ -> traceError "Invalid tokens minted"
-        | otherwise -> traceError "Invalid currency symbol minted"
-      _ -> traceError "Wrong number of currency symbols minted"
+    !onlyMintedOne = case M.lookup thisCurrencySymbol (getValue txInfoMint) of
+      Nothing -> traceError "Nothing of this currency symbol minted"
+      Just m -> case M.toList m of
+        [(t, c)]
+          -> traceIfFalse "Wrong number of witnesses minted" (c == 1)
+          && traceIfFalse "Wrong token name" (t == dcVoteTokenName)
+        _ -> traceError "Invalid tokens minted"
 
     hasVoteNft :: Bool
-    !hasVoteNft = case M.lookup dcVoteFungibleCurrencySymbol (getValue voteValue) of
+    !hasVoteNft = case M.lookup dcVoteNft (getValue voteValue) of
       Nothing -> False
       Just m  -> case M.toList m of
           [(_, c)]

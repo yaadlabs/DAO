@@ -14,6 +14,7 @@ offset=${2:-10000}
 nowSeconds=$(date +%s)
 now=$(($nowSeconds*1000))
 endTime=$(($nowSeconds*1000+$offset))
+superLongEndTime=$(($nowSeconds*1000+10000000))
 
 
 tallyIndexNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
@@ -143,6 +144,26 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/always-succeed-upgrade-p
   "fields": [
     {
       "int": $endTime
+    },
+    {
+      "constructor": 0,
+      "fields": [
+        {
+          "bytes": "ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e"
+        }
+      ]
+    }
+  ]
+}
+
+EOF
+
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/always-succeed-upgrade-proposal-1.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "int": $superLongEndTime
     },
     {
       "constructor": 0,
