@@ -17,6 +17,8 @@ proposalUtxo=$4
 configurationUtxo=$5
 scriptAddr=$(cat $baseDir/$BLOCKCHAIN_PREFIX/vote-validator.addr)
 
+redeemer=$baseDir/redeemers/vote-minter/mint.json
+
 bodyFile=$tempDir/vote-mint-tx-body.01
 outFile=$tempDir/vote-mint-tx.01
 changeOutput=$(cardano-cli-balance-fixer change --address $voterAddress $BLOCKCHAIN -o '1 ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e.123456')
@@ -52,7 +54,7 @@ cardano-cli transaction build \
     --protocol-params-file scripts/$BLOCKCHAIN_PREFIX/protocol-parameters.json \
     --mint "$mintValue" \
     --mint-script-file $voteMinterFile \
-    --mint-redeemer-value '[]' \
+    --mint-redeemer-file $redeemer \
     --invalid-before $startSlot \
     --invalid-hereafter $nextTenSlots \
     --out-file $bodyFile

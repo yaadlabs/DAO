@@ -10,7 +10,7 @@ import           Plutus.V1.Ledger.Credential
 import           Plutus.V1.Ledger.Interval
 import           Plutus.V1.Ledger.Scripts
 import           Plutus.V1.Ledger.Value
-import           Plutus.V2.Ledger.Tx
+import           Plutus.V2.Ledger.Tx hiding (Mint)
 import           PlutusTx.AssocMap (Map)
 import qualified PlutusTx.AssocMap as M
 import           PlutusTx
@@ -36,83 +36,96 @@ data Vote = Vote
   , vReturnAda :: Integer
   }
 
+data VoteMinterAction = Mint | Burn
+
 unstableMakeIsData ''VoteDirection
+unstableMakeIsData ''VoteMinterAction
 unstableMakeIsData ''Vote
 
 -- | The vote minter
 --   has a reference to the proposal so the end time can be validated
 --   Ensures that there is an NFT for voting is present
-mkVoteMinter :: VoteMinterConfig -> BuiltinData -> ScriptContext -> Bool
-mkVoteMinter VoteMinterConfig {..} _ ScriptContext
+mkVoteMinter :: VoteMinterConfig -> VoteMinterAction -> ScriptContext -> Bool
+mkVoteMinter VoteMinterConfig {..} action ScriptContext
   { scriptContextTxInfo = TxInfo {..}
   , scriptContextPurpose = Minting thisCurrencySymbol
-  } =
-  let
-    hasConfigurationNft :: Value -> Bool
-    hasConfigurationNft (Value v) = case M.lookup vmcConfigNftCurrencySymbol v of
-      Nothing -> False
-      Just m  -> case M.lookup vmcConfigNftTokenName m of
-        Nothing -> False
-        Just c -> c == 1
+  } = case action of
+    Burn ->
+      let
+        burnsTokens :: Bool
+        !burnsTokens = case M.lookup thisCurrencySymbol (getValue txInfoMint) of
+          Nothing -> traceError "Impossible. Vote minter called but no vote tokens are minted"
+          Just m -> case M.toList m of
+            [(_, c)] -> traceIfFalse "Count is not less than zero" (c < 0)
+            _ -> traceError "Wrong number of tokens"
 
-    DynamicConfig {..} = case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
-      [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
-      _ -> traceError "Too many NFT values"
+      in traceIfFalse "Not burning tokens" burnsTokens
+    Mint ->
+      let
+        hasConfigurationNft :: Value -> Bool
+        hasConfigurationNft (Value v) = case M.lookup vmcConfigNftCurrencySymbol v of
+          Nothing -> False
+          Just m  -> case M.lookup vmcConfigNftTokenName m of
+            Nothing -> False
+            Just c -> c == 1
 
-    -- Get output on the vote validator. Should just be one.
-    (Vote {..}, !voteValue) = case filter ((==ScriptCredential dcVoteValidator) . addressCredential . txOutAddress) txInfoOutputs of
-      [TxOut {..}] -> (convertDatum txInfoData txOutDatum, txOutValue)
-      _ -> traceError "Wrong number of proposal references"
+        DynamicConfig {..} = case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
+          [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
+          _ -> traceError "Too many NFT values"
 
-    Proposal {..} = case filter ((==vProposal) . txInInfoOutRef) txInfoReferenceInputs of
-      [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
-      _ -> traceError "Wrong number of proposal references"
+        -- Get output on the vote validator. Should just be one.
+        (Vote {..}, !voteValue) = case filter ((==ScriptCredential dcVoteValidator) . addressCredential . txOutAddress) txInfoOutputs of
+          [TxOut {..}] -> (convertDatum txInfoData txOutDatum, txOutValue)
+          _ -> traceError "Wrong number of proposal references"
 
-    proposalIsActive :: Bool
-    !proposalIsActive = pEndTime `after` txInfoValidRange
+        Proposal {..} = case filter ((==vProposal) . txInInfoOutRef) txInfoReferenceInputs of
+          [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
+          _ -> traceError "Wrong number of proposal references"
 
-    hasWitness :: Bool
-    !hasWitness = case M.lookup thisCurrencySymbol (getValue voteValue) of
-      Nothing -> False
-      Just m  -> case M.lookup dcVoteTokenName m of
-        Nothing -> False
-        Just c -> c == 1
+        proposalIsActive :: Bool
+        !proposalIsActive = pEndTime `after` txInfoValidRange
 
+        hasWitness :: Bool
+        !hasWitness = case M.lookup thisCurrencySymbol (getValue voteValue) of
+          Nothing -> False
+          Just m  -> case M.lookup dcVoteTokenName m of
+            Nothing -> False
+            Just c -> c == 1
 
-    onlyMintedOne :: Bool
-    !onlyMintedOne = case M.lookup thisCurrencySymbol (getValue txInfoMint) of
-      Nothing -> traceError "Nothing of this currency symbol minted"
-      Just m -> case M.toList m of
-        [(t, c)]
-          -> traceIfFalse "Wrong number of witnesses minted" (c == 1)
-          && traceIfFalse "Wrong token name" (t == dcVoteTokenName)
-        _ -> traceError "Invalid tokens minted"
+        onlyMintedOne :: Bool
+        !onlyMintedOne = case M.lookup thisCurrencySymbol (getValue txInfoMint) of
+          Nothing -> traceError "Nothing of this currency symbol minted"
+          Just m -> case M.toList m of
+            [(t, c)]
+              -> traceIfFalse "Wrong number of witnesses minted" (c == 1)
+              && traceIfFalse "Wrong token name" (t == dcVoteTokenName)
+            _ -> traceError "Invalid tokens minted"
 
-    hasVoteNft :: Bool
-    !hasVoteNft = case M.lookup dcVoteNft (getValue voteValue) of
-      Nothing -> False
-      Just m  -> case M.toList m of
-          [(_, c)]
-            -> traceIfFalse "Impossible. Vote NFT is not an NFT" (c == 1)
-          _ -> traceError "Wrong number of vote NFTs"
+        hasVoteNft :: Bool
+        !hasVoteNft = case M.lookup dcVoteNft (getValue voteValue) of
+          Nothing -> False
+          Just m  -> case M.toList m of
+              [(_, c)]
+                -> traceIfFalse "Impossible. Vote NFT is not an NFT" (c == 1)
+              _ -> traceError "Wrong number of vote NFTs"
 
-    voteIsNotCounted :: Bool
-    !voteIsNotCounted = not vCounted
+        voteIsNotCounted :: Bool
+        !voteIsNotCounted = not vCounted
 
-    totalAdaIsGreaterThanReturnAda :: Bool
-    !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > vReturnAda
+        totalAdaIsGreaterThanReturnAda :: Bool
+        !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > vReturnAda
 
-  in traceIfFalse "Proposal has expired"             proposalIsActive
-  && traceIfFalse "Vote Nft is missing"              hasVoteNft
-  && traceIfFalse "Missing witness on output"        hasWitness
-  && traceIfFalse "Wrong number of witnesses minted" onlyMintedOne
-  && traceIfFalse "Vote is counted"                  voteIsNotCounted
-  && traceIfFalse "Total ada not high enough"        totalAdaIsGreaterThanReturnAda
+      in traceIfFalse "Proposal has expired"             proposalIsActive
+      && traceIfFalse "Vote Nft is missing"              hasVoteNft
+      && traceIfFalse "Missing witness on output"        hasWitness
+      && traceIfFalse "Wrong number of witnesses minted" onlyMintedOne
+      && traceIfFalse "Vote is counted"                  voteIsNotCounted
+      && traceIfFalse "Total ada not high enough"        totalAdaIsGreaterThanReturnAda
 
 mkVoteMinter _ _ _ = traceError "wrong type of script purpose!"
 
 wrappedPolicy :: VoteMinterConfig -> WrappedMintingPolicyType
-wrappedPolicy config a b = check (mkVoteMinter config a (unsafeFromBuiltinData b))
+wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) (unsafeFromBuiltinData b))
 
 policy :: VoteMinterConfig -> MintingPolicy
 policy cfg = mkMintingPolicyScript $
@@ -215,33 +228,48 @@ validateVote
   action
   VoteScriptContext
     { vScriptContextTxInfo = VoteTxInfo {..}
-    } = case action of
-  Count ->
-    let
-      hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft (Value v) = case M.lookup vvcConfigNftCurrencySymbol v of
+    } =
+
+  let
+    hasConfigurationNft :: Value -> Bool
+    hasConfigurationNft (Value v) = case M.lookup vvcConfigNftCurrencySymbol v of
+      Nothing -> False
+      Just m  -> case M.lookup vvcConfigNftTokenName m of
         Nothing -> False
-        Just m  -> case M.lookup vvcConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+        Just c -> c == 1
 
-      DynamicConfig {..} = case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
-        [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
-        _ -> traceError "Too many NFT values"
+    DynamicConfig {..} = case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
+      [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
+      _ -> traceError "Too many NFT values"
 
-    in traceIfFalse
-        "Missing Tally Validator input"
-        (any
-          ( (== ScriptCredential dcTallyValidator)
-          . vAddressCredential
-          . vTxOutAddress
-          . vTxInInfoResolved
+  in case action of
+    Count ->
+      traceIfFalse
+          "Missing Tally Validator input"
+          (any
+            ( (== ScriptCredential dcTallyValidator)
+            . vAddressCredential
+            . vTxOutAddress
+            . vTxInInfoResolved
+            )
+            vTxInfoInputs
           )
-          vTxInfoInputs
-        )
-  Cancel -> traceIfFalse
-    "Not signed by owner"
-    (any ((== addressCredential vOwner) . PubKeyCredential) vTxInfoSignatories)
+    Cancel ->
+      let
+        isSignedByOwner :: Bool
+        !isSignedByOwner = any ((== addressCredential vOwner) . PubKeyCredential) vTxInfoSignatories
+
+        hasVoteToken :: Value -> Bool
+        hasVoteToken (Value v) = case M.lookup dcVoteCurrencySymbol v of
+          Nothing -> False
+          Just _ -> True
+
+        voteTokenAreAllBurned :: Bool
+        !voteTokenAreAllBurned = not $ any (hasVoteToken . vTxOutValue) vTxInfoOutputs
+
+      in traceIfFalse "Not signed by owner" isSignedByOwner
+      && traceIfFalse "All vote tokens are not burned" voteTokenAreAllBurned
+
 
 wrapValidateVote
     :: VoteValidatorConfig
