@@ -4,3 +4,4 @@ baseDir=$thisDir/../
 
 $thisDir/upgrade.sh
 $thisDir/vote-mint-and-cancel.sh
+$thisDir/vote-mint-and-count.sh
