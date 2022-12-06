@@ -26,8 +26,6 @@ To use a local testnet for testing, source the following:
 source scripts/envars/local-testnet.envars
 ```
 
-
-
 # Building
 
 To build install the GHC 8.10.7 and the cabal.

@@ -6,6 +6,7 @@ senderAddr=$(cardano-cli address build --testnet-magic "42" --payment-verificati
 outFile=temp/consolidate-tx.01
 configurationNftDeployer=$(cat ~/$BLOCKCHAIN_PREFIX/configuration-nft-deployer.addr)
 voter0=$(cat ~/$BLOCKCHAIN_PREFIX/voter-0.addr)
+voter1=$(cat ~/$BLOCKCHAIN_PREFIX/voter-1.addr)
 
 cardano-cli transaction build \
   --babbage-era \
@@ -13,6 +14,7 @@ cardano-cli transaction build \
   $(cardano-cli-balance-fixer input --address $senderAddr $BLOCKCHAIN ) \
   --tx-out "$configurationNftDeployer + 100000000 lovelace" \
   --tx-out "$voter0 + 100000000 lovelace" \
+  --tx-out "$voter1 + 100000000 lovelace" \
   --change-address $senderAddr \
   --protocol-params-file scripts/$BLOCKCHAIN_PREFIX/protocol-parameters.json \
   --out-file $bodyFile
