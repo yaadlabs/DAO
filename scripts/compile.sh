@@ -3,7 +3,7 @@ thisDir=$(dirname "$0")
 mainDir=$thisDir/..
 tempDir=$mainDir/temp
 
-initialConfigurationUtxo=$(./scripts/query/configuration-nft-deployer.sh | tail -1 | head | cardano-cli-balance-fixer parse-as-utxo)
+initialConfigurationUtxo=${1:-$(./scripts/query/configuration-nft-deployer.sh | tail -1 | head | cardano-cli-balance-fixer parse-as-utxo)}
 
 (
 cd $mainDir
