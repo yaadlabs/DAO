@@ -34,7 +34,7 @@ mintValue="1 $upgradeMinterId.$upgradeTokenName"
 
 currentSlot=$(cardano-cli query tip $BLOCKCHAIN | jq .slot)
 startSlot=$(($currentSlot-1))
-nextTenSlots=$(($currentSlot+10))
+nextTenSlots=$(($currentSlot+15))
 
 cardano-cli transaction build \
     --babbage-era \

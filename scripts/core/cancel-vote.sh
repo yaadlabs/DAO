@@ -9,6 +9,7 @@ mkdir -p $tempDir
 cancellerAddress=$1
 signingKey=$2
 configurationUtxo=$3
+proposalUtxo=$4
 
 redeemer=$baseDir/redeemers/vote-validator/cancel.json
 voteValidatorScript=$baseDir/vote-validator.plutus
@@ -40,6 +41,7 @@ cardano-cli transaction build \
     --tx-in-inline-datum-present \
     --tx-in-redeemer-file $redeemer \
     --read-only-tx-in-reference $configurationUtxo \
+    --read-only-tx-in-reference $proposalUtxo \
     --tx-out "$cancellerAddress + 2137884 lovelace + 1 ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e.123456 $extraOutput" \
     --required-signer $signingKey \
     --change-address $cancellerAddress \

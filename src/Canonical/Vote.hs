@@ -304,7 +304,8 @@ wrapValidateVote cfg x y z = check (
 voteValidator :: VoteValidatorConfig -> Validator
 voteValidator cfg = let
     optimizerSettings = Plutonomy.defaultOptimizerOptions
-      { Plutonomy.ooSplitDelay = False
+      { Plutonomy.ooSplitDelay      = False
+      , Plutonomy.ooFloatOutLambda  = False
       }
   in Plutonomy.optimizeUPLCWith optimizerSettings $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
     $$(PlutusTx.compile [|| wrapValidateVote ||])
