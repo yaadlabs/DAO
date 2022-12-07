@@ -26,13 +26,13 @@ changeOutput=$(cardano-cli-balance-fixer change --address $voterAddress $BLOCKCH
 
 voteMinterId=$(cat $baseDir/vote-minter-policy-id.txt)
 voteMinterFile=$baseDir/vote-minter.plutus
+mintValue="1 $voteMinterId.564F5445"
 
 extraOutput=""
 if [ "$changeOutput" != "" ];then
   extraOutput="+ $changeOutput"
 fi
 
-mintValue="1 $voteMinterId.564F5445"
 
 currentSlot=$(cardano-cli query tip $BLOCKCHAIN | jq .slot)
 startSlot=$(($currentSlot-1))
