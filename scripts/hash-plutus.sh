@@ -45,3 +45,18 @@ cardano-cli address build \
  --payment-script-file $thisDir/always-succeed.plutus \
  --testnet-magic 42 \
  --out-file $thisDir/local-testnet/always-succeed.addr
+
+cardano-cli address build \
+ --payment-script-file $thisDir/always-succeed-1.plutus \
+ --mainnet \
+ --out-file $thisDir/mainnet/always-succeed-1.addr
+
+cardano-cli address build \
+ --payment-script-file $thisDir/always-succeed-1.plutus \
+ --testnet-magic 1097911063 \
+ --out-file $thisDir/testnet/always-succeed-1.addr
+
+ cardano-cli address build \
+ --payment-script-file $thisDir/always-succeed-1.plutus \
+ --testnet-magic 42 \
+ --out-file $thisDir/local-testnet/always-succeed-1.addr

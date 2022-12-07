@@ -25,7 +25,19 @@ if [ $detected == false ]; then
   exit 1
 fi
 
+detected=false
+
 "$baseDir/failure-cases/cancel-vote-dont-burn.sh" || {
+    detected=true
+}
+
+if [ $detected == false ]; then
+  exit 1
+fi
+
+detected=false
+
+"$baseDir/failure-cases/cancel-missing-config-nft.sh" || {
     detected=true
 }
 
