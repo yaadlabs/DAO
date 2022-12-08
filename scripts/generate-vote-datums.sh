@@ -64,4 +64,55 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/vote-0.json
 
 EOF
 
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/counted-vote-0.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "constructor": 0,
+      "fields" : [
+        {
+          "constructor": 0,
+          "fields" : [
+              {
+                "bytes" : "$txOutRefTxId"
+              }
+            ]
+        },
+        {
+          "int": $txOutRefIndex
+        }
+      ]
+    },
+    {
+      "constructor": 0,
+      "fields" : []
+    },
+    {
+      "constructor": 1,
+      "fields" : []
+    },
+    { "constructor": 0,
+      "fields": [
+        { "constructor": 0,
+          "fields": [
+            {
+              "bytes": "$voter0Pkh"
+            }
+          ]
+        },
+        {
+          "constructor": 1,
+          "fields": []
+        }
+      ]
+    },
+    {
+      "int": 3000000
+    }
+  ]
+}
+
+EOF
+
 $thisDir/hash-datums.sh

@@ -14,6 +14,7 @@ $baseDir/wait/until-next-block.sh
 detected=false
 
 "$baseDir/happy-path/mint-vote-long-lived.sh" || {
+    echo "Failed to prevent minting without vote token!"
     detected=true
 }
 
@@ -32,6 +33,17 @@ detected=false
 
 if [ $detected == false ]; then
   echo "Failed to prevent witness escaping!"
+  exit 1
+fi
+
+detected=false
+
+"$baseDir/failure-cases/mint-vote-counted.sh" || {
+    detected=true
+}
+
+if [ $detected == false ]; then
+  echo "Failed to prevent counted vote from minting!"
   exit 1
 fi
 
