@@ -12,7 +12,7 @@ $baseDir/minting/mint-0-policy.sh
 $baseDir/wait/until-next-block.sh
 $baseDir/happy-path/lock-long-lived-upgrade-proposal.sh
 $baseDir/wait/until-next-block.sh
-$baseDir/happy-path/mint-vote.sh
+$baseDir/happy-path/mint-vote-long-lived.sh
 $baseDir/wait/until-next-block.sh
 $baseDir/happy-path/dummy-tally-long-lived-lock.sh
 $baseDir/wait/until-next-block.sh

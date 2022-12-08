@@ -13,7 +13,7 @@ $baseDir/wait/until-next-block.sh
 
 detected=false
 
-"$baseDir/happy-path/mint-vote.sh" || {
+"$baseDir/happy-path/mint-vote-long-lived.sh" || {
     detected=true
 }
 
@@ -24,7 +24,7 @@ fi
 $baseDir/minting/mint-0-policy.sh
 $baseDir/wait/until-next-block.sh
 
-$baseDir/happy-path/mint-vote.sh
+$baseDir/happy-path/mint-vote-long-lived.sh
 $baseDir/wait/until-next-block.sh
 
 detected=false
