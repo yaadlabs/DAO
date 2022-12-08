@@ -19,4 +19,5 @@ $baseDir/core/dummy-tally-lock.sh \
   $(cat $baseDir/$BLOCKCHAIN_PREFIX/always-succeed-1.addr) \
   ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e \
   54414C4C59 \
-  $baseDir/test-policies/test-policy-0.plutus
+  $baseDir/test-policies/test-policy-0.plutus \
+  3100000
