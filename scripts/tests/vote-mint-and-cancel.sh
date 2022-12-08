@@ -24,6 +24,17 @@ fi
 $baseDir/minting/mint-0-policy.sh
 $baseDir/wait/until-next-block.sh
 
+detected=false
+
+"$baseDir/failure-cases/mint-vote-bad-output-address.sh" || {
+    detected=true
+}
+
+if [ $detected == false ]; then
+  echo "Failed to prevent witness escaping!"
+  exit 1
+fi
+
 $baseDir/happy-path/mint-vote-long-lived.sh
 $baseDir/wait/until-next-block.sh
 
