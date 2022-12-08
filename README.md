@@ -98,8 +98,6 @@ If the vote is valid, a UTxO is created with the a vote datum that stores the pr
 
 Users have to include min Ada for the their vote NFT, and additionally ada to cover the fees of tallying their vote. Users can cancel their votes at any time and receive all the assets the used to create the vote UTxO.
 
-Vote counting can start while the proposal is still active. In which case the vote is returned to the validator, but the vote state is modified to "counted". If a vote is "counted" it cannot be returned to a user until the proposal is over.
-
 ## Upgrading
 
 The smart contract system is designed to be upgraded. Upgrades are special proposals that can be voted on. The proposal includes a minting contract that is used to validate the upgrade transaction. The security of the upgrade is delegated to this contract. The upgrade procedure ensures that there are enough votes for the upgrade, and that an upgrade token is minted in the transaction. This ensures that the upgrade minting contract is executed, so therefore the upgrade is valid.

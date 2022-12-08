@@ -9,7 +9,6 @@ import           Plutus.V1.Ledger.Crypto
 import           Plutus.V1.Ledger.Credential
 import           Plutus.V1.Ledger.Interval
 import           Plutus.V1.Ledger.Scripts
-import           Plutus.V1.Ledger.Time
 import           Plutus.V1.Ledger.Value
 import           Plutus.V2.Ledger.Tx hiding (Mint)
 import           PlutusTx.AssocMap (Map)
@@ -268,25 +267,8 @@ validateVote
         voteTokenAreAllBurned :: Bool
         !voteTokenAreAllBurned = not $ any (hasVoteToken . vTxOutValue) vTxInfoOutputs
 
-        isAvailableForCancel :: Bool
-        !isAvailableForCancel =
-          if vCounted then
-            let
-              Proposal {..} = case filter ((==vProposal) . vTxInInfoOutRef) vTxInfoReferenceInputs of
-                [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
-                _ -> traceError "Wrong number of proposal references"
-
-              isProposalActive :: Bool
-              !isProposalActive = (pEndTime + POSIXTime dcProposalTallyEndOffset) `before` unsafeFromBuiltinData vTxInfoValidRange
-
-            in isProposalActive
-          else
-            True
-
       in traceIfFalse "Not signed by owner" isSignedByOwner
       && traceIfFalse "All vote tokens are not burned" voteTokenAreAllBurned
-      && traceIfFalse "Is not available for cancelling yet" isAvailableForCancel
-
 
 wrapValidateVote
     :: VoteValidatorConfig

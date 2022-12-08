@@ -15,9 +15,9 @@ $baseDir/generate-tally-datums.sh $DATUM_PREFIX $upgradeProposalTxId $upgradePro
 $baseDir/core/dummy-tally-lock.sh \
   $(cat ~/$BLOCKCHAIN_PREFIX/configuration-nft-deployer.addr) \
   ~/$BLOCKCHAIN_PREFIX/configuration-nft-deployer.skey \
-  $tempDir/$BLOCKCHAIN_PREFIX/datums/$DATUM_PREFIX/final-upgrade-tally.json \
+  $tempDir/$BLOCKCHAIN_PREFIX/datums/$DATUM_PREFIX/final-upgrade-tally-too-few-votes.json \
   $(cat $baseDir/$BLOCKCHAIN_PREFIX/always-succeed.addr) \
   ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e \
   54414C4C59 \
   $baseDir/test-policies/test-policy-0.plutus \
-  3000000
+  2900000

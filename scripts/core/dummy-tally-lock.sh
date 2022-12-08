@@ -13,6 +13,7 @@ scriptAddr=$4
 tallyNftPolicyId=$5
 tallyNftTokenName=$6
 tallyNftMintScript=$7
+adaAmount=$8
 
 
 bodyFile=$tempDir/sell-tx-body.01
@@ -31,7 +32,7 @@ cardano-cli transaction build \
     $BLOCKCHAIN \
     $(cardano-cli-balance-fixer input --address $tallyAddress $BLOCKCHAIN) \
     --tx-in-collateral $(cardano-cli-balance-fixer collateral --address $tallyAddress $BLOCKCHAIN) \
-    --tx-out "$scriptAddr + 2823090 lovelace + $mintValue" \
+    --tx-out "$scriptAddr + $adaAmount lovelace + $mintValue" \
     --tx-out-inline-datum-file $datumFile \
     --tx-out "$tallyAddress + 2137884 lovelace $extraOutput" \
     --required-signer $signingKey \
