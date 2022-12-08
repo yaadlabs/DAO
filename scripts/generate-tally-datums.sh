@@ -73,4 +73,35 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/final-upgrade-tally-too-
 
 EOF
 
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/final-upgrade-tally-no-relative-majority.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "constructor": 0,
+      "fields" : [
+        {
+          "constructor": 0,
+          "fields" : [
+              {
+                "bytes" : "$txOutRefTxId"
+              }
+            ]
+        },
+        {
+          "int": $txOutRefIndex
+        }
+      ]
+    },
+    {
+      "int" : 1
+    },
+    {
+      "int" : 0
+    }
+  ]
+}
+
+EOF
+
 $thisDir/hash-datums.sh
