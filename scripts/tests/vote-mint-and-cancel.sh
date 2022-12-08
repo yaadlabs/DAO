@@ -47,6 +47,15 @@ if [ $detected == false ]; then
   exit 1
 fi
 
+"$baseDir/failure-cases/mint-vote-too-little-ada.sh" || {
+    detected=true
+}
+
+if [ $detected == false ]; then
+  echo "Failed to prevent too little ada vote from minting!"
+  exit 1
+fi
+
 $baseDir/happy-path/mint-vote-long-lived.sh
 $baseDir/wait/until-next-block.sh
 
