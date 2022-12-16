@@ -7,6 +7,7 @@ import           Options.Generic
 import           Canonical.AlwaysSucceed
 import           Canonical.ConfigurationNft
 import           Canonical.Vote
+import           Canonical.Treasury
 import           Prelude
 import           Plutus.V1.Ledger.Bytes
 import           Plutus.V1.Ledger.Crypto
@@ -45,6 +46,8 @@ data Options = Options
   , voteMinterPolicyIdOutput         :: FilePath
   , voteValidatorOutput              :: FilePath
   , voteValidatorHashOutput          :: FilePath
+  , treasuryValidatorOutput          :: FilePath
+  , treasuryValidatorHashOutput      :: FilePath
   } deriving (Show, Generic)
 
 instance ParseField PubKeyHash where
@@ -132,3 +135,12 @@ run Options{..} = do
   writeSource voteValidatorOutput (voteScript voteValidatorConfig)
 
   writeFile voteValidatorHashOutput $ show (voteValidatorHash voteValidatorConfig)
+
+  let treasuryValidatorConfig = TreasuryValidatorConfig
+        { tvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , tvcConfigNftTokenName      = configurationNftTokenName
+        }
+
+  writeSource treasuryValidatorOutput (treasuryScript treasuryValidatorConfig)
+
+  writeFile treasuryValidatorHashOutput $ show (treasuryValidatorHash treasuryValidatorConfig)

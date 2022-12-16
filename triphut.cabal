@@ -38,8 +38,10 @@ library
     Canonical.AlwaysSucceed
     Canonical.ConfigurationNft
     Canonical.Vote
+    Canonical.Treasury
     Canonical.Types
     Canonical.Shared
+
   build-depends:
     , aeson
     , bytestring

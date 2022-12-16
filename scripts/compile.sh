@@ -21,7 +21,9 @@ cabal run exe:create-sc -- \
   --vote-minter-output=scripts/vote-minter.plutus \
   --vote-minter-policy-id-output=scripts/vote-minter-policy-id.txt \
   --vote-validator-output=scripts/vote-validator.plutus \
-  --vote-validator-hash-output=scripts/vote-validator-hash.txt
+  --vote-validator-hash-output=scripts/vote-validator-hash.txt \
+  --treasury-validator-output=scripts/treasury-validator.plutus \
+  --treasury-validator-hash-output=scripts/treasury-validator-hash.txt
 )
 
 $thisDir/hash-plutus.sh
