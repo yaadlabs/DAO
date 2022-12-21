@@ -7,16 +7,17 @@ import qualified Data.ByteString.Short as BSS
 import           Plutus.V2.Ledger.Contexts
 import           Plutus.V1.Ledger.Crypto
 import           Plutus.V1.Ledger.Credential
--- import           Plutus.V1.Ledger.Interval
+import           Plutus.V1.Ledger.Interval
 import           Plutus.V1.Ledger.Scripts
+import           Plutus.V1.Ledger.Time
 import           Plutus.V1.Ledger.Value
 import           Plutus.V2.Ledger.Tx hiding (Mint)
 import           PlutusTx.AssocMap (Map)
--- import qualified PlutusTx.AssocMap as M
+import qualified PlutusTx.AssocMap as M
 import           PlutusTx
 import           PlutusTx.Prelude
 import           Canonical.Shared
--- import           Canonical.Types
+import qualified Canonical.Types as T
 import qualified Plutonomy
 
 -------------------------------------------------------------------------------
@@ -51,10 +52,10 @@ data TreasuryTxInfo = TreasuryTxInfo
   , tTxInfoReferenceInputs    :: [TreasuryTxInInfo]
   , tTxInfoOutputs            :: [TreasuryTxOut]
   , tTxInfoFee                :: BuiltinData
-  , tTxInfoMint               :: BuiltinData
+  , tTxInfoMint               :: Value
   , tTxInfoDCert              :: BuiltinData
   , tTxInfoWdrl               :: BuiltinData
-  , tTxInfoValidRange         :: BuiltinData
+  , tTxInfoValidRange         :: POSIXTimeRange
   , tTxInfoSignatories        :: [PubKeyHash]
   , tTxInfoRedeemers          :: BuiltinData
   , tTxInfoData               :: Map DatumHash Datum
@@ -65,8 +66,9 @@ data TreasuryTxInfo = TreasuryTxInfo
 -- Input Types
 -------------------------------------------------------------------------------
 data TreasuryAction
-  = Count
-  | Cancel
+  = Upgrade
+  | TravelDisbursement
+  | GeneralDisbursement
 
 data Treasury = Treasury
 
@@ -86,6 +88,13 @@ unstableMakeIsData ''TreasuryAction
 makeLift ''TreasuryValidatorConfig
 
 -- Needs to work in bulk
+-- TODO
+-- This needs to upgradeable A.
+-- So if there is an upgrade proposal
+-- It just unlocks assuming there is a
+-- Good tally
+-- So it is basically the configuration validator logic
+-- There are other proposals it does other things
 validateTreasury
   :: TreasuryValidatorConfig
   -> Treasury
@@ -93,12 +102,85 @@ validateTreasury
   -> TreasuryScriptContext
   -> Bool
 validateTreasury
-  TreasuryValidatorConfig {}
+  TreasuryValidatorConfig {..}
   Treasury {}
-  _action
+  action
   TreasuryScriptContext
-    { tScriptContextTxInfo = TreasuryTxInfo {}
-    } = error ()
+    { tScriptContextTxInfo = TreasuryTxInfo {..}
+    } = case action of
+  TravelDisbursement -> error ()
+  GeneralDisbursement -> error ()
+  Upgrade ->
+    let
+
+      hasConfigurationNft :: Value -> Bool
+      hasConfigurationNft (Value v) = case M.lookup tvcConfigNftCurrencySymbol v of
+        Nothing -> False
+        Just m  -> case M.lookup tvcConfigNftTokenName m of
+          Nothing -> False
+          Just c -> c == 1
+
+      -- filter the reference inputs for the configuration nft
+      T.DynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
+        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
+          OutputDatum (Datum dbs) -> dbs
+          OutputDatumHash dh -> case M.lookup dh tTxInfoData of
+            Just (Datum dbs) -> dbs
+            _ -> traceError "Missing datum"
+          NoOutputDatum -> traceError "Script input missing datum hash"
+        _ -> traceError "Too many NFT values"
+
+      hasTallyNft :: Value -> Bool
+      hasTallyNft (Value v) = case M.lookup dcTallyNft v of
+        Nothing -> False
+        Just m  -> case M.lookup dcTallyTokenName m of
+          Nothing -> False
+          Just c -> c == 1
+
+      T.TallyState {..} = case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
+        [] -> traceError "Missing tally NFT"
+        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
+          OutputDatum (Datum dbs) -> dbs
+          OutputDatumHash dh -> case M.lookup dh tTxInfoData of
+            Just (Datum dbs) -> dbs
+            _ -> traceError "Missing datum"
+          NoOutputDatum -> traceError "Script input missing datum hash"
+        _ -> traceError "Too many NFT values"
+
+      totalVotes :: Integer
+      !totalVotes = tsFor + tsAgainst
+
+      relativeMajority :: Integer
+      !relativeMajority = (totalVotes * 1000) `divide` dcTotalVotes
+
+      majorityPercent :: Integer
+      !majorityPercent = (tsFor * 1000) `divide` totalVotes
+
+      hasEnoughVotes :: Bool
+      !hasEnoughVotes
+        =  traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradRelativeMajorityPercent)
+        && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
+
+      -- Find a the reference input with using the tsProposal TxOutRef
+      T.Proposal {pType = T.Upgrade {ptUpgradeMinter}, ..} = case filter ((==tsProposal) . tTxInInfoOutRef) tTxInfoReferenceInputs of
+        [] -> traceError "Missing proposal NFT"
+        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
+        _ -> traceError "Too many NFT values"
+
+      -- Make sure the upgrade token was minted
+      hasUpgradeMinterToken :: Bool
+      !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue tTxInfoMint) of
+        Nothing -> False
+        Just m  -> case M.toList m of
+          [(_, c)] -> c == 1
+          _ -> False
+
+      isAfterTallyEndTime :: Bool
+      isAfterTallyEndTime = (pEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
+
+    in traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
+    && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
+    && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 
 wrapValidateTreasury
     :: TreasuryValidatorConfig
