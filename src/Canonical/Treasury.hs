@@ -107,80 +107,83 @@ validateTreasury
   action
   TreasuryScriptContext
     { tScriptContextTxInfo = TreasuryTxInfo {..}
-    } = case action of
-  TravelDisbursement -> error ()
-  GeneralDisbursement -> error ()
-  Upgrade ->
-    let
-
-      hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft (Value v) = case M.lookup tvcConfigNftCurrencySymbol v of
+    } =
+  let
+    hasConfigurationNft :: Value -> Bool
+    hasConfigurationNft (Value v) = case M.lookup tvcConfigNftCurrencySymbol v of
+      Nothing -> False
+      Just m  -> case M.lookup tvcConfigNftTokenName m of
         Nothing -> False
-        Just m  -> case M.lookup tvcConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+        Just c -> c == 1
 
-      -- filter the reference inputs for the configuration nft
-      T.DynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
-        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
-          OutputDatum (Datum dbs) -> dbs
-          OutputDatumHash dh -> case M.lookup dh tTxInfoData of
-            Just (Datum dbs) -> dbs
-            _ -> traceError "Missing datum"
-          NoOutputDatum -> traceError "Script input missing datum hash"
-        _ -> traceError "Too many NFT values"
+    -- filter the reference inputs for the configuration nft
+    T.DynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
+      [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
+        OutputDatum (Datum dbs) -> dbs
+        OutputDatumHash dh -> case M.lookup dh tTxInfoData of
+          Just (Datum dbs) -> dbs
+          _ -> traceError "Missing datum"
+        NoOutputDatum -> traceError "Script input missing datum hash"
+      _ -> traceError "Too many NFT values"
 
-      hasTallyNft :: Value -> Bool
-      hasTallyNft (Value v) = case M.lookup dcTallyNft v of
+    hasTallyNft :: Value -> Bool
+    hasTallyNft (Value v) = case M.lookup dcTallyNft v of
+      Nothing -> False
+      Just m  -> case M.lookup dcTallyTokenName m of
         Nothing -> False
-        Just m  -> case M.lookup dcTallyTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+        Just c -> c == 1
 
-      T.TallyState {..} = case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
-        [] -> traceError "Missing tally NFT"
-        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
-          OutputDatum (Datum dbs) -> dbs
-          OutputDatumHash dh -> case M.lookup dh tTxInfoData of
-            Just (Datum dbs) -> dbs
-            _ -> traceError "Missing datum"
-          NoOutputDatum -> traceError "Script input missing datum hash"
-        _ -> traceError "Too many NFT values"
+    T.TallyState {..} = case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
+      [] -> traceError "Missing tally NFT"
+      [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
+        OutputDatum (Datum dbs) -> dbs
+        OutputDatumHash dh -> case M.lookup dh tTxInfoData of
+          Just (Datum dbs) -> dbs
+          _ -> traceError "Missing datum"
+        NoOutputDatum -> traceError "Script input missing datum hash"
+      _ -> traceError "Too many NFT values"
 
-      totalVotes :: Integer
-      !totalVotes = tsFor + tsAgainst
+    totalVotes :: Integer
+    !totalVotes = tsFor + tsAgainst
 
-      relativeMajority :: Integer
-      !relativeMajority = (totalVotes * 1000) `divide` dcTotalVotes
+    relativeMajority :: Integer
+    !relativeMajority = (totalVotes * 1000) `divide` dcTotalVotes
 
-      majorityPercent :: Integer
-      !majorityPercent = (tsFor * 1000) `divide` totalVotes
+    majorityPercent :: Integer
+    !majorityPercent = (tsFor * 1000) `divide` totalVotes
 
-      hasEnoughVotes :: Bool
-      !hasEnoughVotes
-        =  traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradRelativeMajorityPercent)
-        && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
+    proposal :: T.Proposal
+    proposal = case filter ((==tsProposal) . tTxInInfoOutRef) tTxInfoReferenceInputs of
+      [] -> traceError "Missing proposal NFT"
+      [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
+      _ -> traceError "Too many NFT values"
 
-      -- Find a the reference input with using the tsProposal TxOutRef
-      T.Proposal {pType = T.Upgrade {ptUpgradeMinter}, ..} = case filter ((==tsProposal) . tTxInInfoOutRef) tTxInfoReferenceInputs of
-        [] -> traceError "Missing proposal NFT"
-        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
-        _ -> traceError "Too many NFT values"
+  in case action of
+      TravelDisbursement -> error ()
+      GeneralDisbursement -> error ()
+      Upgrade ->
+        let
+          hasEnoughVotes :: Bool
+          !hasEnoughVotes
+            =  traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradRelativeMajorityPercent)
+            && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
 
-      -- Make sure the upgrade token was minted
-      hasUpgradeMinterToken :: Bool
-      !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue tTxInfoMint) of
-        Nothing -> False
-        Just m  -> case M.toList m of
-          [(_, c)] -> c == 1
-          _ -> False
+          -- Find a the reference input with using the tsProposal TxOutRef
+          T.Proposal {pType = T.Upgrade {ptUpgradeMinter}, ..} = proposal
+          -- Make sure the upgrade token was minted
+          hasUpgradeMinterToken :: Bool
+          !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue tTxInfoMint) of
+            Nothing -> False
+            Just m  -> case M.toList m of
+              [(_, c)] -> c == 1
+              _ -> False
 
-      isAfterTallyEndTime :: Bool
-      isAfterTallyEndTime = (pEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
+          isAfterTallyEndTime :: Bool
+          isAfterTallyEndTime = (pEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
 
-    in traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
-    && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
-    && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
+        in traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
+        && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
+        && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 
 wrapValidateTreasury
     :: TreasuryValidatorConfig
