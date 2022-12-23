@@ -41,6 +41,7 @@ library
     Canonical.Treasury
     Canonical.Types
     Canonical.Shared
+    Canonical.Tally
 
   build-depends:
     , aeson

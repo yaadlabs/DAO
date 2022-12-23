@@ -4,6 +4,7 @@ mainDir=$thisDir/..
 tempDir=$mainDir/temp
 
 initialConfigurationUtxo=${1:-$(./scripts/query/configuration-nft-deployer.sh | tail -1 | head | cardano-cli-balance-fixer parse-as-utxo)}
+initialIndexUtxo=${1:-$(./scripts/query/index-nft-deployer.sh | tail -1 | head | cardano-cli-balance-fixer parse-as-utxo)}
 
 (
 cd $mainDir
@@ -23,7 +24,11 @@ cabal run exe:create-sc -- \
   --vote-validator-output=scripts/vote-validator.plutus \
   --vote-validator-hash-output=scripts/vote-validator-hash.txt \
   --treasury-validator-output=scripts/treasury-validator.plutus \
-  --treasury-validator-hash-output=scripts/treasury-validator-hash.txt
+  --treasury-validator-hash-output=scripts/treasury-validator-hash.txt \
+  --tally-index-nft-output=scripts/tally-index.plutus \
+  --tally-index-nft-policy-id-output=scripts/tally-index-policy-id.txt \
+  --tally-index-nft-token-name=INDEX \
+  --tally-index-nft-initial-utxo=$initialIndexUtxo \
 )
 
 $thisDir/hash-plutus.sh

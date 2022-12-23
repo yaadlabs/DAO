@@ -8,6 +8,7 @@ import           Canonical.AlwaysSucceed
 import           Canonical.ConfigurationNft
 import           Canonical.Vote
 import           Canonical.Treasury
+import           Canonical.Tally
 import           Prelude
 import           Plutus.V1.Ledger.Bytes
 import           Plutus.V1.Ledger.Crypto
@@ -48,6 +49,10 @@ data Options = Options
   , voteValidatorHashOutput          :: FilePath
   , treasuryValidatorOutput          :: FilePath
   , treasuryValidatorHashOutput      :: FilePath
+  , tallyIndexNftOutput              :: FilePath
+  , tallyIndexNftPolicyIdOutput      :: FilePath
+  , tallyIndexNftTokenName           :: TokenName
+  , tallyIndexNftInitialUtxo         :: TxOutRef
   } deriving (Show, Generic)
 
 instance ParseField PubKeyHash where
@@ -144,3 +149,14 @@ run Options{..} = do
   writeSource treasuryValidatorOutput (treasuryScript treasuryValidatorConfig)
 
   writeFile treasuryValidatorHashOutput $ show (treasuryValidatorHash treasuryValidatorConfig)
+
+  let indexNftConfig = IndexNftConfig
+        { incInitialUtxo = tallyIndexNftInitialUtxo
+        , incTokenName   = tallyIndexNftTokenName
+        }
+
+  writeSource tallyIndexNftOutput $ tallyIndexNftMinter indexNftConfig
+
+  let theTallyIndexNftPolicyId = tallyIndexNftMinterPolicyId indexNftConfig
+
+  writeFile tallyIndexNftPolicyIdOutput $ show theTallyIndexNftPolicyId

@@ -5,6 +5,7 @@ signingKey=/Users/jonathanfischoff/prototypes/cardano-node/example/utxo-keys/utx
 senderAddr=$(cardano-cli address build --testnet-magic "42" --payment-verification-key-file /Users/jonathanfischoff/prototypes/cardano-node/example/utxo-keys/utxo1.vkey)
 outFile=temp/consolidate-tx.01
 configurationNftDeployer=$(cat ~/$BLOCKCHAIN_PREFIX/configuration-nft-deployer.addr)
+indexNftDeployer=$(cat ~/$BLOCKCHAIN_PREFIX/index-nft-deployer.addr)
 voter0=$(cat ~/$BLOCKCHAIN_PREFIX/voter-0.addr)
 voter1=$(cat ~/$BLOCKCHAIN_PREFIX/voter-1.addr)
 
@@ -13,6 +14,7 @@ cardano-cli transaction build \
   $BLOCKCHAIN \
   $(cardano-cli-balance-fixer input --address $senderAddr $BLOCKCHAIN ) \
   --tx-out "$configurationNftDeployer + 100000000 lovelace" \
+  --tx-out "$indexNftDeployer + 100000000 lovelace" \
   --tx-out "$voter0 + 100000000 lovelace" \
   --tx-out "$voter1 + 100000000 lovelace" \
   --change-address $senderAddr \
