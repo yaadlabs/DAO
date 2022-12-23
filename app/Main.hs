@@ -57,6 +57,8 @@ data Options = Options
   , tallyNftPolicyIdOutput           :: FilePath
   , indexValidatorOutput             :: FilePath
   , indexValidatorHashOutput         :: FilePath
+  , tallyValidatorOutput             :: FilePath
+  , tallyValidatorHashOutput         :: FilePath
   } deriving (Show, Generic)
 
 instance ParseField PubKeyHash where
@@ -189,3 +191,14 @@ run Options{..} = do
   let theTallyNftPolicyId = tallyNftMinterPolicyId tallyNftConfig
 
   writeFile tallyNftPolicyIdOutput $ show theTallyNftPolicyId
+
+  let tallyValidatorConfig = TallyValidatorConfig
+        { tvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , tvcConfigNftTokenName      = configurationNftTokenName
+        }
+
+  writeSource tallyValidatorOutput (tallyScript tallyValidatorConfig)
+
+  let theTallyValidatorHash = tallyValidatorHash tallyValidatorConfig
+
+  writeFile tallyValidatorHashOutput $ show theTallyValidatorHash

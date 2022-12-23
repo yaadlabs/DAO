@@ -5,13 +5,16 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Short as BSS
 import           Plutus.V2.Ledger.Contexts
 import           Plutus.V1.Ledger.Credential
+import           Plutus.V1.Ledger.Crypto
+-- import           Plutus.V1.Ledger.Interval
+import           Plutus.V1.Ledger.Time
 import           Plutus.V1.Ledger.Address
 import           Plutus.V1.Ledger.Scripts
 import           Plutus.V2.Ledger.Tx
 import           Plutus.V1.Ledger.Value
 import           PlutusTx
 import qualified PlutusTx.AssocMap as M
--- import           PlutusTx.AssocMap (Map)
+import           PlutusTx.AssocMap (Map)
 import           PlutusTx.Prelude
 import qualified Plutonomy
 import           Canonical.Shared
@@ -321,3 +324,122 @@ tallyNftMinter
   . BSS.toShort
   . BSL.toStrict
   . tallyNftScriptAsCbor
+
+-------------------------------------------------------------------------------
+-- Tally Validator
+-------------------------------------------------------------------------------
+
+data TallyAddress = TallyAddress
+  { cAddressCredential        :: Credential
+  , cAddressStakingCredential :: BuiltinData
+  }
+
+data TallyTxOut = TallyTxOut
+  { cTxOutAddress             :: TallyAddress
+  , cTxOutValue               :: Value
+  , cTxOutDatum               :: OutputDatum
+  , cTxOutReferenceScript     :: BuiltinData
+  }
+
+data TallyTxInInfo = TallyTxInInfo
+  { cTxInInfoOutRef   :: TxOutRef
+  , cTxInInfoResolved :: TallyTxOut
+  }
+
+data TallyScriptPurpose = TallySpend TxOutRef
+
+data TallyScriptContext = TallyScriptContext
+  { cScriptContextTxInfo  :: TallyTxInfo
+  , cScriptContextPurpose :: TallyScriptPurpose
+  }
+
+data TallyTxInfo = TallyTxInfo
+  { cTxInfoInputs             :: [TallyTxInInfo]
+  , cTxInfoReferenceInputs    :: [TallyTxInInfo]
+  , cTxInfoOutputs            :: [TallyTxOut]
+  , cTxInfoFee                :: BuiltinData
+  , cTxInfoMint               :: Value
+  , cTxInfoDCert              :: BuiltinData
+  , cTxInfoWdrl               :: BuiltinData
+  , cTxInfoValidRange         :: POSIXTimeRange
+  , cTxInfoSignatories        :: [PubKeyHash]
+  , cTxInfoRedeemers          :: BuiltinData
+  , cTxInfoData               :: Map DatumHash Datum
+  , cTxInfoId                 :: BuiltinData
+  }
+
+-------------------------------------------------------------------------------
+-- Input Types
+-------------------------------------------------------------------------------
+
+data TallyValidatorConfig = TallyValidatorConfig
+  { tvcConfigNftCurrencySymbol :: CurrencySymbol
+  , tvcConfigNftTokenName      :: TokenName
+  }
+
+unstableMakeIsData ''TallyAddress
+unstableMakeIsData ''TallyTxOut
+unstableMakeIsData ''TallyTxInInfo
+makeIsDataIndexed  ''TallyScriptPurpose [('TallySpend,1)]
+unstableMakeIsData ''TallyScriptContext
+unstableMakeIsData ''TallyTxInfo
+makeLift ''TallyValidatorConfig
+
+ownValue :: [TallyTxInInfo] -> TxOutRef -> Value
+ownValue ins txOutRef = go ins where
+  go = \case
+    [] -> traceError "The impossible happened"
+    TallyTxInInfo {cTxInInfoOutRef, cTxInInfoResolved = TallyTxOut{cTxOutValue}} :xs ->
+      if cTxInInfoOutRef == txOutRef then
+        cTxOutValue
+      else
+        go xs
+
+validateTally
+  :: TallyValidatorConfig
+  -> DynamicConfig
+  -> BuiltinData
+  -> TallyScriptContext
+  -> Bool
+validateTally
+  TallyValidatorConfig {}
+  DynamicConfig {}
+  _
+  TallyScriptContext
+    { cScriptContextTxInfo = TallyTxInfo {}
+    , cScriptContextPurpose = TallySpend _thisOutRef
+    } = error ()
+
+wrapValidateTally
+    :: TallyValidatorConfig
+    -> BuiltinData
+    -> BuiltinData
+    -> BuiltinData
+    -> ()
+wrapValidateTally cfg x y z = check (
+  validateTally
+    cfg
+    (unsafeFromBuiltinData x)
+    (unsafeFromBuiltinData y)
+    (unsafeFromBuiltinData z) )
+
+tallyValidator :: TallyValidatorConfig -> Validator
+tallyValidator cfg = let
+    optimizerSettings = Plutonomy.defaultOptimizerOptions
+      { Plutonomy.ooSplitDelay = False
+      }
+  in Plutonomy.optimizeUPLCWith optimizerSettings $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
+    $$(PlutusTx.compile [|| wrapValidateTally ||])
+    `applyCode`
+    liftCode cfg
+
+tallyValidatorHash :: TallyValidatorConfig -> ValidatorHash
+tallyValidatorHash = validatorHash . tallyValidator
+
+tallyScript :: TallyValidatorConfig ->  PlutusScript PlutusScriptV2
+tallyScript
+  = PlutusScriptSerialised
+  . BSS.toShort
+  . BSL.toStrict
+  . serialise
+  . tallyValidator

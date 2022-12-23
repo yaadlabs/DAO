@@ -32,7 +32,9 @@ cabal run exe:create-sc -- \
   --tally-nft-output=tally-nft.plutus \
   --tally-nft-policy-id-output=tally-nft-policy-id.txt \
   --index-validator-output=scripts/index-validator.plutus \
-  --index-validator-hash-output=scripts/index-validator-hash.txt
+  --index-validator-hash-output=scripts/index-validator-hash.txt \
+  --tally-validator-output=scripts/tally-validator.plutus \
+  --tally-validator-hash-output=scripts/tally-validator-hash.txt
 )
 
 $thisDir/hash-plutus.sh
