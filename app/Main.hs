@@ -53,6 +53,10 @@ data Options = Options
   , tallyIndexNftPolicyIdOutput      :: FilePath
   , tallyIndexNftTokenName           :: TokenName
   , tallyIndexNftInitialUtxo         :: TxOutRef
+  , tallyNftOutput                   :: FilePath
+  , tallyNftPolicyIdOutput           :: FilePath
+  , indexValidatorOutput             :: FilePath
+  , indexValidatorHashOutput         :: FilePath
   } deriving (Show, Generic)
 
 instance ParseField PubKeyHash where
@@ -150,9 +154,21 @@ run Options{..} = do
 
   writeFile treasuryValidatorHashOutput $ show (treasuryValidatorHash treasuryValidatorConfig)
 
+  let indexValidatorConfig = IndexValidatorConfig
+        { ivcConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , ivcConfigNftTokenName      = configurationNftTokenName
+        }
+
+  writeSource indexValidatorOutput (indexScript indexValidatorConfig)
+
+  let theIndexValidatorHash = indexValidatorHash indexValidatorConfig
+
+  writeFile indexValidatorHashOutput $ show theIndexValidatorHash
+
   let indexNftConfig = IndexNftConfig
-        { incInitialUtxo = tallyIndexNftInitialUtxo
-        , incTokenName   = tallyIndexNftTokenName
+        { incInitialUtxo    = tallyIndexNftInitialUtxo
+        , incTokenName      = tallyIndexNftTokenName
+        , incIndexValidator = theIndexValidatorHash
         }
 
   writeSource tallyIndexNftOutput $ tallyIndexNftMinter indexNftConfig
@@ -160,3 +176,16 @@ run Options{..} = do
   let theTallyIndexNftPolicyId = tallyIndexNftMinterPolicyId indexNftConfig
 
   writeFile tallyIndexNftPolicyIdOutput $ show theTallyIndexNftPolicyId
+
+  let tallyNftConfig = TallyNftConfig
+        { tncIndexNftPolicyId        = theTallyIndexNftPolicyId
+        , tncIndexNftTokenName       = tallyIndexNftTokenName
+        , tncConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , tncConfigNftTokenName      = configurationNftTokenName
+        }
+
+  writeSource tallyNftOutput $ tallyNftMinter tallyNftConfig
+
+  let theTallyNftPolicyId = tallyNftMinterPolicyId tallyNftConfig
+
+  writeFile tallyNftPolicyIdOutput $ show theTallyNftPolicyId
