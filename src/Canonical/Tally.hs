@@ -6,7 +6,7 @@ import qualified Data.ByteString.Short as BSS
 import           Plutus.V2.Ledger.Contexts
 import           Plutus.V1.Ledger.Credential
 import           Plutus.V1.Ledger.Crypto
--- import           Plutus.V1.Ledger.Interval
+import           Plutus.V1.Ledger.Interval
 import           Plutus.V1.Ledger.Time
 import           Plutus.V1.Ledger.Address
 import           Plutus.V1.Ledger.Scripts
@@ -19,20 +19,6 @@ import           PlutusTx.Prelude
 import qualified Plutonomy
 import           Canonical.Shared
 import           Canonical.Types
--- TODO use the Tally NFT index
--- When making the Tally utxo it needs to make an NFT, that is
--- in the proposal datum, and the proposal utxo is in the tally datum
--- the proposal needs to stay locked
--- I think I should probably combine the proposals and the tallys
--- so there is only one utxo
--- Do I even need an NFT in that case?
--- Yes I need an NFT for voting
--- So the idea is mint a regular NFT
--- Put in on the proposal/tally
--- Votes refer to it
-
--- So there is an index NFT that is used to make the tokenname
--- When validating you just need to make sure the policy correct
 
 data IndexNftDatum = IndexNftDatum
   { indIndex :: Integer
@@ -329,55 +315,54 @@ tallyNftMinter
 -- Tally Validator
 -------------------------------------------------------------------------------
 
-data TallyAddress = TallyAddress
-  { cAddressCredential        :: Credential
-  , cAddressStakingCredential :: BuiltinData
-  }
 
 data TallyTxOut = TallyTxOut
-  { cTxOutAddress             :: TallyAddress
-  , cTxOutValue               :: Value
-  , cTxOutDatum               :: OutputDatum
-  , cTxOutReferenceScript     :: BuiltinData
+  { tTxOutAddress             :: Address
+  , tTxOutValue               :: Value
+  , tTxOutDatum               :: OutputDatum
+  , tTxOutReferenceScript     :: BuiltinData
   }
 
 data TallyTxInInfo = TallyTxInInfo
-  { cTxInInfoOutRef   :: TxOutRef
-  , cTxInInfoResolved :: TallyTxOut
+  { tTxInInfoOutRef   :: TxOutRef
+  , tTxInInfoResolved :: TallyTxOut
   }
 
 data TallyScriptPurpose = TallySpend TxOutRef
 
 data TallyScriptContext = TallyScriptContext
-  { cScriptContextTxInfo  :: TallyTxInfo
-  , cScriptContextPurpose :: TallyScriptPurpose
+  { tScriptContextTxInfo  :: TallyTxInfo
+  , tScriptContextPurpose :: TallyScriptPurpose
   }
 
 data TallyTxInfo = TallyTxInfo
-  { cTxInfoInputs             :: [TallyTxInInfo]
-  , cTxInfoReferenceInputs    :: [TallyTxInInfo]
-  , cTxInfoOutputs            :: [TallyTxOut]
-  , cTxInfoFee                :: BuiltinData
-  , cTxInfoMint               :: Value
-  , cTxInfoDCert              :: BuiltinData
-  , cTxInfoWdrl               :: BuiltinData
-  , cTxInfoValidRange         :: POSIXTimeRange
-  , cTxInfoSignatories        :: [PubKeyHash]
-  , cTxInfoRedeemers          :: BuiltinData
-  , cTxInfoData               :: Map DatumHash Datum
-  , cTxInfoId                 :: BuiltinData
+  { tTxInfoInputs             :: [TallyTxInInfo]
+  , tTxInfoReferenceInputs    :: [TallyTxInInfo]
+  , tTxInfoOutputs            :: [TallyTxOut]
+  , tTxInfoFee                :: BuiltinData
+  , tTxInfoMint               :: Value
+  , tTxInfoDCert              :: BuiltinData
+  , tTxInfoWdrl               :: BuiltinData
+  , tTxInfoValidRange         :: POSIXTimeRange
+  , tTxInfoSignatories        :: [PubKeyHash]
+  , tTxInfoRedeemers          :: BuiltinData
+  , tTxInfoData               :: Map DatumHash Datum
+  , tTxInfoId                 :: BuiltinData
   }
 
 -------------------------------------------------------------------------------
 -- Input Types
 -------------------------------------------------------------------------------
 
+
+-- data TallyAction
+--  = Count
+
 data TallyValidatorConfig = TallyValidatorConfig
   { tvcConfigNftCurrencySymbol :: CurrencySymbol
   , tvcConfigNftTokenName      :: TokenName
   }
 
-unstableMakeIsData ''TallyAddress
 unstableMakeIsData ''TallyTxOut
 unstableMakeIsData ''TallyTxInInfo
 makeIsDataIndexed  ''TallyScriptPurpose [('TallySpend,1)]
@@ -385,30 +370,169 @@ unstableMakeIsData ''TallyScriptContext
 unstableMakeIsData ''TallyTxInfo
 makeLift ''TallyValidatorConfig
 
-ownValue :: [TallyTxInInfo] -> TxOutRef -> Value
-ownValue ins txOutRef = go ins where
+ownValueAndValidator :: [TallyTxInInfo] -> TxOutRef -> (Value, ValidatorHash)
+ownValueAndValidator ins txOutRef = go ins where
   go = \case
     [] -> traceError "The impossible happened"
-    TallyTxInInfo {cTxInInfoOutRef, cTxInInfoResolved = TallyTxOut{cTxOutValue}} :xs ->
-      if cTxInInfoOutRef == txOutRef then
-        cTxOutValue
+    TallyTxInInfo {tTxInInfoOutRef, tTxInInfoResolved = TallyTxOut{tTxOutAddress = Address {..}, ..}} :xs ->
+      if tTxInInfoOutRef == txOutRef then
+        case addressCredential of
+          ScriptCredential vh -> (tTxOutValue, vh)
+          _ -> traceError "Impossible. Expected ScriptCredential"
       else
         go xs
 
+isScriptCredential :: Credential -> Bool
+isScriptCredential = \case
+  ScriptCredential _ -> True
+  _ -> False
+
+hasExpectedScripts :: [TallyTxInInfo] -> ValidatorHash -> ValidatorHash -> Bool
+hasExpectedScripts theInputs theTallyValidator voteValidator =
+  let
+    tallyCredential :: Credential
+    !tallyCredential = ScriptCredential theTallyValidator
+
+    voteCredential :: Credential
+    !voteCredential = ScriptCredential voteValidator
+
+    inputCredentials :: [Credential]
+    inputCredentials =
+      filter isScriptCredential
+        (map (addressCredential . tTxOutAddress . tTxInInfoResolved) theInputs)
+
+    onlyTallyOrVote :: Bool
+    onlyTallyOrVote =
+      all (\x -> tallyCredential == x || voteCredential == x) inputCredentials
+
+    onlyOneTallyScript :: Bool
+    onlyOneTallyScript =
+      length (filter (== tallyCredential) inputCredentials) == 1
+
+  in traceIfFalse "More than one tally input" onlyOneTallyScript
+  && traceIfFalse "Invalid script inputs" onlyTallyOrVote
+
 validateTally
   :: TallyValidatorConfig
-  -> DynamicConfig
+  -> TallyState
   -> BuiltinData
   -> TallyScriptContext
   -> Bool
 validateTally
-  TallyValidatorConfig {}
-  DynamicConfig {}
+  TallyValidatorConfig {..}
+  ts@TallyState {tsFor = oldFor, tsAgainst = oldAgainst}
   _
   TallyScriptContext
-    { cScriptContextTxInfo = TallyTxInfo {}
-    , cScriptContextPurpose = TallySpend _thisOutRef
-    } = error ()
+    { tScriptContextTxInfo = TallyTxInfo {..}
+    , tScriptContextPurpose = TallySpend thisOutRef
+    } =
+  let
+    hasConfigurationNft :: Value -> Bool
+    hasConfigurationNft (Value v) = case M.lookup tvcConfigNftCurrencySymbol v of
+      Nothing -> False
+      Just m  -> case M.lookup tvcConfigNftTokenName m of
+        Nothing -> False
+        Just c -> c == 1
+
+    DynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
+      [TallyTxInInfo {tTxInInfoResolved = TallyTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
+      _ -> traceError "Too many NFT values"
+
+    oldValue :: Value
+    thisValidatorHash :: ValidatorHash
+
+    (!oldValue, !thisValidatorHash) = ownValueAndValidator tTxInfoInputs thisOutRef
+    -- Make sure there is only one tally and many votes
+    expectedScripts :: Bool
+    expectedScripts = hasExpectedScripts tTxInfoInputs thisValidatorHash dcVoteValidator
+    -- Collect the votes
+    -- Make sure the votes are for the write proposal
+    -- Make sure the votes have the vote witness
+    forCount :: Integer
+    againstCount :: Integer
+
+    -- Go through each input and if it has a vote token
+    -- convert the datum
+    -- Check what proposal it is for
+    -- If it is wrong die
+    -- accum the payout map
+    -- fors and against
+    hasVoteToken :: Value -> Bool
+    hasVoteToken (Value v) = case M.lookup dcVoteCurrencySymbol v of
+      Nothing -> False
+      Just _ -> True
+
+    -- Stub. Redo after refactor
+    checkProposal :: TxOutRef -> Bool
+    checkProposal = error ()
+
+    stepVotes
+      :: TallyTxInInfo
+      -> (Integer, Integer, Map Address Value)
+      -> (Integer, Integer, Map Address Value)
+    stepVotes TallyTxInInfo { tTxInInfoResolved = TallyTxOut {..}} oldAcc@(oldFor, oldAgainst, oldPayoutMap) =
+      if hasVoteToken tTxOutValue then
+        let
+          Vote {..} = convertDatum tTxInfoData tTxOutDatum
+
+          -- Add the lovelaces and the NFT
+          votePayout :: Value
+          votePayout = error ()
+
+        in if checkProposal vProposal then
+             ( oldFor     + if vDirection == For then 1 else 0
+             , oldAgainst + if vDirection == For then 0 else 1
+             , error ()
+             )
+           else
+            traceError "wrong vote proposal"
+      else
+        oldAcc
+
+    (!forCount, !againstCount, !_payoutMap) = foldr stepVotes (0, 0, M.empty) tTxInfoInputs
+
+    -- return the vote tokens to the owner
+    voteNftAndAdaToVoters :: Bool
+    voteNftAndAdaToVoters = error ()
+
+    -- Make sure the tallying is active and the voting is not
+    -- TODO implement after proposal tally combination
+    proposalEndTime :: POSIXTime
+    proposalEndTime = error ()
+
+    tallyingIsActive :: Bool
+    tallyingIsActive
+      =  (proposalEndTime + POSIXTime dcProposalTallyEndOffset) `after` tTxInfoValidRange
+      && proposalEndTime `before` tTxInfoValidRange
+
+
+
+    voteTokenAreAllBurned :: Bool
+    !voteTokenAreAllBurned = not $ any (hasVoteToken . tTxOutValue) tTxInfoOutputs
+
+    newDatum :: TallyState
+    newValue :: Value
+
+    (!newValue, !newDatum) = case filter (\TallyTxOut{ tTxOutAddress = Address {..}} ->
+        addressCredential == ScriptCredential thisValidatorHash) tTxInfoOutputs of
+      [TallyTxOut {..}] -> convertDatum tTxInfoData tTxOutDatum
+      _ -> traceError "Wrong number of continuing outputs"
+
+    newValueIsAtleastAsBigAsOldValue :: Bool
+    newValueIsAtleastAsBigAsOldValue = newValue `geq` oldValue
+
+    -- Tally datum is updated
+    tallyDatumIsUpdated :: Bool
+    tallyDatumIsUpdated = newDatum == ts { tsFor = oldFor + forCount, tsAgainst = oldAgainst + againstCount}
+
+
+  in traceIfFalse "Tally is active" tallyingIsActive
+  && traceIfFalse "Unexpected scripts" expectedScripts
+  && traceIfFalse "Not all vote tokens and Ada returned" voteNftAndAdaToVoters
+  && traceIfFalse "Not all vote tokens are burned" voteTokenAreAllBurned
+  && traceIfFalse "Tally datum is not updated" tallyDatumIsUpdated
+  && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
+
 
 wrapValidateTally
     :: TallyValidatorConfig

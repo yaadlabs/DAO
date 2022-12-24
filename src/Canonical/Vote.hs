@@ -31,7 +31,7 @@ data VoteDirection = For | Against
 data Vote = Vote
   { vProposal  :: TxOutRef
   , vDirection :: VoteDirection
-  , vCounted   :: Bool
+  , vCounted   :: Bool -- TODO remove
   , vOwner     :: Address
   , vReturnAda :: Integer
   }

@@ -12,6 +12,20 @@ data TallyState = TallyState
   , tsAgainst  :: Integer
   }
 
+instance Eq TallyState where
+  TallyState
+    { tsProposal = xProposal
+    , tsFor      = xFor
+    , tsAgainst  = xAgainst
+    } ==
+      TallyState
+        { tsProposal = yProposal
+        , tsFor      = yFor
+        , tsAgainst  = yAgainst
+        } =  xProposal == yProposal
+          && xFor      == yFor
+          && xAgainst  == yAgainst
+
 data ProposalType
   = Upgrade
       { ptUpgradeMinter :: CurrencySymbol
