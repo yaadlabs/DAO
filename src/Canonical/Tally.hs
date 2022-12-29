@@ -466,11 +466,7 @@ validateTally
     -- Make sure there is only one tally and many votes
     expectedScripts :: Bool
     expectedScripts = hasExpectedScripts tTxInfoInputs thisValidatorHash dcVoteValidator
-    -- Collect the votes
-    -- Make sure the votes are for the write proposal
-    -- Make sure the votes have the vote witness
-    forCount :: Integer
-    againstCount :: Integer
+
 
     -- Go through each input and if it has a vote token
     -- convert the datum
@@ -520,6 +516,13 @@ validateTally
       else
         oldAcc
 
+
+    -- Collect the votes
+    -- Make sure the votes are for the write proposal
+    -- Make sure the votes have the vote witness
+    forCount :: Integer
+    againstCount :: Integer
+    payoutMap :: Map Address Value
     (!forCount, !againstCount, !payoutMap) = foldr stepVotes (0, 0, M.empty) tTxInfoInputs
 
     -- return the vote tokens to the owner
@@ -555,8 +558,10 @@ validateTally
 
     -- Tally datum is updated
     tallyDatumIsUpdated :: Bool
-    tallyDatumIsUpdated = newDatum == ts { tsFor = oldFor + forCount, tsAgainst = oldAgainst + againstCount}
-
+    tallyDatumIsUpdated = newDatum ==
+      ts { tsFor     = oldFor     + forCount
+         , tsAgainst = oldAgainst + againstCount
+         }
 
   in traceIfFalse "Tally is active" tallyingIsActive
   && traceIfFalse "Unexpected scripts" expectedScripts
