@@ -413,6 +413,26 @@ hasExpectedScripts theInputs theTallyValidator voteValidator =
   in traceIfFalse "More than one tally input" onlyOneTallyScript
   && traceIfFalse "Invalid script inputs" onlyTallyOrVote
 
+mapInsertWith :: Eq k => (a -> a -> a) -> k -> a -> Map k a -> Map k a
+mapInsertWith f k v xs = case M.lookup k xs of
+  Nothing -> M.insert k v xs
+  Just v' -> M.insert k (f v v') xs
+
+mergePayouts :: Address -> Value -> Map Address Value -> Map Address Value
+mergePayouts addr value =
+  mapInsertWith (<>) addr value
+
+addressOutputsAt :: Address -> [TallyTxOut] -> [Value]
+addressOutputsAt addr outs =
+  let
+    flt TallyTxOut { tTxOutAddress, tTxOutValue }
+      | addr == tTxOutAddress = Just tTxOutValue
+      | otherwise = Nothing
+  in mapMaybe flt outs
+
+valuePaidTo' :: [TallyTxOut] -> Address -> Value
+valuePaidTo' outs addr = mconcat (addressOutputsAt addr outs)
+
 validateTally
   :: TallyValidatorConfig
   -> TallyState
@@ -493,18 +513,21 @@ validateTally
         in if checkProposal vProposal then
              ( oldForCount     + if vDirection == For then 1 else 0
              , oldAgainstCount + if vDirection == For then 0 else 1
-             , M.insert vOwner votePayout oldPayoutMap
+             , mergePayouts vOwner votePayout oldPayoutMap
              )
            else
             traceError "wrong vote proposal"
       else
         oldAcc
 
-    (!forCount, !againstCount, !_payoutMap) = foldr stepVotes (0, 0, M.empty) tTxInfoInputs
+    (!forCount, !againstCount, !payoutMap) = foldr stepVotes (0, 0, M.empty) tTxInfoInputs
 
     -- return the vote tokens to the owner
+    addressedIsPaid :: [TallyTxOut] -> (Address, Value) -> Bool
+    addressedIsPaid outputs (addr, value) = valuePaidTo' outputs addr `geq` value
+
     voteNftAndAdaToVoters :: Bool
-    voteNftAndAdaToVoters = error ()
+    voteNftAndAdaToVoters = all (addressedIsPaid tTxInfoOutputs) (M.toList payoutMap)
 
     -- Make sure the tallying is active and the voting is not
     -- TODO implement after proposal tally combination
@@ -515,8 +538,6 @@ validateTally
     tallyingIsActive
       =  (proposalEndTime + POSIXTime dcProposalTallyEndOffset) `after` tTxInfoValidRange
       && proposalEndTime `before` tTxInfoValidRange
-
-
 
     voteTokenAreAllBurned :: Bool
     !voteTokenAreAllBurned = not $ any (hasVoteToken . tTxOutValue) tTxInfoOutputs
