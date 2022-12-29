@@ -441,7 +441,7 @@ validateTally
   -> Bool
 validateTally
   TallyValidatorConfig {..}
-  ts@TallyState {tsFor = oldFor, tsAgainst = oldAgainst}
+  ts@TallyState {tsFor = oldFor, tsAgainst = oldAgainst, tsProposalEndTime }
   _
   TallyScriptContext
     { tScriptContextTxInfo = TallyTxInfo {..}
@@ -479,9 +479,14 @@ validateTally
       Nothing -> False
       Just _ -> True
 
-    -- Stub. Redo after refactor
-    checkProposal :: TokenName -> Bool
-    checkProposal = error ()
+    thisTallyTokenName :: TokenName
+    thisTallyTokenName = case M.lookup dcTallyNft (getValue oldValue) of
+      Nothing -> traceError "Failed to find tally nft"
+      Just m -> case M.toList m of
+        [(t, c)]
+          | c == 1 -> t
+          | otherwise -> traceError "bad tally nft count"
+        _ -> traceError "wrong number of tally nfts"
 
     stepVotes
       :: TallyTxInInfo
@@ -506,7 +511,10 @@ validateTally
             =  V.singleton adaSymbol adaToken vReturnAda
             <> voteNft
 
-        in if checkProposal vProposalTokenName then
+          checkProposal :: Bool
+          !checkProposal = vProposalTokenName == thisTallyTokenName
+
+        in if checkProposal then
              ( oldForCount     + if vDirection == For then 1 else 0
              , oldAgainstCount + if vDirection == For then 0 else 1
              , mergePayouts vOwner votePayout oldPayoutMap
@@ -532,15 +540,10 @@ validateTally
     voteNftAndAdaToVoters :: Bool
     voteNftAndAdaToVoters = all (addressedIsPaid tTxInfoOutputs) (M.toList payoutMap)
 
-    -- Make sure the tallying is active and the voting is not
-    -- TODO implement after proposal tally combination
-    proposalEndTime :: POSIXTime
-    proposalEndTime = error ()
-
     tallyingIsActive :: Bool
     tallyingIsActive
-      =  (proposalEndTime + POSIXTime dcProposalTallyEndOffset) `after` tTxInfoValidRange
-      && proposalEndTime `before` tTxInfoValidRange
+      =  (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `after` tTxInfoValidRange
+      && tsProposalEndTime `before` tTxInfoValidRange
 
     voteTokenAreAllBurned :: Bool
     !voteTokenAreAllBurned = not $ any (hasVoteToken . tTxOutValue) tTxInfoOutputs
