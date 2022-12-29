@@ -66,9 +66,7 @@ data TreasuryTxInfo = TreasuryTxInfo
 -- Input Types
 -------------------------------------------------------------------------------
 data TreasuryAction
-  = Upgrade
-  | TravelDisbursement
-  | GeneralDisbursement
+  = TreasuryAction
 
 data Treasury = Treasury
 
@@ -104,7 +102,7 @@ validateTreasury
 validateTreasury
   TreasuryValidatorConfig {..}
   Treasury {}
-  action
+  _action
   TreasuryScriptContext
     { tScriptContextTxInfo = TreasuryTxInfo {..}
     } =
@@ -129,9 +127,7 @@ validateTreasury
     hasTallyNft :: Value -> Bool
     hasTallyNft (Value v) = case M.lookup dcTallyNft v of
       Nothing -> False
-      Just m  -> case M.lookup dcTallyTokenName m of
-        Nothing -> False
-        Just c -> c == 1
+      Just {} -> True
 
     T.TallyState {..} = case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
       [] -> traceError "Missing tally NFT"
@@ -152,34 +148,26 @@ validateTreasury
     majorityPercent :: Integer
     !majorityPercent = (tsFor * 1000) `divide` totalVotes
 
-    proposal :: T.Proposal
-    proposal = case filter ((==tsProposal) . tTxInInfoOutRef) tTxInfoReferenceInputs of
-      [] -> traceError "Missing proposal NFT"
-      [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
-      _ -> traceError "Too many NFT values"
-
-  in case action of
-      TravelDisbursement -> error ()
-      GeneralDisbursement -> error ()
-      Upgrade ->
+  in case tsProposal of
+      -- TravelDisbursement -> error ()
+      -- GeneralDisbursement -> error ()
+      T.Upgrade upgradeMinter ->
         let
           hasEnoughVotes :: Bool
           !hasEnoughVotes
             =  traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradRelativeMajorityPercent)
             && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
 
-          -- Find a the reference input with using the tsProposal TxOutRef
-          T.Proposal {pType = T.Upgrade {ptUpgradeMinter}, ..} = proposal
           -- Make sure the upgrade token was minted
           hasUpgradeMinterToken :: Bool
-          !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue tTxInfoMint) of
+          !hasUpgradeMinterToken = case M.lookup upgradeMinter (getValue tTxInfoMint) of
             Nothing -> False
             Just m  -> case M.toList m of
               [(_, c)] -> c == 1
               _ -> False
 
           isAfterTallyEndTime :: Bool
-          isAfterTallyEndTime = (pEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
+          isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
 
         in traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
         && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken

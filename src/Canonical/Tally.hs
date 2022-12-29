@@ -480,7 +480,7 @@ validateTally
       Just _ -> True
 
     -- Stub. Redo after refactor
-    checkProposal :: TxOutRef -> Bool
+    checkProposal :: TokenName -> Bool
     checkProposal = error ()
 
     stepVotes
@@ -506,7 +506,7 @@ validateTally
             =  V.singleton adaSymbol adaToken vReturnAda
             <> voteNft
 
-        in if checkProposal vProposal then
+        in if checkProposal vProposalTokenName then
              ( oldForCount     + if vDirection == For then 1 else 0
              , oldAgainstCount + if vDirection == For then 0 else 1
              , mergePayouts vOwner votePayout oldPayoutMap

@@ -35,11 +35,11 @@ instance Eq VoteDirection where
     _ -> False
 
 data Vote = Vote
-  { vProposal  :: TxOutRef
-  , vDirection :: VoteDirection
-  , vCounted   :: Bool -- TODO remove
-  , vOwner     :: Address
-  , vReturnAda :: Integer
+  { vProposalTokenName :: TokenName
+  , vDirection         :: VoteDirection
+  , vCounted           :: Bool -- TODO remove
+  , vOwner             :: Address
+  , vReturnAda         :: Integer
   }
 
 data VoteMinterAction = Mint | Burn
@@ -84,12 +84,18 @@ mkVoteMinter VoteMinterConfig {..} action ScriptContext
           [TxOut {..}] -> (convertDatum txInfoData txOutDatum, txOutValue)
           _ -> traceError "Wrong number of proposal references"
 
-        Proposal {..} = case filter ((==vProposal) . txInInfoOutRef) txInfoReferenceInputs of
+        -- Find the reference input with the Tally nft currency symbol
+        hasTallyNft :: Value -> Bool
+        hasTallyNft (Value v) = case M.lookup dcTallyNft v of
+          Nothing -> False
+          Just _ -> True
+
+        TallyState {..} = case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Wrong number of proposal references"
 
         proposalIsActive :: Bool
-        !proposalIsActive = pEndTime `after` txInfoValidRange
+        !proposalIsActive = tsProposalEndTime `after` txInfoValidRange
 
         hasWitness :: Bool
         !hasWitness = case M.lookup thisCurrencySymbol (getValue voteValue) of
