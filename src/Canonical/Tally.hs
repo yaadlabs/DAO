@@ -11,7 +11,7 @@ import           Plutus.V1.Ledger.Time
 import           Plutus.V1.Ledger.Address
 import           Plutus.V1.Ledger.Scripts
 import           Plutus.V2.Ledger.Tx
-import           Plutus.V1.Ledger.Value
+import           Plutus.V1.Ledger.Value as V
 import           PlutusTx
 import qualified PlutusTx.AssocMap as M
 import           PlutusTx.AssocMap (Map)
@@ -19,6 +19,7 @@ import           PlutusTx.Prelude
 import qualified Plutonomy
 import           Canonical.Shared
 import           Canonical.Types
+import           Canonical.Vote (Vote(..), VoteDirection(..))
 
 data IndexNftDatum = IndexNftDatum
   { indIndex :: Integer
@@ -458,7 +459,7 @@ validateTally
     -- accum the payout map
     -- fors and against
     hasVoteToken :: Value -> Bool
-    hasVoteToken (Value v) = case M.lookup dcVoteCurrencySymbol v of
+    hasVoteToken (Value v) = case M.lookup dcVoteNft v of
       Nothing -> False
       Just _ -> True
 
@@ -470,19 +471,29 @@ validateTally
       :: TallyTxInInfo
       -> (Integer, Integer, Map Address Value)
       -> (Integer, Integer, Map Address Value)
-    stepVotes TallyTxInInfo { tTxInInfoResolved = TallyTxOut {..}} oldAcc@(oldFor, oldAgainst, oldPayoutMap) =
+    stepVotes TallyTxInInfo { tTxInInfoResolved = TallyTxOut {..}} oldAcc@(oldForCount, oldAgainstCount, oldPayoutMap) =
       if hasVoteToken tTxOutValue then
         let
           Vote {..} = convertDatum tTxInfoData tTxOutDatum
 
+          voteNft :: Value
+          voteNft = Value
+            ( M.fromList
+              ( filter (\(k, _) -> dcVoteNft == k)
+                       (M.toList (getValue tTxOutValue))
+              )
+            )
+
           -- Add the lovelaces and the NFT
           votePayout :: Value
-          votePayout = error ()
+          votePayout
+            =  V.singleton adaSymbol adaToken vReturnAda
+            <> voteNft
 
         in if checkProposal vProposal then
-             ( oldFor     + if vDirection == For then 1 else 0
-             , oldAgainst + if vDirection == For then 0 else 1
-             , error ()
+             ( oldForCount     + if vDirection == For then 1 else 0
+             , oldAgainstCount + if vDirection == For then 0 else 1
+             , M.insert vOwner votePayout oldPayoutMap
              )
            else
             traceError "wrong vote proposal"

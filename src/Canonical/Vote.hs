@@ -28,6 +28,12 @@ makeLift ''VoteMinterConfig
 
 data VoteDirection = For | Against
 
+instance Eq VoteDirection where
+  x == y = case (x, y) of
+    (For, For) -> True
+    (Against, Against) -> True
+    _ -> False
+
 data Vote = Vote
   { vProposal  :: TxOutRef
   , vDirection :: VoteDirection
