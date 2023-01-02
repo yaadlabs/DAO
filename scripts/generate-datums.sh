@@ -179,4 +179,16 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/always-succeed-upgrade-p
 EOF
 
 
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-index.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "int": 0
+    }
+  ]
+}
+
+EOF
+
 $thisDir/hash-datums.sh

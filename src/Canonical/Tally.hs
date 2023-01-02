@@ -34,7 +34,6 @@ data IndexNftConfig = IndexNftConfig
 unstableMakeIsData ''IndexNftDatum
 makeLift ''IndexNftConfig
 
--- TODO this needs to send the value to the validator
 mkIndexNftMinter :: IndexNftConfig -> BuiltinData -> ScriptContext -> Bool
 mkIndexNftMinter IndexNftConfig {..} _ ScriptContext
   { scriptContextTxInfo = TxInfo {..}
@@ -355,10 +354,6 @@ data TallyTxInfo = TallyTxInfo
 -- Input Types
 -------------------------------------------------------------------------------
 
-
--- data TallyAction
---  = Count
-
 data TallyValidatorConfig = TallyValidatorConfig
   { tvcConfigNftCurrencySymbol :: CurrencySymbol
   , tvcConfigNftTokenName      :: TokenName
@@ -467,13 +462,6 @@ validateTally
     expectedScripts :: Bool
     expectedScripts = hasExpectedScripts tTxInfoInputs thisValidatorHash dcVoteValidator
 
-
-    -- Go through each input and if it has a vote token
-    -- convert the datum
-    -- Check what proposal it is for
-    -- If it is wrong die
-    -- accum the payout map
-    -- fors and against
     hasVoteToken :: Value -> Bool
     hasVoteToken (Value v) = case M.lookup dcVoteNft v of
       Nothing -> False
