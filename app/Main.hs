@@ -4,6 +4,7 @@
 module Main where
 import           Cardano.Api hiding (TxId)
 import           Options.Generic
+import           Canonical.AlwaysSucceed
 import           Canonical.ConfigurationNft
 import           Canonical.Vote
 import           Prelude
@@ -30,7 +31,11 @@ instance ParseField ValidatorHash
 instance ParseFields ValidatorHash
 
 data Options = Options
-  { configurationNftOutput           :: FilePath
+  { alwaysSucceedOutput              :: FilePath
+  , alwaysSucceedHashOutput          :: FilePath
+  , alwaysSucceed1Output             :: FilePath
+  , alwaysSucceed1HashOutput         :: FilePath
+  , configurationNftOutput           :: FilePath
   , configurationNftPolicyIdOutput   :: FilePath
   , configurationNftTokenName        :: TokenName
   , configurationNftInitialUtxo      :: TxOutRef
@@ -77,6 +82,15 @@ writeSource outputPath source =
 
 run :: Options -> IO ()
 run Options{..} = do
+
+  writeSource alwaysSucceedOutput succeed
+
+  writeFile alwaysSucceedHashOutput $ show succeedHash
+
+  writeSource alwaysSucceed1Output succeed1
+
+  writeFile alwaysSucceed1HashOutput $ show succeedHash1
+
   let nftConfig = NftConfig
         { ncInitialUtxo = configurationNftInitialUtxo
         , ncTokenName   = configurationNftTokenName
@@ -98,19 +112,18 @@ run Options{..} = do
 
   writeFile configurationValidatorHashOutput $ show (configurationValidatorHash configurationValidatorConfig)
 
-  ----
+  ---
   let voteMinterConfig = VoteMinterConfig
         { vmcConfigNftCurrencySymbol = theConfigurationNftPolicyId
         , vmcConfigNftTokenName      = configurationNftTokenName
         }
 
-  writeSource configurationNftOutput $ voteMinter voteMinterConfig
+  writeSource voteMinterOutput (voteMinter voteMinterConfig)
 
-  let theVoteMinterPolicyId = voteMinterPolicyId voteMinterConfig
+  let theVoteMinterCurrencySymbol = voteMinterPolicyId voteMinterConfig
 
-  writeFile configurationNftPolicyIdOutput $ show theVoteMinterPolicyId
+  writeFile voteMinterPolicyIdOutput $ show theVoteMinterCurrencySymbol
 
-  ----
   let voteValidatorConfig = VoteValidatorConfig
         { vvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
         , vvcConfigNftTokenName      = configurationNftTokenName

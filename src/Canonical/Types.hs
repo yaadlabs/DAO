@@ -25,8 +25,8 @@ data Proposal = Proposal
 data DynamicConfig = DynamicConfig
   { dcTallyIndexNft                 :: CurrencySymbol
   , dcTallyNft                      :: CurrencySymbol
+  , dcTallyTokenName                :: TokenName
   , dcTallyValidator                :: ValidatorHash
-  , dcUpgradeProposal               :: CurrencySymbol
   , dcTreasuryValidator             :: ValidatorHash
   , dcConfigurationValidator        :: ValidatorHash
   , dcVoteCurrencySymbol            :: CurrencySymbol
@@ -38,6 +38,7 @@ data DynamicConfig = DynamicConfig
   , dcVoteNft                       :: CurrencySymbol
   , dcVoteFungibleCurrencySymbol    :: CurrencySymbol
   , dcVoteFungibleTokenName         :: TokenName
+  , dcProposalTallyEndOffset        :: Integer -- in milliseconds
   }
 
 unstableMakeIsData ''TallyState

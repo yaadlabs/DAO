@@ -1,8 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module Canonical.ConfigurationNft where
 import           Cardano.Api.Shelley (PlutusScript(..), PlutusScriptV2)
 import           Codec.Serialise (serialise)
@@ -11,6 +6,8 @@ import qualified Data.ByteString.Short as BSS
 import           Plutus.V1.Ledger.Credential
 import           Plutus.V1.Ledger.Crypto
 import           Plutus.V2.Ledger.Contexts
+import           Plutus.V1.Ledger.Interval
+import           Plutus.V1.Ledger.Time
 import           Plutus.V1.Ledger.Scripts
 import           Plutus.V2.Ledger.Tx
 import           Plutus.V1.Ledger.Value
@@ -133,10 +130,10 @@ data ConfigurationTxInfo = ConfigurationTxInfo
   , cTxInfoReferenceInputs    :: [ConfigurationTxInInfo]
   , cTxInfoOutputs            :: [ConfigurationTxOut]
   , cTxInfoFee                :: BuiltinData
-  , cTxInfoMint               :: BuiltinData
+  , cTxInfoMint               :: Value
   , cTxInfoDCert              :: BuiltinData
   , cTxInfoWdrl               :: BuiltinData
-  , cTxInfoValidRange         :: BuiltinData
+  , cTxInfoValidRange         :: POSIXTimeRange
   , cTxInfoSignatories        :: [PubKeyHash]
   , cTxInfoRedeemers          :: BuiltinData
   , cTxInfoData               :: Map DatumHash Datum
@@ -195,20 +192,15 @@ validateConfiguration
         Nothing -> False
         Just c -> c == 1
 
-    -- Filter all the reference inputs for a tally nft
-    -- make sure the token name equals the tally validator hash
-    toTokenName :: ValidatorHash -> TokenName
-    toTokenName (ValidatorHash v) = TokenName v
-
     hasTallyNft :: Value -> Bool
     hasTallyNft (Value v) = case M.lookup dcTallyNft v of
       Nothing -> False
-      Just m  -> case M.lookup (toTokenName dcTallyValidator) m of
+      Just m  -> case M.lookup dcTallyTokenName m of
         Nothing -> False
         Just c -> c == 1
 
     TallyState {..} = case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
-      [] -> traceError "Missing NFT"
+      [] -> traceError "Missing tally NFT"
       [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> unsafeFromBuiltinData $ case cTxOutDatum of
         OutputDatum (Datum dbs) -> dbs
         OutputDatumHash dh -> case M.lookup dh cTxInfoData of
@@ -232,25 +224,26 @@ validateConfiguration
       && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
 
     -- Find a the reference input with using the tsProposal TxOutRef
-    Proposal {pType = Upgrade {ptUpgradeMinter}} = case filter ((==tsProposal) . cTxInInfoOutRef) cTxInfoReferenceInputs of
-      [] -> traceError "Missing NFT"
+    Proposal {pType = Upgrade {ptUpgradeMinter}, ..} = case filter ((==tsProposal) . cTxInInfoOutRef) cTxInfoReferenceInputs of
+      [] -> traceError "Missing proposal NFT"
       [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> convertDatum cTxInfoData cTxOutDatum
       _ -> traceError "Too many NFT values"
 
     -- Make sure the upgrade token was minted
     hasUpgradeMinterToken :: Bool
-    !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue thisScriptValue) of
+    !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue cTxInfoMint) of
       Nothing -> False
       Just m  -> case M.toList m of
         [(_, c)] -> c == 1
         _ -> False
 
+    isAfterTallyEndTime :: Bool
+    isAfterTallyEndTime = (pEndTime + POSIXTime dcProposalTallyEndOffset) `before` cTxInfoValidRange
+
   in traceIfFalse "Missing configuration nft" hasConfigurationNft
   && traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
   && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
-
-validatorHash :: Validator -> ValidatorHash
-validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator
+  && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 
 wrapValidateConfiguration
     :: ConfigurationValidatorConfig

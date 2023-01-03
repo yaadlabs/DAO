@@ -69,3 +69,6 @@ mintingPolicyHash
   . getValidator
   . Validator
   . getMintingPolicy
+
+validatorHash :: Validator -> ValidatorHash
+validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator
