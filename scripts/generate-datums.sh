@@ -20,8 +20,8 @@ superLongEndTime=$(($nowSeconds*1000+10000000))
 tallyIndexNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
 tallyNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
 tallyTokenName=54414C4C59
-tallyValidator=$(cat $thisDir/always-succeed-hash.txt)
-treasuryValidator=$(cat $thisDir/always-succeed-hash.txt)
+tallyValidator=$(cat $thisDir/tally-validator-hash.txt)
+treasuryValidator=$(cat $thisDir/treasury-validator-hash.txt)
 configurationValidator=$(cat $thisDir/configuration-hash.txt)
 voteCurrencySymbol=$(cat $thisDir/vote-minter-policy-id.txt)
 voteTokenName=564F5445
@@ -42,9 +42,6 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-configuration.js
     },
     {
       "bytes" : "$tallyNft"
-    },
-    {
-      "bytes" : "$tallyTokenName"
     },
     {
       "bytes" : "$tallyValidator"
@@ -183,6 +180,44 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-index.json
 {
   "constructor": 0,
   "fields": [
+    {
+      "int": 0
+    }
+  ]
+}
+
+EOF
+
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/next-index.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "int": 1
+    }
+  ]
+}
+
+EOF
+
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-1.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "constructor": 0,
+      "fields": [
+        {
+          "bytes": "ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e"
+        }
+      ]
+    },
+    {
+      "int": $endTime
+    },
+    {
+      "int": 0
+    },
     {
       "int": 0
     }

@@ -77,16 +77,16 @@ cardano-cli address build \
  --out-file $thisDir/local-testnet/index-validator.addr
 
 cardano-cli address build \
- --payment-script-file $thisDir/tally-index.plutus \
+ --payment-script-file $thisDir/tally-validator.plutus \
  --mainnet \
- --out-file $thisDir/mainnet/tally-index.addr
+ --out-file $thisDir/mainnet/tally-validator.addr
 
 cardano-cli address build \
- --payment-script-file $thisDir/tally-index.plutus \
+ --payment-script-file $thisDir/tally-validator.plutus \
  --testnet-magic 1097911063 \
- --out-file $thisDir/testnet/tally-index.addr
+ --out-file $thisDir/testnet/tally-validator.addr
 
  cardano-cli address build \
- --payment-script-file $thisDir/tally-index.plutus \
+ --payment-script-file $thisDir/tally-validator.plutus \
  --testnet-magic 42 \
- --out-file $thisDir/local-testnet/tally-index.addr
+ --out-file $thisDir/local-testnet/tally-validator.addr
