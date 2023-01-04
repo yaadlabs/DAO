@@ -37,7 +37,6 @@ instance Eq VoteDirection where
 data Vote = Vote
   { vProposalTokenName :: TokenName
   , vDirection         :: VoteDirection
-  , vCounted           :: Bool -- TODO remove
   , vOwner             :: Address
   , vReturnAda         :: Integer
   }
@@ -121,9 +120,6 @@ mkVoteMinter VoteMinterConfig {..} action ScriptContext
                 -> traceIfFalse "Impossible. Vote NFT is not an NFT" (c == 1)
               _ -> traceError "Wrong number of vote NFTs"
 
-        voteIsNotCounted :: Bool
-        !voteIsNotCounted = not vCounted
-
         totalAdaIsGreaterThanReturnAda :: Bool
         !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > vReturnAda
 
@@ -131,7 +127,6 @@ mkVoteMinter VoteMinterConfig {..} action ScriptContext
       && traceIfFalse "Vote Nft is missing"              hasVoteNft
       && traceIfFalse "Missing witness on output"        hasWitness
       && traceIfFalse "Wrong number of witnesses minted" onlyMintedOne
-      && traceIfFalse "Vote is counted"                  voteIsNotCounted
       && traceIfFalse "Total ada not high enough"        totalAdaIsGreaterThanReturnAda
 
 mkVoteMinter _ _ _ = traceError "wrong type of script purpose!"

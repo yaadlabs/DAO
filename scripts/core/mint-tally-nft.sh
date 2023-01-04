@@ -41,11 +41,6 @@ if [ "$changeOutput" != "" ];then
 fi
 
 
-currentSlot=$(cardano-cli query tip $BLOCKCHAIN | jq .slot)
-startSlot=$(($currentSlot-1))
-nextTenSlots=$(($currentSlot+60))
-
-
 cardano-cli transaction build \
     --babbage-era \
     $BLOCKCHAIN \
@@ -67,8 +62,6 @@ cardano-cli transaction build \
     --mint "$mintValue" \
     --mint-script-file $tallyMinterFile \
     --mint-redeemer-file $redeemer \
-    --invalid-before $startSlot \
-    --invalid-hereafter $nextTenSlots \
     --out-file $bodyFile
 
 echo "saved transaction to $bodyFile"

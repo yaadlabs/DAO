@@ -13,7 +13,7 @@ $baseDir/hash-datums.sh
 voterAddress=$1
 signingKey=$2
 datumFile=$3
-proposalUtxo=$4
+tallyUtxo=$4
 configurationUtxo=$5
 scriptAddr=$(cat $baseDir/$BLOCKCHAIN_PREFIX/vote-validator.addr)
 
@@ -45,7 +45,7 @@ cardano-cli transaction build \
     $(cardano-cli-balance-fixer input --address $voterAddress $BLOCKCHAIN) \
     --tx-in-collateral $(cardano-cli-balance-fixer collateral --address $voterAddress $BLOCKCHAIN) \
     --read-only-tx-in-reference $configurationUtxo \
-    --read-only-tx-in-reference $proposalUtxo \
+    --read-only-tx-in-reference $tallyUtxo \
     --tx-out "$scriptAddr + 3500000 lovelace + 1 ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e.123456 + $mintValue" \
     --tx-out-inline-datum-file $datumFile \
     --tx-out "$voterAddress + 2137884 lovelace $extraOutput" \

@@ -10,11 +10,15 @@ $baseDir/wait/until-next-block.sh
 
 $baseDir/minting/mint-0-policy.sh
 $baseDir/wait/until-next-block.sh
-$baseDir/happy-path/lock-long-lived-upgrade-proposal.sh
+$baseDir/happy-path/mint-tally-index-nft.sh
 $baseDir/wait/until-next-block.sh
-$baseDir/happy-path/mint-vote-long-lived.sh
+$baseDir/happy-path/mint-tally-nft.sh
 $baseDir/wait/until-next-block.sh
-$baseDir/happy-path/dummy-tally-long-lived-lock.sh
+$baseDir/happy-path/mint-vote0-long-lived.sh
+$baseDir/wait/until-next-block.sh
+$baseDir/happy-path/mint-vote1-long-lived.sh
+$baseDir/wait/until-next-block.sh
+$baseDir/happy-path/tally-initial-two-votes.sh
 $baseDir/wait/until-next-block.sh
 
 $baseDir/failure-cases/bad-dummy-tally-long-lived-lock.sh
@@ -29,5 +33,3 @@ detected=false
 if [ $detected == false ]; then
   exit 1
 fi
-
-$baseDir/happy-path/count-vote.sh

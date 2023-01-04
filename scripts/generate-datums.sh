@@ -9,16 +9,18 @@ mkdir -p $tempDir/$BLOCKCHAIN_PREFIX/redeemers/$prefix
 
 $thisDir/hash-plutus.sh
 
-offset=${2:-10000}
+offset=${2:-60000}
 
 nowSeconds=$(date +%s)
 now=$(($nowSeconds*1000))
 endTime=$(($nowSeconds*1000+$offset))
 superLongEndTime=$(($nowSeconds*1000+10000000))
 
+voter0Pkh=$(cat $tempDir/$BLOCKCHAIN_PREFIX/pkhs/voter-0-pkh.txt)
+voter1Pkh=$(cat $tempDir/$BLOCKCHAIN_PREFIX/pkhs/voter-1-pkh.txt)
 
 tallyIndexNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
-tallyNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
+tallyNft=$(cat $thisDir/tally-nft-policy-id.txt)
 tallyTokenName=54414C4C59
 tallyValidator=$(cat $thisDir/tally-validator-hash.txt)
 treasuryValidator=$(cat $thisDir/treasury-validator-hash.txt)
@@ -220,6 +222,74 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-1.json
     },
     {
       "int": 0
+    }
+  ]
+}
+
+EOF
+
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/vote-0.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "bytes": "30"
+    },
+    {
+      "constructor": 0,
+      "fields" : []
+    },
+    { "constructor": 0,
+      "fields": [
+        { "constructor": 0,
+          "fields": [
+            {
+              "bytes": "$voter0Pkh"
+            }
+          ]
+        },
+        {
+          "constructor": 1,
+          "fields": []
+        }
+      ]
+    },
+    {
+      "int": 3000000
+    }
+  ]
+}
+
+EOF
+
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/vote-1.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "bytes": "30"
+    },
+    {
+      "constructor": 0,
+      "fields" : []
+    },
+    { "constructor": 0,
+      "fields": [
+        { "constructor": 0,
+          "fields": [
+            {
+              "bytes": "$voter1Pkh"
+            }
+          ]
+        },
+        {
+          "constructor": 1,
+          "fields": []
+        }
+      ]
+    },
+    {
+      "int": 3000000
     }
   ]
 }
