@@ -15,13 +15,13 @@ voteUtxo0=$6
 voteOwner0=$7
 voteOutput0=$8
 voteUtxo1=$9
-voteOwner0=${10}
+voteOwner1=${10}
 voteOutput1=${11}
 
 
-voteScript=$baseDir/scripts/vote-validator.plutus
-tallyScript=$baseDir/scripts/tally-validator.plutus
-tallyScriptAddr=$baseDir/$BLOCKCHAIN_PREFIX/tally-validator.addr
+voteScript=$baseDir/vote-validator.plutus
+tallyScript=$baseDir/tally-validator.plutus
+tallyScriptAddr=$(cat $baseDir/$BLOCKCHAIN_PREFIX/tally-validator.addr)
 
 configurationUtxo=$( $baseDir/query/configuration-validator.sh | tail -n 1 | cardano-cli-balance-fixer parse-as-utxo)
 
@@ -38,6 +38,8 @@ currentSlot=$(cardano-cli query tip $BLOCKCHAIN | jq .slot)
 startSlot=$(($currentSlot-1))
 nextTenSlots=$(($currentSlot+20))
 
+voteRedeemer=$baseDir/redeemers/vote-validator/count.json
+
 cardano-cli transaction build \
     --babbage-era \
     $BLOCKCHAIN \
@@ -50,15 +52,16 @@ cardano-cli transaction build \
     --tx-in $voteUtxo0 \
     --tx-in-script-file $voteScript \
     --tx-in-inline-datum-present \
-    --tx-in-redeemer-value '[]' \
+    --tx-in-redeemer-file $voteRedeemer \
     --tx-in $voteUtxo1 \
     --tx-in-script-file $voteScript \
     --tx-in-inline-datum-present \
-    --tx-in-redeemer-value '[]' \
+    --tx-in-redeemer-file $voteRedeemer \
     --read-only-tx-in-reference $configurationUtxo \
     --tx-out "$voteOwner0 + $voteOutput0" \
     --tx-out "$voteOwner1 + $voteOutput1" \
     --tx-out "$tallyScriptAddr + $tallyOutput" \
+    --tx-out-inline-datum-file $newTallyDatum \
     --required-signer $signingKey \
     --change-address $updaterAddress \
     --protocol-params-file scripts/$BLOCKCHAIN_PREFIX/protocol-parameters.json \

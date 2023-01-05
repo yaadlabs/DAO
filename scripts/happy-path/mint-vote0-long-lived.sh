@@ -13,4 +13,6 @@ $baseDir/core/mint-vote.sh \
   ~/$BLOCKCHAIN_PREFIX/voter-0.skey \
   $tempDir/$BLOCKCHAIN_PREFIX/datums/$DATUM_PREFIX/vote-0.json \
   $tallyUtxo \
-  $configurationUtxo
+  $configurationUtxo \
+  "ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e.30" \
+  3500000

@@ -2,20 +2,20 @@ set -eux
 
 mkdir -p temp
 
-utxo=$1
-policyScript=$2
-policyId=$3
-tokenName=$4
-mintCount=$5
-address=$(cat ~/$BLOCKCHAIN_PREFIX/voter-0.addr)
-holderAddress=$(cat ~/$BLOCKCHAIN_PREFIX/voter-0.addr)
+address=$1
+signinKey=$2
+policyScript=$3
+policyId=$4
+tokenName=$5
+mintCount=$6
+
 
 cardano-cli transaction build \
   --babbage-era \
   $BLOCKCHAIN \
-  --tx-in $utxo \
-  --tx-in-collateral $utxo \
-  --tx-out "$holderAddress + 1758582 lovelace + $mintCount $policyId.$tokenName" \
+  --tx-in  $(cardano-cli-balance-fixer collateral --address $address $BLOCKCHAIN) \
+  --tx-in-collateral $(cardano-cli-balance-fixer collateral --address $address $BLOCKCHAIN) \
+  --tx-out "$address + 1758582 lovelace + $mintCount $policyId.$tokenName" \
   --mint="$mintCount $policyId.$tokenName" \
   --minting-script-file $policyScript \
   --mint-redeemer-value [] \
@@ -24,7 +24,7 @@ cardano-cli transaction build \
   --out-file temp/mint_tx.body
 
 cardano-cli transaction sign  \
-  --signing-key-file ~/$BLOCKCHAIN_PREFIX/voter-0.skey  \
+  --signing-key-file $signinKey \
   $BLOCKCHAIN \
   --tx-body-file temp/mint_tx.body \
   --out-file temp/mint_tx.signed

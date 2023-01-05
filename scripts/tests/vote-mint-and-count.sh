@@ -8,7 +8,9 @@ $baseDir/generate-datums.sh
 $baseDir/happy-path/mint-configuration-nft-tx.sh
 $baseDir/wait/until-next-block.sh
 
-$baseDir/minting/mint-0-policy.sh
+$baseDir/minting/mint-vote-0-nft.sh
+$baseDir/wait/until-next-block.sh
+$baseDir/minting/mint-vote-1-nft.sh
 $baseDir/wait/until-next-block.sh
 $baseDir/happy-path/mint-tally-index-nft.sh
 $baseDir/wait/until-next-block.sh
