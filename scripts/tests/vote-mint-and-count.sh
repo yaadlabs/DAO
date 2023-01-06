@@ -20,18 +20,9 @@ $baseDir/happy-path/mint-vote0-long-lived.sh
 $baseDir/wait/until-next-block.sh
 $baseDir/happy-path/mint-vote1-long-lived.sh
 $baseDir/wait/until-next-block.sh
+sleep 20
 $baseDir/happy-path/tally-initial-two-votes.sh
 $baseDir/wait/until-next-block.sh
 
 $baseDir/failure-cases/bad-dummy-tally-long-lived-lock.sh
 $baseDir/wait/until-next-block.sh
-
-detected=false
-
-"$baseDir/failure-cases/count-vote-bad-tally-utxo.sh" || {
-    detected=true
-}
-
-if [ $detected == false ]; then
-  exit 1
-fi

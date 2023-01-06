@@ -20,11 +20,11 @@ $baseDir/core/update-tally.sh \
   $(cat ~/$BLOCKCHAIN_PREFIX/configuration-nft-deployer.addr) \
   ~/$BLOCKCHAIN_PREFIX/configuration-nft-deployer.skey \
   $tallyUtxo \
-  "2000000 lovelace + 1 $tallyNft" \
-  $tempDir/$BLOCKCHAIN_PREFIX/datums/$DATUM_PREFIX/tally-1.json \
+  "3500000 lovelace + 1 $tallyNft" \
+  $tempDir/$BLOCKCHAIN_PREFIX/datums/$DATUM_PREFIX/tally-2.json \
   $voteUtxo0 \
   $(cat ~/$BLOCKCHAIN_PREFIX/voter-0.addr) \
-  "1400000 lovelace + 1 $voteNft0" \
+  "3000000 lovelace + 1 $voteNft0" \
   $voteUtxo1 \
   $(cat ~/$BLOCKCHAIN_PREFIX/voter-1.addr) \
-  "1400000 lovelace + 1 $voteNft1"
+  "3000000 lovelace + 1 $voteNft1"

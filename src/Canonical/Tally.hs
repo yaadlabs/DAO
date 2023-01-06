@@ -467,6 +467,11 @@ validateTally
       Nothing -> False
       Just _ -> True
 
+    hasVoteWitness :: Value -> Bool
+    hasVoteWitness (Value v) = case M.lookup dcVoteCurrencySymbol v of
+      Nothing -> False
+      Just _ -> True
+
     thisTallyTokenName :: TokenName
     thisTallyTokenName = case M.lookup dcTallyNft (getValue oldValue) of
       Nothing -> traceError "Failed to find tally nft"
@@ -481,7 +486,7 @@ validateTally
       -> (Integer, Integer, Map Address Value)
       -> (Integer, Integer, Map Address Value)
     stepVotes TallyTxInInfo { tTxInInfoResolved = TallyTxOut {..}} oldAcc@(oldForCount, oldAgainstCount, oldPayoutMap) =
-      if hasVoteToken tTxOutValue then
+      if hasVoteToken tTxOutValue && hasVoteWitness tTxOutValue then
         let
           Vote {..} = convertDatum tTxInfoData tTxOutDatum
 
@@ -534,14 +539,14 @@ validateTally
       && tsProposalEndTime `before` tTxInfoValidRange
 
     voteTokenAreAllBurned :: Bool
-    !voteTokenAreAllBurned = not $ any (hasVoteToken . tTxOutValue) tTxInfoOutputs
+    !voteTokenAreAllBurned = not $ any (hasVoteWitness . tTxOutValue) tTxInfoOutputs
 
     newDatum :: TallyState
     newValue :: Value
 
     (!newValue, !newDatum) = case filter (\TallyTxOut{ tTxOutAddress = Address {..}} ->
         addressCredential == ScriptCredential thisValidatorHash) tTxInfoOutputs of
-      [TallyTxOut {..}] -> convertDatum tTxInfoData tTxOutDatum
+      [TallyTxOut {..}] -> (tTxOutValue, convertDatum tTxInfoData tTxOutDatum)
       _ -> traceError "Wrong number of continuing outputs"
 
     newValueIsAtleastAsBigAsOldValue :: Bool

@@ -40,6 +40,11 @@ nextTenSlots=$(($currentSlot+20))
 
 voteRedeemer=$baseDir/redeemers/vote-validator/count.json
 
+voteMinterId=$(cat $baseDir/vote-minter-policy-id.txt)
+voteMinterFile=$baseDir/vote-minter.plutus
+mintValue="-2 $voteMinterId.564F5445"
+mintRedeemer=$baseDir/redeemers/vote-minter/burn.json
+
 cardano-cli transaction build \
     --babbage-era \
     $BLOCKCHAIN \
@@ -65,6 +70,9 @@ cardano-cli transaction build \
     --required-signer $signingKey \
     --change-address $updaterAddress \
     --protocol-params-file scripts/$BLOCKCHAIN_PREFIX/protocol-parameters.json \
+    --mint "$mintValue" \
+    --mint-script-file $voteMinterFile \
+    --mint-redeemer-file $mintRedeemer \
     --invalid-before $startSlot\
     --invalid-hereafter $nextTenSlots \
     --out-file $bodyFile
