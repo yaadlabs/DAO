@@ -13,6 +13,7 @@ proposalUtxo=$4
 upgradeMinterId=$5
 upgradeTokenName=$6
 upgradeScript=$7
+treasuryUtxo=$8
 
 configurationValidatorScript=$baseDir/configuration.plutus
 
@@ -30,6 +31,8 @@ if [ "$changeOutput" != "" ];then
 fi
 
 
+
+
 mintValue="1 $upgradeMinterId.$upgradeTokenName"
 
 currentSlot=$(cardano-cli query tip $BLOCKCHAIN | jq .slot)
@@ -43,6 +46,10 @@ cardano-cli transaction build \
     --tx-in-collateral $(cardano-cli-balance-fixer collateral --address $updaterAddress $BLOCKCHAIN) \
     --tx-in $configurationUtxo \
     --tx-in-script-file $configurationValidatorScript \
+    --tx-in-inline-datum-present \
+    --tx-in-redeemer-value '[]' \
+    --tx-in $treasuryUtxo \
+    --tx-in-script-file $treasuryValidatorScript \
     --tx-in-inline-datum-present \
     --tx-in-redeemer-value '[]' \
     --read-only-tx-in-reference $tallyUtxo \

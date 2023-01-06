@@ -8,6 +8,7 @@ configurationNftDeployer=$(cat ~/$BLOCKCHAIN_PREFIX/configuration-nft-deployer.a
 indexNftDeployer=$(cat ~/$BLOCKCHAIN_PREFIX/index-nft-deployer.addr)
 voter0=$(cat ~/$BLOCKCHAIN_PREFIX/voter-0.addr)
 voter1=$(cat ~/$BLOCKCHAIN_PREFIX/voter-1.addr)
+treasuryLocker=$(cat ~/$BLOCKCHAIN_PREFIX/treasury-locker.addr)
 
 cardano-cli transaction build \
   --babbage-era \
@@ -17,6 +18,7 @@ cardano-cli transaction build \
   --tx-out "$indexNftDeployer + 100000000 lovelace" \
   --tx-out "$voter0 + 100000000 lovelace" \
   --tx-out "$voter1 + 100000000 lovelace" \
+  --tx-out "$treasuryLocker + 100000000 lovelace" \
   --change-address $senderAddr \
   --protocol-params-file scripts/$BLOCKCHAIN_PREFIX/protocol-parameters.json \
   --out-file $bodyFile

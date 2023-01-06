@@ -65,10 +65,8 @@ data TreasuryTxInfo = TreasuryTxInfo
 -------------------------------------------------------------------------------
 -- Input Types
 -------------------------------------------------------------------------------
-data TreasuryAction
-  = TreasuryAction
 
-data Treasury = Treasury
+type Treasury = BuiltinData
 
 data TreasuryValidatorConfig = TreasuryValidatorConfig
   { tvcConfigNftCurrencySymbol :: CurrencySymbol
@@ -81,8 +79,6 @@ unstableMakeIsData ''TreasuryTxInInfo
 makeIsDataIndexed  ''TreasuryScriptPurpose [('TreasurySpend,1)]
 unstableMakeIsData ''TreasuryScriptContext
 unstableMakeIsData ''TreasuryTxInfo
-unstableMakeIsData ''Treasury
-unstableMakeIsData ''TreasuryAction
 makeLift ''TreasuryValidatorConfig
 
 -- Needs to work in bulk
@@ -96,12 +92,12 @@ makeLift ''TreasuryValidatorConfig
 validateTreasury
   :: TreasuryValidatorConfig
   -> Treasury
-  -> TreasuryAction
+  -> BuiltinData
   -> TreasuryScriptContext
   -> Bool
 validateTreasury
   TreasuryValidatorConfig {..}
-  Treasury {}
+  _treasury
   _action
   TreasuryScriptContext
     { tScriptContextTxInfo = TreasuryTxInfo {..}

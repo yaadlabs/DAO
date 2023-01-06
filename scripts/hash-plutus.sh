@@ -90,3 +90,18 @@ cardano-cli address build \
  --payment-script-file $thisDir/tally-validator.plutus \
  --testnet-magic 42 \
  --out-file $thisDir/local-testnet/tally-validator.addr
+
+cardano-cli address build \
+ --payment-script-file $thisDir/treasury-validator.plutus \
+ --mainnet \
+ --out-file $thisDir/mainnet/treasury-validator.addr
+
+cardano-cli address build \
+ --payment-script-file $thisDir/treasury-validator.plutus \
+ --testnet-magic 1097911063 \
+ --out-file $thisDir/testnet/treasury-validator.addr
+
+ cardano-cli address build \
+ --payment-script-file $thisDir/treasury-validator.plutus \
+ --testnet-magic 42 \
+ --out-file $thisDir/local-testnet/treasury-validator.addr
