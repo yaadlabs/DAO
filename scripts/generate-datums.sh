@@ -228,6 +228,32 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-1.json
 
 EOF
 
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-one-vote.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "constructor": 0,
+      "fields": [
+        {
+          "bytes": "ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e"
+        }
+      ]
+    },
+    {
+      "int": $endTime
+    },
+    {
+      "int": 1
+    },
+    {
+      "int": 0
+    }
+  ]
+}
+
+EOF
+
 cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-2.json
 {
   "constructor": 0,
