@@ -18,7 +18,7 @@ cardano-cli transaction build \
   --tx-out "$indexNftDeployer + 100000000 lovelace" \
   --tx-out "$voter0 + 100000000 lovelace" \
   --tx-out "$voter1 + 100000000 lovelace" \
-  --tx-out "$treasuryLocker + 100000000 lovelace" \
+  --tx-out "$treasuryLocker + 150000000 lovelace" \
   --change-address $senderAddr \
   --protocol-params-file scripts/$BLOCKCHAIN_PREFIX/protocol-parameters.json \
   --out-file $bodyFile

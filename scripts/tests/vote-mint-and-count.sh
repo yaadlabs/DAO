@@ -27,5 +27,5 @@ sleep 20
 $baseDir/happy-path/tally-initial-two-votes.sh
 $baseDir/wait/until-next-block.sh
 
-sleep 20
+sleep 80
 $baseDir/happy-path/upgrade-configuration.sh
