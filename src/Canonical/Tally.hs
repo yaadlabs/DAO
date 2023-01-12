@@ -109,6 +109,7 @@ tallyIndexNftMinter
 data IndexValidatorConfig = IndexValidatorConfig
   { ivcConfigNftCurrencySymbol :: CurrencySymbol
   , ivcConfigNftTokenName      :: TokenName
+  , ivcNonce                   :: Integer -- to help with testing
   }
 
 makeLift ''IndexValidatorConfig
@@ -120,7 +121,7 @@ validateIndex
   -> ScriptContext
   -> Bool
 validateIndex
-  IndexValidatorConfig {}
+  IndexValidatorConfig {..}
   IndexNftDatum { indIndex = inputIndex}
   _
   ctx@ScriptContext
@@ -146,6 +147,7 @@ validateIndex
 
   in traceIfFalse "output datum is not incremented" outputDatumIsIncremented
   && traceIfFalse "script value is not returned" outputValueGreaterThanInputValue
+  && ivcNonce == ivcNonce -- to help with testing
 
 validateIndex _ _ _ _ = traceError "Wrong script purpose"
 

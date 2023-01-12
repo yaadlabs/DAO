@@ -2,6 +2,8 @@ set -eux
 thisDir=$(dirname "$0")
 baseDir=$thisDir/../
 
+
+
 $thisDir/vote-mint-and-cancel.sh
 $thisDir/vote-mint-and-count-upgrade.sh
 $thisDir/vote-mint-expired.sh

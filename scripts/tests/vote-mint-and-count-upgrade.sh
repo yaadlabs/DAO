@@ -2,7 +2,7 @@ set -eux
 thisDir=$(dirname "$0")
 baseDir=$thisDir/../
 
-$baseDir/compile.sh
+$baseDir/compile.sh 23
 $baseDir/generate-datums.sh
 
 $baseDir/happy-path/mint-configuration-nft-tx.sh

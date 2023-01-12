@@ -59,6 +59,7 @@ data Options = Options
   , indexValidatorHashOutput         :: FilePath
   , tallyValidatorOutput             :: FilePath
   , tallyValidatorHashOutput         :: FilePath
+  , indexValidatorNonce              :: Integer
   } deriving (Show, Generic)
 
 instance ParseField PubKeyHash where
@@ -159,6 +160,7 @@ run Options{..} = do
   let indexValidatorConfig = IndexValidatorConfig
         { ivcConfigNftCurrencySymbol = theConfigurationNftPolicyId
         , ivcConfigNftTokenName      = configurationNftTokenName
+        , ivcNonce                   = indexValidatorNonce
         }
 
   writeSource indexValidatorOutput (indexScript indexValidatorConfig)
