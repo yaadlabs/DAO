@@ -33,7 +33,7 @@ fi
 
 currentSlot=$(cardano-cli query tip $BLOCKCHAIN | jq .slot)
 startSlot=$(($currentSlot-1))
-nextTenSlots=$(($currentSlot+20))
+nextTenSlots=$(($currentSlot+30))
 
 voteRedeemer=$baseDir/redeemers/vote-validator/count.json
 
@@ -59,6 +59,7 @@ cardano-cli transaction build \
     --tx-out "$voteOwner0 + $voteOutput0" \
     --tx-out "$tallyScriptAddr + $tallyOutput" \
     --tx-out-inline-datum-file $newTallyDatum \
+    --tx-out "$updaterAddress 3000000 lovelace $extraOutput" \
     --required-signer $signingKey \
     --change-address $updaterAddress \
     --protocol-params-file scripts/$BLOCKCHAIN_PREFIX/protocol-parameters.json \

@@ -10,7 +10,6 @@ tallyUtxo=$(./$baseDir/query/tally-validator.sh | tail -n 1 | cardano-cli-balanc
 
 voteNftPolicyId=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
 voteNft0=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e.30
-voteNft1=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e.31
 
 tallyNftPolicyId=$(cat $baseDir/tally-nft-policy-id.txt)
 tallyNft=$tallyNftPolicyId.30
