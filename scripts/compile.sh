@@ -1,4 +1,4 @@
-set -eu
+set -eux
 thisDir=$(dirname "$0")
 mainDir=$thisDir/..
 tempDir=$mainDir/temp

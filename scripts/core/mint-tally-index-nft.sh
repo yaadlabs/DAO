@@ -51,8 +51,6 @@ cardano-cli transaction build \
     --mint "$mintValue" \
     --mint-script-file $voteMinterFile \
     --mint-redeemer-file $redeemer \
-    --invalid-before $startSlot \
-    --invalid-hereafter $nextTenSlots \
     --out-file $bodyFile
 
 echo "saved transaction to $bodyFile"

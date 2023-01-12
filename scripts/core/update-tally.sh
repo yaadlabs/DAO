@@ -36,7 +36,7 @@ fi
 
 currentSlot=$(cardano-cli query tip $BLOCKCHAIN | jq .slot)
 startSlot=$(($currentSlot-1))
-nextTenSlots=$(($currentSlot+20))
+nextTenSlots=$(($currentSlot+60))
 
 voteRedeemer=$baseDir/redeemers/vote-validator/count.json
 

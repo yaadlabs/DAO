@@ -95,3 +95,4 @@ if [ $detected == false ]; then
 fi
 
 $baseDir/happy-path/cancel-vote.sh
+$baseDir/wait/until-next-block.sh
