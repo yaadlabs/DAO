@@ -300,6 +300,92 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-2.json
 
 EOF
 
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-general-1.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "constructor": 1,
+      "fields": [
+        {
+          "constructor": 0,
+          "fields": [
+            {
+              "constructor": 0,
+              "fields" : [
+                {
+                  "bytes": "$voter0Pkh"
+                }
+              ]
+            },
+            {
+              "constructor": 1,
+              "fields": []
+            }
+          ]
+        },
+        {
+          "int": 4000000
+        }
+      ]
+    },
+    {
+      "int": $endTime
+    },
+    {
+      "int": 0
+    },
+    {
+      "int": 0
+    }
+  ]
+}
+
+EOF
+
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-general-2.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "constructor": 1,
+      "fields": [
+        {
+          "constructor": 0,
+          "fields": [
+            {
+              "constructor": 0,
+              "fields" : [
+                {
+                  "bytes": "$voter0Pkh"
+                }
+              ]
+            },
+            {
+              "constructor": 1,
+              "fields": []
+            }
+          ]
+        },
+        {
+          "int": 4000000
+        }
+      ]
+    },
+    {
+      "int": $endTime
+    },
+    {
+      "int": 2
+    },
+    {
+      "int": 0
+    }
+  ]
+}
+
+EOF
+
 cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/vote-0.json
 {
   "constructor": 0,
