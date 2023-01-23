@@ -197,7 +197,7 @@ validateConfiguration
       Nothing -> False
       Just _  -> True
 
-    TallyState {tsProposal = Upgrade {ptUpgradeMinter},..} = case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
+    TallyState {tsProposal = proposal ,..} = case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
       [] -> traceError "Missing tally NFT"
       [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> unsafeFromBuiltinData $ case cTxOutDatum of
         OutputDatum (Datum dbs) -> dbs
@@ -206,6 +206,11 @@ validateConfiguration
           _ -> traceError "Missing datum"
         NoOutputDatum -> traceError "Script input missing datum hash"
       _ -> traceError "Too many NFT values"
+
+    upgradeMinter :: CurrencySymbol
+    upgradeMinter = case proposal of
+      Upgrade u -> u
+      _ -> traceError "Not an upgrade proposal"
 
     totalVotes :: Integer
     !totalVotes = tsFor + tsAgainst
@@ -223,7 +228,7 @@ validateConfiguration
 
     -- Make sure the upgrade token was minted
     hasUpgradeMinterToken :: Bool
-    !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue cTxInfoMint) of
+    !hasUpgradeMinterToken = case M.lookup upgradeMinter (getValue cTxInfoMint) of
       Nothing -> False
       Just m  -> case M.toList m of
         [(_, c)] -> c == 1

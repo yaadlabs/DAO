@@ -29,7 +29,9 @@ voteCurrencySymbol=$(cat $thisDir/vote-minter-policy-id.txt)
 voteTokenName=564F5445
 voteValidator=$(cat $thisDir/vote-validator-hash.txt)
 updateMajoriyPercent=500 # 50 percent
-upgradeRelativeMajorityPercent=110 # ten percent
+upgradeRelativeMajorityPercent=110 # eleven percent
+genericMajoriyPercent=500 # 50 percent
+genericRelativeMajorityPercent=110 # eleven percent
 totalVotes=10
 voteNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
 voteFungibleCurrencySymbol=a37767c537bbf908aa2bf5abf49ef3fd67e749cbca3225d31bd166e0
@@ -70,6 +72,12 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-configuration.js
       "int" : $upgradeRelativeMajorityPercent
     },
     {
+      "int" : $genericMajoriyPercent
+    },
+    {
+      "int" : $genericRelativeMajorityPercent
+    },
+    {
       "int" : $totalVotes
     },
     {
@@ -83,6 +91,9 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-configuration.js
     },
     {
       "int": $((offset*2))
+    },
+    {
+      "int": 6000000
     }
   ]
 }
@@ -124,6 +135,12 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/invalid-configuration.js
       "int" : $upgradeRelativeMajorityPercent
     },
     {
+      "int" : $genericMajoriyPercent
+    },
+    {
+      "int" : $genericRelativeMajorityPercent
+    },
+    {
       "int" : $totalVotes
     },
     {
@@ -131,6 +148,9 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/invalid-configuration.js
     },
     {
       "bytes": "$voteFungibleCurrencySymbol"
+    },
+    {
+      "int": 6000000
     }
   ]
 }
