@@ -3,7 +3,7 @@ thisDir=$(dirname "$0")
 mainDir=$thisDir/..
 tempDir=$mainDir/temp
 
-indexValidatorNonce=${1:- 0}
+indexValidatorNonce=${1:-0}
 
 initialConfigurationUtxo=${2:-$(./scripts/query/configuration-nft-deployer.sh | tail -1 | head | cardano-cli-balance-fixer parse-as-utxo)}
 initialIndexUtxo=${3:-$(./scripts/query/index-nft-deployer.sh | tail -1 | head | cardano-cli-balance-fixer parse-as-utxo)}

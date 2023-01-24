@@ -76,8 +76,9 @@ data DynamicConfig = DynamicConfig
   , dcMaxGeneralDisbursement        :: Integer
   , dcMaxTripDisbursement           :: Integer
   , dcAgentDisbursementPercent      :: Integer -- times a 1000
+  , dcFungibleVotePercent           :: Integer -- times a 1000
   }
 
+unstableMakeIsData ''DynamicConfig
 unstableMakeIsData ''TallyState
 unstableMakeIsData ''ProposalType
-unstableMakeIsData ''DynamicConfig

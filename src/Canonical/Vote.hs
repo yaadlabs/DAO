@@ -179,27 +179,52 @@ data VoteTxInInfo = VoteTxInInfo
   , vTxInInfoResolved :: VoteTxOut
   }
 
-data VoteScriptPurpose = VoteSpend TxOutRef
-
 data VoteScriptContext = VoteScriptContext
   { vScriptContextTxInfo  :: VoteTxInfo
-  , vScriptContextPurpose :: VoteScriptPurpose
+  , vScriptContextPurpose :: BuiltinData
   }
 
 data VoteTxInfo = VoteTxInfo
-  { vTxInfoInputs             :: [VoteTxInInfo]
+  { vTxInfoInputs             :: BuiltinData
   , vTxInfoReferenceInputs    :: [VoteTxInInfo]
-  , vTxInfoOutputs            :: [VoteTxOut]
+  , vTxInfoOutputs            :: BuiltinData
   , vTxInfoFee                :: BuiltinData
   , vTxInfoMint               :: BuiltinData
   , vTxInfoDCert              :: BuiltinData
   , vTxInfoWdrl               :: BuiltinData
   , vTxInfoValidRange         :: BuiltinData
-  , vTxInfoSignatories        :: [PubKeyHash]
+  , vTxInfoSignatories        :: BuiltinData
   , vTxInfoRedeemers          :: BuiltinData
   , vTxInfoData               :: Map DatumHash Datum
   , vTxInfoId                 :: BuiltinData
   }
+
+data VoteDynamicConfig = VoteDynamicConfig
+  { vdcTallyIndexNft                 :: BuiltinData
+  , vdcTallyNft                      :: BuiltinData
+  , vdcTallyValidator                :: ValidatorHash
+  , vdcTreasuryValidator             :: BuiltinData
+  , vdcConfigurationValidator        :: BuiltinData
+  , vdcVoteCurrencySymbol            :: CurrencySymbol
+  , vdcVoteTokenName                 :: BuiltinData
+  , vdcVoteValidator                 :: BuiltinData
+  , vdcUpgradeMajorityPercent        :: BuiltinData
+  , vdcUpgradRelativeMajorityPercent :: BuiltinData
+  , vdcGeneralMajorityPercent        :: BuiltinData
+  , vdcGeneralRelativeMajorityPercent:: BuiltinData
+  , vdcTripMajorityPercent           :: BuiltinData
+  , vdcTripRelativeMajorityPercent   :: BuiltinData
+  , vdcTotalVotes                    :: BuiltinData
+  , vdcVoteNft                       :: BuiltinData
+  , vdcVoteFungibleCurrencySymbol    :: BuiltinData
+  , vdcVoteFungibleTokenName         :: BuiltinData
+  , vdcProposalTallyEndOffset        :: BuiltinData
+  , vdcMaxGeneralDisbursement        :: BuiltinData
+  , vdcMaxTripDisbursement           :: BuiltinData
+  , vdcAgentDisbursementPercent      :: BuiltinData
+  , vdcFungibleVotePercent           :: BuiltinData
+  }
+
 
 -------------------------------------------------------------------------------
 -- Input Types
@@ -216,10 +241,10 @@ data VoteValidatorConfig = VoteValidatorConfig
 unstableMakeIsData ''VoteAddress
 unstableMakeIsData ''VoteTxOut
 unstableMakeIsData ''VoteTxInInfo
-makeIsDataIndexed  ''VoteScriptPurpose [('VoteSpend,1)]
 unstableMakeIsData ''VoteScriptContext
 unstableMakeIsData ''VoteTxInfo
 unstableMakeIsData ''VoteAction
+unstableMakeIsData ''VoteDynamicConfig
 makeLift ''VoteValidatorConfig
 
 -- Needs to work in bulk
@@ -245,7 +270,7 @@ validateVote
         Nothing -> False
         Just c -> c == 1
 
-    DynamicConfig {..} = case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
+    VoteDynamicConfig {..} = case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
       [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
       _ -> traceError "Too many NFT values"
 
@@ -254,25 +279,25 @@ validateVote
       traceIfFalse
           "Missing Tally Validator input"
           (any
-            ( (== ScriptCredential dcTallyValidator)
+            ( (== ScriptCredential vdcTallyValidator)
             . vAddressCredential
             . vTxOutAddress
             . vTxInInfoResolved
             )
-            vTxInfoInputs
+            (unsafeFromBuiltinData vTxInfoInputs :: [VoteTxInInfo])
           )
     Cancel ->
       let
         isSignedByOwner :: Bool
-        !isSignedByOwner = any ((== addressCredential vOwner) . PubKeyCredential) vTxInfoSignatories
+        !isSignedByOwner = any ((== addressCredential vOwner) . PubKeyCredential) (unsafeFromBuiltinData vTxInfoSignatories :: [PubKeyHash])
 
         hasVoteToken :: Value -> Bool
-        hasVoteToken (Value v) = case M.lookup dcVoteCurrencySymbol v of
+        hasVoteToken (Value v) = case M.lookup vdcVoteCurrencySymbol v of
           Nothing -> False
           Just _ -> True
 
         voteTokenAreAllBurned :: Bool
-        !voteTokenAreAllBurned = not $ any (hasVoteToken . vTxOutValue) vTxInfoOutputs
+        !voteTokenAreAllBurned = not $ any (hasVoteToken . vTxOutValue) (unsafeFromBuiltinData vTxInfoOutputs :: [VoteTxOut])
 
       in traceIfFalse "Not signed by owner" isSignedByOwner
       && traceIfFalse "All vote tokens are not burned" voteTokenAreAllBurned

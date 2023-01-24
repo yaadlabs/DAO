@@ -30,11 +30,6 @@ voteMinterId=$(cat $baseDir/vote-minter-policy-id.txt)
 voteMinterFile=$baseDir/vote-minter.plutus
 mintValue="1 $voteMinterId.564F5445"
 
-extraOutput=""
-if [ "$changeOutput" != "" ];then
-  extraOutput="+ $changeOutput"
-fi
-
 
 currentSlot=$(cardano-cli query tip $BLOCKCHAIN | jq .slot)
 startSlot=$(($currentSlot-1))
@@ -50,7 +45,6 @@ cardano-cli transaction build \
     --read-only-tx-in-reference $tallyUtxo \
     --tx-out "$scriptAddr + $lovelaceAmount lovelace + 1 $voteNft + $mintValue" \
     --tx-out-inline-datum-file $datumFile \
-    --tx-out "$voterAddress + 2137884 lovelace $extraOutput" \
     --required-signer $signingKey \
     --change-address $voterAddress \
     --protocol-params-file scripts/$BLOCKCHAIN_PREFIX/protocol-parameters.json \

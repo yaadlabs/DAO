@@ -105,6 +105,38 @@ lovelacesOf (Value v) = case M.lookup adaSymbol v of
     Nothing -> 0
     Just c -> c
 
+ownValueAndValidator :: [TreasuryTxInInfo] -> TxOutRef -> (Value, ValidatorHash)
+ownValueAndValidator ins txOutRef = go ins where
+  go = \case
+    [] -> traceError "The impossible happened"
+    TreasuryTxInInfo {tTxInInfoOutRef, tTxInInfoResolved = TreasuryTxOut{tTxOutAddress = Address {..}, ..}} :xs ->
+      if tTxInInfoOutRef == txOutRef then
+        case addressCredential of
+          ScriptCredential vh -> (tTxOutValue, vh)
+          _ -> traceError "Impossible. Expected ScriptCredential"
+      else
+        go xs
+
+isScriptCredential :: Credential -> Bool
+isScriptCredential = \case
+  ScriptCredential _ -> True
+  _ -> False
+
+onlyOneOfThisScript :: [TreasuryTxInInfo] -> ValidatorHash -> TxOutRef -> Bool
+onlyOneOfThisScript ins vh expectedRef = go ins where
+  go = \case
+    [] -> True
+    TreasuryTxInInfo {tTxInInfoOutRef, tTxInInfoResolved = TreasuryTxOut{tTxOutAddress = Address {..}}} :xs ->
+      if isScriptCredential addressCredential then
+        if tTxInInfoOutRef /= expectedRef then
+          case addressCredential of
+            ScriptCredential vh' | vh' == vh -> False
+            _ -> go xs
+        else
+          go xs
+      else
+        go xs
+
 validateTreasury
   :: TreasuryValidatorConfig
   -> Treasury
@@ -120,6 +152,12 @@ validateTreasury
     , tScriptContextPurpose = TreasurySpend thisTxRef
     } =
   let
+    -- check that there is only one of this script
+    inputValue :: Value
+    thisValidator :: ValidatorHash
+
+    (!inputValue, !thisValidator) = ownValueAndValidator tTxInfoInputs thisTxRef
+
     hasConfigurationNft :: Value -> Bool
     hasConfigurationNft (Value v) = case M.lookup tvcConfigNftCurrencySymbol v of
       Nothing -> False
@@ -164,26 +202,14 @@ validateTreasury
     isAfterTallyEndTime :: Bool
     !isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
 
-  in case tsProposal of
+  in onlyOneOfThisScript tTxInfoInputs thisValidator thisTxRef
+  && case tsProposal of
       T.Trip {..} ->
          let
-          thisValidator :: ValidatorHash
-          !thisValidator = case filter ((==thisTxRef) . tTxInInfoOutRef) tTxInfoInputs of
-            [TreasuryTxInInfo{..}] -> case tTxOutAddress tTxInInfoResolved of
-              Address (ScriptCredential vh) _ -> vh
-              _ -> traceError "expected script address"
-            _ -> traceError "expected exactly one input"
-
           hasEnoughVotes :: Bool
           !hasEnoughVotes
             =  traceIfFalse "relative majority is too low" (relativeMajority >= dcTripRelativeMajorityPercent)
             && traceIfFalse "majority is too small" (majorityPercent >= dcTripMajorityPercent)
-
-          -- Get the value on the script
-          inputValue :: Value
-          !inputValue = case filter (\TreasuryTxInInfo{..} -> tTxInInfoOutRef == thisTxRef) tTxInfoInputs of
-            [TreasuryTxInInfo{..}] -> tTxOutValue tTxInInfoResolved
-            _ -> traceError "expected exactly one input"
 
           -- Get the disbursed amount
           disbursedAmount :: Value
@@ -219,23 +245,10 @@ validateTreasury
 
       T.General {..} ->
         let
-          thisValidator :: ValidatorHash
-          !thisValidator = case filter ((==thisTxRef) . tTxInInfoOutRef) tTxInfoInputs of
-            [TreasuryTxInInfo{..}] -> case tTxOutAddress tTxInInfoResolved of
-              Address (ScriptCredential vh) _ -> vh
-              _ -> traceError "expected script address"
-            _ -> traceError "expected exactly one input"
-
           hasEnoughVotes :: Bool
           !hasEnoughVotes
             =  traceIfFalse "relative majority is too low" (relativeMajority >= dcGeneralRelativeMajorityPercent)
             && traceIfFalse "majority is too small" (majorityPercent >= dcGeneralMajorityPercent)
-
-          -- Get the value on the script
-          inputValue :: Value
-          !inputValue = case filter (\TreasuryTxInInfo{..} -> tTxInInfoOutRef == thisTxRef) tTxInfoInputs of
-            [TreasuryTxInInfo{..}] -> tTxOutValue tTxInInfoResolved
-            _ -> traceError "expected exactly one input"
 
           -- Get the disbursed amount
           disbursedAmount :: Value
