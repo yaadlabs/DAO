@@ -32,6 +32,8 @@ updateMajoriyPercent=500 # 50 percent
 upgradeRelativeMajorityPercent=110 # eleven percent
 genericMajoriyPercent=500 # 50 percent
 genericRelativeMajorityPercent=110 # eleven percent
+travelMajoriyPercent=500 # 50 percent
+travelRelativeMajorityPercent=110 # eleven percent
 totalVotes=10
 voteNft=ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e
 voteFungibleCurrencySymbol=a37767c537bbf908aa2bf5abf49ef3fd67e749cbca3225d31bd166e0
@@ -78,6 +80,12 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-configuration.js
       "int" : $genericRelativeMajorityPercent
     },
     {
+      "int" : $travelMajoriyPercent
+    },
+    {
+      "int" : $travelRelativeMajorityPercent
+    },
+    {
       "int" : $totalVotes
     },
     {
@@ -93,7 +101,13 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-configuration.js
       "int": $((offset*2))
     },
     {
-      "int": 6000000
+      "int": 60000000
+    },
+    {
+      "int": 60000000
+    },
+    {
+      "int": 670
     }
   ]
 }
@@ -141,6 +155,12 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/invalid-configuration.js
       "int" : $genericRelativeMajorityPercent
     },
     {
+      "int" : $travelMajoriyPercent
+    },
+    {
+      "int" : $travelRelativeMajorityPercent
+    },
+    {
       "int" : $totalVotes
     },
     {
@@ -151,6 +171,12 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/invalid-configuration.js
     },
     {
       "int": 6000000
+    },
+    {
+      "int": 6000000
+    },
+    {
+      "int": 670
     }
   ]
 }
@@ -369,6 +395,126 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-general-2.json
         },
         {
           "int": 4000000
+        }
+      ]
+    },
+    {
+      "int": $endTime
+    },
+    {
+      "int": 2
+    },
+    {
+      "int": 0
+    }
+  ]
+}
+
+EOF
+
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-travel-1.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "constructor": 2,
+      "fields": [
+        {
+          "constructor": 0,
+          "fields": [
+            {
+              "constructor": 0,
+              "fields" : [
+                {
+                  "bytes": "$voter0Pkh"
+                }
+              ]
+            },
+            {
+              "constructor": 1,
+              "fields": []
+            }
+          ]
+        },
+        {
+          "constructor": 0,
+          "fields": [
+            {
+              "constructor": 0,
+              "fields" : [
+                {
+                  "bytes": "$voter1Pkh"
+                }
+              ]
+            },
+            {
+              "constructor": 1,
+              "fields": []
+            }
+          ]
+        },
+        {
+          "int": 40000000
+        }
+      ]
+    },
+    {
+      "int": $endTime
+    },
+    {
+      "int": 0
+    },
+    {
+      "int": 0
+    }
+  ]
+}
+
+EOF
+
+cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/tally-travel-2.json
+{
+  "constructor": 0,
+  "fields": [
+    {
+      "constructor": 2,
+      "fields": [
+        {
+          "constructor": 0,
+          "fields": [
+            {
+              "constructor": 0,
+              "fields" : [
+                {
+                  "bytes": "$voter0Pkh"
+                }
+              ]
+            },
+            {
+              "constructor": 1,
+              "fields": []
+            }
+          ]
+        },
+        {
+          "constructor": 0,
+          "fields": [
+            {
+              "constructor": 0,
+              "fields" : [
+                {
+                  "bytes": "$voter1Pkh"
+                }
+              ]
+            },
+            {
+              "constructor": 1,
+              "fields": []
+            }
+          ]
+        },
+        {
+          "int": 40000000
         }
       ]
     },

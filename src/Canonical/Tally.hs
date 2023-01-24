@@ -533,12 +533,13 @@ validateTally
     addressedIsPaid outputs (addr, value) = valuePaidTo' outputs addr `geq` value
 
     voteNftAndAdaToVoters :: Bool
-    voteNftAndAdaToVoters = all (addressedIsPaid tTxInfoOutputs) (M.toList payoutMap)
+    !voteNftAndAdaToVoters = all (addressedIsPaid tTxInfoOutputs) (M.toList payoutMap)
 
-    tallyingIsActive :: Bool
-    tallyingIsActive
-      =  (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `after` tTxInfoValidRange
-      && tsProposalEndTime `before` tTxInfoValidRange
+    tallyingIsInactive :: Bool
+    !tallyingIsInactive = tsProposalEndTime `before` tTxInfoValidRange
+
+    tallyCountingIsActive :: Bool
+    !tallyCountingIsActive  =  (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `after` tTxInfoValidRange
 
     voteTokenAreAllBurned :: Bool
     !voteTokenAreAllBurned = not $ any (hasVoteWitness . tTxOutValue) tTxInfoOutputs
@@ -552,16 +553,17 @@ validateTally
       _ -> traceError "Wrong number of continuing outputs"
 
     newValueIsAtleastAsBigAsOldValue :: Bool
-    newValueIsAtleastAsBigAsOldValue = newValue `geq` oldValue
+    !newValueIsAtleastAsBigAsOldValue = newValue `geq` oldValue
 
     -- Tally datum is updated
     tallyDatumIsUpdated :: Bool
-    tallyDatumIsUpdated = newDatum ==
+    !tallyDatumIsUpdated = newDatum ==
       ts { tsFor     = oldFor     + forCount
          , tsAgainst = oldAgainst + againstCount
          }
 
-  in traceIfFalse "Tally is active" tallyingIsActive
+  in traceIfFalse "Tally is active" tallyingIsInactive
+  && traceIfFalse "Tally counting is not active" tallyCountingIsActive
   && traceIfFalse "Unexpected scripts" expectedScripts
   && traceIfFalse "Not all vote tokens and Ada returned" voteNftAndAdaToVoters
   && traceIfFalse "Not all vote tokens are burned" voteTokenAreAllBurned

@@ -190,7 +190,7 @@ validateTreasury
           !disbursedAmount = V.singleton adaSymbol adaToken (min dcMaxTripDisbursement ptTotalTravelCost)
 
           travelAgentLovelaces :: Integer
-          !travelAgentLovelaces = (ptTotalTravelCost `divide` dcAgentDisbursementPercent) * 1000
+          !travelAgentLovelaces = (ptTotalTravelCost * dcAgentDisbursementPercent) `divide` 1000
 
           travelerLovelaces :: Integer
           !travelerLovelaces = ptTotalTravelCost - travelAgentLovelaces
