@@ -14,11 +14,17 @@ data ProposalType
       { ptGeneralPaymentAddress :: Address
       , ptGeneralPaymentValue   :: Integer
       }
+  | Trip
+      { ptTravelAgentAddress :: Address
+      , ptTravelerAddress    :: Address
+      , ptTotalTravelCost    :: Integer
+      }
 
 instance Eq ProposalType where
   x == y = case (x, y) of
     (Upgrade a, Upgrade b) -> a == b
     (General a b, General c d) -> a == c && b == d
+    (Trip a b c, Trip d e f) -> a == d && b == e && c == f
     _                      -> False
 
 data TallyState = TallyState
@@ -60,12 +66,16 @@ data DynamicConfig = DynamicConfig
   , dcUpgradRelativeMajorityPercent :: Integer -- times a 1000
   , dcGeneralMajorityPercent        :: Integer -- times a 1000
   , dcGeneralRelativeMajorityPercent:: Integer -- times a 1000
+  , dcTripMajorityPercent           :: Integer -- times a 1000
+  , dcTripRelativeMajorityPercent   :: Integer -- times a 1000
   , dcTotalVotes                    :: Integer
   , dcVoteNft                       :: CurrencySymbol
   , dcVoteFungibleCurrencySymbol    :: CurrencySymbol
   , dcVoteFungibleTokenName         :: TokenName
   , dcProposalTallyEndOffset        :: Integer -- in milliseconds
   , dcMaxGeneralDisbursement        :: Integer
+  , dcMaxTripDisbursement           :: Integer
+  , dcAgentDisbursementPercent      :: Integer -- times a 1000
   }
 
 unstableMakeIsData ''TallyState

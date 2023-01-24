@@ -98,6 +98,12 @@ getContinuingOutputs' vh outs =
         == ScriptCredential vh)
       outs
 
+lovelacesOf :: Value -> Integer
+lovelacesOf (Value v) = case M.lookup adaSymbol v of
+  Nothing -> 0
+  Just m  -> case M.lookup adaToken m of
+    Nothing -> 0
+    Just c -> c
 
 validateTreasury
   :: TreasuryValidatorConfig
@@ -159,9 +165,58 @@ validateTreasury
     !isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
 
   in case tsProposal of
-      -- TravelDisbursement -> error ()
-      -- Handle the general case
-      -- make sure no more than the max is disbursed
+      T.Trip {..} ->
+         let
+          thisValidator :: ValidatorHash
+          !thisValidator = case filter ((==thisTxRef) . tTxInInfoOutRef) tTxInfoInputs of
+            [TreasuryTxInInfo{..}] -> case tTxOutAddress tTxInInfoResolved of
+              Address (ScriptCredential vh) _ -> vh
+              _ -> traceError "expected script address"
+            _ -> traceError "expected exactly one input"
+
+          hasEnoughVotes :: Bool
+          !hasEnoughVotes
+            =  traceIfFalse "relative majority is too low" (relativeMajority >= dcTripRelativeMajorityPercent)
+            && traceIfFalse "majority is too small" (majorityPercent >= dcTripMajorityPercent)
+
+          -- Get the value on the script
+          inputValue :: Value
+          !inputValue = case filter (\TreasuryTxInInfo{..} -> tTxInInfoOutRef == thisTxRef) tTxInfoInputs of
+            [TreasuryTxInInfo{..}] -> tTxOutValue tTxInInfoResolved
+            _ -> traceError "expected exactly one input"
+
+          -- Get the disbursed amount
+          disbursedAmount :: Value
+          !disbursedAmount = V.singleton adaSymbol adaToken (min dcMaxTripDisbursement ptTotalTravelCost)
+
+          travelAgentLovelaces :: Integer
+          !travelAgentLovelaces = (ptTotalTravelCost `divide` dcAgentDisbursementPercent) * 1000
+
+          travelerLovelaces :: Integer
+          !travelerLovelaces = ptTotalTravelCost - travelAgentLovelaces
+
+          -- Make sure the disbursed amount is less than the max
+          -- Find the total value returned to the script address
+          outputValue :: Value
+          !outputValue = case getContinuingOutputs' thisValidator tTxInfoOutputs of
+            [TreasuryTxOut{..}] -> tTxOutValue
+            _ -> traceError "expected exactly one continuing output"
+
+          outputValueIsLargeEnough :: Bool
+          !outputValueIsLargeEnough = outputValue `geq` (inputValue - disbursedAmount)
+
+          -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
+          paidToTravelAgentAddress :: Bool
+          !paidToTravelAgentAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs ptTravelAgentAddress) >= travelAgentLovelaces
+
+          paidToTravelerAddress :: Bool
+          !paidToTravelerAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs ptTravelerAddress) >= travelerLovelaces
+
+        in traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
+        && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
+        && traceIfFalse "Not paying enough to the travel agent address" paidToTravelAgentAddress
+        && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
+
       T.General {..} ->
         let
           thisValidator :: ValidatorHash
@@ -198,7 +253,7 @@ validateTreasury
 
           -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
           paidToAddress :: Bool
-          !paidToAddress = valuePaidTo' tTxInfoOutputs ptGeneralPaymentAddress `geq` disbursedAmount
+          !paidToAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs ptGeneralPaymentAddress) >= ptGeneralPaymentValue
 
         in traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
         && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
