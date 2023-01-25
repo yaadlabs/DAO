@@ -25,8 +25,8 @@ tallyScriptAddr=$(cat $baseDir/$BLOCKCHAIN_PREFIX/tally-validator.addr)
 
 configurationUtxo=$( $baseDir/query/configuration-validator.sh | tail -n 1 | cardano-cli-balance-fixer parse-as-utxo)
 
-bodyFile=$tempDir/sell-tx-body.01
-outFile=$tempDir/sell-tx.01
+bodyFile=$tempDir/tally-tx-body.01
+outFile=$tempDir/tally-tx.01
 changeOutput=$(cardano-cli-balance-fixer change --address $updaterAddress $BLOCKCHAIN)
 
 extraOutput=""

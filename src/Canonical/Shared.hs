@@ -10,6 +10,7 @@ import qualified Cardano.Api.Shelley as Shelly
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Short as BSS
 import           Codec.Serialise (serialise)
+import qualified Plutonomy
 
 type WrappedMintingPolicyType = BuiltinData -> BuiltinData -> ()
 
@@ -69,6 +70,17 @@ mintingPolicyHash
   . getValidator
   . Validator
   . getMintingPolicy
+
+plutonomyMintingPolicyHash :: MintingPolicy -> MintingPolicyHash
+plutonomyMintingPolicyHash =
+  let
+    optimizerSettings = Plutonomy.defaultOptimizerOptions
+      { Plutonomy.ooSplitDelay = False
+      , Plutonomy.ooFloatOutLambda  = False
+      }
+
+  in MintingPolicyHash . getScriptHash . scriptHash . getValidator . Plutonomy.optimizeUPLCWith optimizerSettings . Validator . getMintingPolicy
+
 
 validatorHash :: Validator -> ValidatorHash
 validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator

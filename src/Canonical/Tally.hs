@@ -370,7 +370,7 @@ data TallyDynamicConfig = TallyDynamicConfig
   , tdcVoteNft                       :: CurrencySymbol
   , tdcVoteFungibleCurrencySymbol    :: CurrencySymbol
   , tdcVoteFungibleTokenName         :: TokenName
-  , tdcProposalTallyEndOffset        :: Integer
+  , tdcProposalTallyEndOffset        :: BuiltinData
   , tdcMaxGeneralDisbursement        :: BuiltinData
   , tdcMaxTripDisbursement           :: BuiltinData
   , tdcAgentDisbursementPercent      :: BuiltinData
@@ -446,16 +446,13 @@ mergePayouts :: Address -> Value -> Map Address Value -> Map Address Value
 mergePayouts addr value =
   mapInsertWith (<>) addr value
 
-addressOutputsAt :: Address -> [TallyTxOut] -> [Value]
-addressOutputsAt addr outs =
-  let
-    flt TallyTxOut { tTxOutAddress, tTxOutValue }
-      | addr == tTxOutAddress = Just tTxOutValue
-      | otherwise = Nothing
-  in mapMaybe flt outs
-
+-- Optimize this to accum a value
 valuePaidTo' :: [TallyTxOut] -> Address -> Value
-valuePaidTo' outs addr = mconcat (addressOutputsAt addr outs)
+valuePaidTo' outs addr = go mempty outs where
+  go acc [] = acc
+  go acc (TallyTxOut { tTxOutAddress, tTxOutValue } :xs)
+    | addr == tTxOutAddress = go (acc <> tTxOutValue) xs
+    | otherwise = go acc xs
 
 validateTally
   :: TallyValidatorConfig
@@ -491,10 +488,13 @@ validateTally
     expectedScripts :: Bool
     !expectedScripts = hasExpectedScripts tTxInfoInputs thisValidatorHash tdcVoteValidator
 
-    hasVoteToken :: Value -> Bool
-    hasVoteToken (Value v) = case M.lookup tdcVoteNft v of
-      Nothing -> False
-      Just _ -> True
+    hasVoteToken :: Value -> Maybe Value
+    hasVoteToken (Value v) =
+      case filter (\(k, _) -> tdcVoteNft == k) (M.toList v) of
+        [] -> Nothing
+        xs@[_] -> Just (Value (M.fromList xs))
+        _ -> traceError "Too many vote nfts"
+
 
     hasVoteWitness :: Value -> Bool
     hasVoteWitness (Value v) = case M.lookup tdcVoteCurrencySymbol v of
@@ -511,60 +511,51 @@ validateTally
         _ -> traceError "wrong number of tally nfts"
 
     stepVotes
-      :: (Integer, Integer, Map Address Value)
-      -> TallyTxInInfo
+      :: TallyTxInInfo
       -> (Integer, Integer, Map Address Value)
-    stepVotes oldAcc@(oldForCount, oldAgainstCount, oldPayoutMap) TallyTxInInfo { tTxInInfoResolved = TallyTxOut {..}} =
-      if hasVoteToken tTxOutValue && hasVoteWitness tTxOutValue then
-        let
-          Vote {..} = convertDatum tTxInfoData tTxOutDatum
+      -> (Integer, Integer, Map Address Value)
+    stepVotes TallyTxInInfo { tTxInInfoResolved = TallyTxOut {..}} oldAcc@(oldForCount, oldAgainstCount, oldPayoutMap) =
+      case (hasVoteToken tTxOutValue, hasVoteWitness tTxOutValue) of
+        (Just voteNft, True) ->
+          let
+            Vote {..} = convertDatum tTxInfoData tTxOutDatum
 
-          voteNft :: Value
-          !voteNft = Value
-            ( M.fromList
-              ( filter (\(k, _) -> tdcVoteNft == k)
-                       (M.toList (getValue tTxOutValue))
-              )
-            )
-
-          -- Count all the dcVoteFungibleCurrencySymbol with dcVoteFungibleTokenName tokens on the vote utxo
-          fungibleTokens :: Integer
-          !fungibleTokens = case M.lookup tdcVoteFungibleCurrencySymbol (getValue tTxOutValue) of
-            Nothing -> 0
-            Just m -> case M.lookup tdcVoteFungibleTokenName m of
+            -- Count all the dcVoteFungibleCurrencySymbol with dcVoteFungibleTokenName tokens on the vote utxo
+            fungibleTokens :: Integer
+            !fungibleTokens = case M.lookup tdcVoteFungibleCurrencySymbol (getValue tTxOutValue) of
               Nothing -> 0
-              Just c -> c
+              Just m -> case M.lookup tdcVoteFungibleTokenName m of
+                Nothing -> 0
+                Just c -> c
 
-          -- Calculate fungible votes using the dcFungibleVotePercent
-          fungibleVotes :: Integer
-          !fungibleVotes = (fungibleTokens * tdcFungibleVotePercent) `divide` 1000
+            -- Calculate fungible votes using the dcFungibleVotePercent
+            fungibleVotes :: Integer
+            !fungibleVotes = if fungibleTokens == 0 then 0 else (fungibleTokens * tdcFungibleVotePercent) `divide` 1000
 
-          -- Add the lovelaces and the NFT
-          votePayout :: Value
-          !votePayout
-            =  V.singleton adaSymbol adaToken vReturnAda
-            <> voteNft
-            <> V.singleton tdcVoteFungibleCurrencySymbol tdcVoteFungibleTokenName fungibleTokens
+            -- Add the lovelaces and the NFT
+            votePayout :: Value
+            !votePayout = if fungibleTokens == 0
+              then Value (M.insert adaSymbol (M.singleton adaToken vReturnAda) (getValue voteNft))
+              else
+                 Value (M.insert tdcVoteFungibleCurrencySymbol (M.singleton tdcVoteFungibleTokenName fungibleTokens) (M.insert adaSymbol (M.singleton adaToken vReturnAda) (getValue voteNft)))
 
-          checkProposal :: Bool
-          !checkProposal = vProposalTokenName == thisTallyTokenName
+            checkProposal :: Bool
+            !checkProposal = vProposalTokenName == thisTallyTokenName
 
-          newForCount :: Integer
-          !newForCount = oldForCount + if vDirection == For then 1 + fungibleVotes else 0
+            newForCount :: Integer
+            !newForCount = oldForCount + if vDirection == For then 1 + fungibleVotes else 0
 
-          newAgainstCount :: Integer
-          !newAgainstCount = oldAgainstCount + if vDirection == For then 0 else 1 + fungibleVotes
+            newAgainstCount :: Integer
+            !newAgainstCount = oldAgainstCount + if vDirection == For then 0 else 1 + fungibleVotes
 
-          newPayoutMap :: Map Address Value
-          !newPayoutMap = mergePayouts vOwner votePayout oldPayoutMap
+            newPayoutMap :: Map Address Value
+            !newPayoutMap = mergePayouts vOwner votePayout oldPayoutMap
 
-        in if checkProposal then
-            (newForCount, newAgainstCount, newPayoutMap)
-           else
-            traceError "wrong vote proposal"
-      else
-        oldAcc
-
+          in if checkProposal then
+              (newForCount, newAgainstCount, newPayoutMap)
+             else
+              traceError "wrong vote proposal"
+        _ -> oldAcc
 
     -- Collect the votes
     -- Make sure the votes are for the write proposal
@@ -572,7 +563,7 @@ validateTally
     forCount :: Integer
     againstCount :: Integer
     payoutMap :: Map Address Value
-    (!forCount, !againstCount, !payoutMap) = foldl stepVotes (0, 0, M.empty) tTxInfoInputs
+    (!forCount, !againstCount, !payoutMap) = foldr stepVotes (0, 0, M.empty) tTxInfoInputs
 
     -- return the vote tokens to the owner
     addressedIsPaid :: [TallyTxOut] -> (Address, Value) -> Bool
@@ -630,6 +621,7 @@ tallyValidator :: TallyValidatorConfig -> Validator
 tallyValidator cfg = let
     optimizerSettings = Plutonomy.defaultOptimizerOptions
       { Plutonomy.ooSplitDelay = False
+      , Plutonomy.ooFloatOutLambda = False
       }
   in Plutonomy.optimizeUPLCWith optimizerSettings $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
     $$(PlutusTx.compile [|| wrapValidateTally ||])

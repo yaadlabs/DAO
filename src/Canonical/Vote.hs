@@ -47,18 +47,92 @@ unstableMakeIsData ''VoteDirection
 unstableMakeIsData ''VoteMinterAction
 unstableMakeIsData ''Vote
 
+data VoteMinterAddress = VoteMinterAddress
+  { vmAddressCredential        :: Credential
+  , vmAddressStakingCredential :: BuiltinData
+  }
+
+data VoteMinterTxOut = VoteMinterTxOut
+  { vmTxOutAddress             :: VoteMinterAddress
+  , vmTxOutValue               :: Value
+  , vmTxOutDatum               :: OutputDatum
+  , vmTxOutReferenceScript     :: BuiltinData
+  }
+
+data VoteMinterTxInInfo = VoteMinterTxInInfo
+  { vmTxInInfoOutRef   :: BuiltinData
+  , vmTxInInfoResolved :: VoteMinterTxOut
+  }
+
+
+data VoteMinterScriptPurpose = VMMinting CurrencySymbol
+
+data VoteMinterScriptContext = VoteMinterScriptContext
+  { vmScriptContextTxInfo  :: VoteMinterTxInfo
+  , vmScriptContextPurpose :: VoteMinterScriptPurpose
+  }
+
+data VoteMinterTxInfo = VoteMinterTxInfo
+  { vmTxInfoInputs             :: BuiltinData
+  , vmTxInfoReferenceInputs    :: BuiltinData
+  , vmTxInfoOutputs            :: BuiltinData
+  , vmTxInfoFee                :: BuiltinData
+  , vmTxInfoMint               :: Value
+  , vmTxInfoDCert              :: BuiltinData
+  , vmTxInfoWdrl               :: BuiltinData
+  , vmTxInfoValidRange         :: BuiltinData
+  , vmTxInfoSignatories        :: BuiltinData
+  , vmTxInfoRedeemers          :: BuiltinData
+  , vmTxInfoData               :: BuiltinData
+  , vmTxInfoId                 :: BuiltinData
+  }
+
+data VoteMinterDynamicConfig = VoteMinterDynamicConfig
+  { vmdcTallyIndexNft                 :: BuiltinData
+  , vmdcTallyNft                      :: CurrencySymbol
+  , vmdcTallyValidator                :: BuiltinData
+  , vmdcTreasuryValidator             :: BuiltinData
+  , vmdcConfigurationValidator        :: BuiltinData
+  , vmdcVoteCurrencySymbol            :: BuiltinData
+  , vmdcVoteTokenName                 :: TokenName
+  , vmdcVoteValidator                 :: ValidatorHash
+  , vmdcUpgradeMajorityPercent        :: BuiltinData
+  , vmdcUpgradRelativeMajorityPercent :: BuiltinData
+  , vmdcGeneralMajorityPercent        :: BuiltinData
+  , vmdcGeneralRelativeMajorityPercent:: BuiltinData
+  , vmdcTripMajorityPercent           :: BuiltinData
+  , vmdcTripRelativeMajorityPercent   :: BuiltinData
+  , vmdcTotalVotes                    :: BuiltinData
+  , vmdcVoteNft                       :: CurrencySymbol
+  , vmdcVoteFungibleCurrencySymbol    :: BuiltinData
+  , vmdcVoteFungibleTokenName         :: BuiltinData
+  , vmdcProposalTallyEndOffset        :: BuiltinData
+  , vmdcMaxGeneralDisbursement        :: BuiltinData
+  , vmdcMaxTripDisbursement           :: BuiltinData
+  , vmdcAgentDisbursementPercent      :: BuiltinData
+  , vmdcFungibleVotePercent           :: BuiltinData
+  }
+
+unstableMakeIsData ''VoteMinterAddress
+unstableMakeIsData ''VoteMinterTxOut
+unstableMakeIsData ''VoteMinterTxInInfo
+unstableMakeIsData ''VoteMinterScriptPurpose
+unstableMakeIsData ''VoteMinterScriptContext
+unstableMakeIsData ''VoteMinterTxInfo
+unstableMakeIsData ''VoteMinterDynamicConfig
+
 -- | The vote minter
 --   has a reference to the proposal so the end time can be validated
 --   Ensures that there is an NFT for voting is present
-mkVoteMinter :: VoteMinterConfig -> VoteMinterAction -> ScriptContext -> Bool
-mkVoteMinter VoteMinterConfig {..} action ScriptContext
-  { scriptContextTxInfo = TxInfo {..}
-  , scriptContextPurpose = Minting thisCurrencySymbol
+mkVoteMinter :: VoteMinterConfig -> VoteMinterAction -> VoteMinterScriptContext -> Bool
+mkVoteMinter VoteMinterConfig {..} action VoteMinterScriptContext
+  { vmScriptContextTxInfo = VoteMinterTxInfo {..}
+  , vmScriptContextPurpose = VMMinting thisCurrencySymbol
   } = case action of
     Burn ->
       let
         burnsTokens :: Bool
-        !burnsTokens = case M.lookup thisCurrencySymbol (getValue txInfoMint) of
+        !burnsTokens = case M.lookup thisCurrencySymbol (getValue vmTxInfoMint) of
           Nothing -> traceError "Impossible. Vote minter called but no vote tokens are minted"
           Just m -> case M.toList m of
             [(_, c)] -> traceIfFalse "Count is not less than zero" (c < 0)
@@ -74,46 +148,49 @@ mkVoteMinter VoteMinterConfig {..} action ScriptContext
             Nothing -> False
             Just c -> c == 1
 
-        DynamicConfig {..} = case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
-          [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
+        theData :: Map DatumHash Datum
+        theData = unsafeFromBuiltinData vmTxInfoData
+
+        VoteMinterDynamicConfig {..} = case filter (hasConfigurationNft . vmTxOutValue . vmTxInInfoResolved) (unsafeFromBuiltinData vmTxInfoReferenceInputs) of
+          [VoteMinterTxInInfo {vmTxInInfoResolved = VoteMinterTxOut {..}}] -> convertDatum theData vmTxOutDatum
           _ -> traceError "Too many NFT values"
 
         -- Get output on the vote validator. Should just be one.
-        (Vote {..}, !voteValue) = case filter ((==ScriptCredential dcVoteValidator) . addressCredential . txOutAddress) txInfoOutputs of
-          [TxOut {..}] -> (convertDatum txInfoData txOutDatum, txOutValue)
+        (Vote {..}, !voteValue) = case filter ((==ScriptCredential vmdcVoteValidator) . vmAddressCredential . vmTxOutAddress) (unsafeFromBuiltinData vmTxInfoOutputs) of
+          [VoteMinterTxOut {..}] -> (convertDatum theData vmTxOutDatum, vmTxOutValue)
           _ -> traceError "Wrong number of proposal references"
 
         -- Find the reference input with the Tally nft currency symbol
         hasTallyNft :: Value -> Bool
-        hasTallyNft (Value v) = case M.lookup dcTallyNft v of
+        hasTallyNft (Value v) = case M.lookup vmdcTallyNft v of
           Nothing -> False
           Just _ -> True
 
-        TallyState {..} = case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
-          [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
-          _ -> traceError "Wrong number of proposal references"
+        TallyState {..} = case filter (hasTallyNft . txOutValue . txInInfoResolved) (unsafeFromBuiltinData vmTxInfoReferenceInputs) of
+          [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum theData txOutDatum
+          _ -> traceError "Wrong number of tally references"
 
         proposalIsActive :: Bool
-        !proposalIsActive = tsProposalEndTime `after` txInfoValidRange
+        !proposalIsActive = tsProposalEndTime `after` (unsafeFromBuiltinData vmTxInfoValidRange)
 
         hasWitness :: Bool
         !hasWitness = case M.lookup thisCurrencySymbol (getValue voteValue) of
           Nothing -> False
-          Just m  -> case M.lookup dcVoteTokenName m of
+          Just m  -> case M.lookup vmdcVoteTokenName m of
             Nothing -> False
             Just c -> c == 1
 
         onlyMintedOne :: Bool
-        !onlyMintedOne = case M.lookup thisCurrencySymbol (getValue txInfoMint) of
+        !onlyMintedOne = case M.lookup thisCurrencySymbol (getValue vmTxInfoMint) of
           Nothing -> traceError "Nothing of this currency symbol minted"
           Just m -> case M.toList m of
             [(t, c)]
               -> traceIfFalse "Wrong number of witnesses minted" (c == 1)
-              && traceIfFalse "Wrong token name" (t == dcVoteTokenName)
+              && traceIfFalse "Wrong token name" (t == vmdcVoteTokenName)
             _ -> traceError "Invalid tokens minted"
 
         hasVoteNft :: Bool
-        !hasVoteNft = case M.lookup dcVoteNft (getValue voteValue) of
+        !hasVoteNft = case M.lookup vmdcVoteNft (getValue voteValue) of
           Nothing -> False
           Just m  -> case M.toList m of
               [(_, c)]
@@ -128,8 +205,6 @@ mkVoteMinter VoteMinterConfig {..} action ScriptContext
       && traceIfFalse "Missing witness on output"        hasWitness
       && traceIfFalse "Wrong number of witnesses minted" onlyMintedOne
       && traceIfFalse "Total ada not high enough"        totalAdaIsGreaterThanReturnAda
-
-mkVoteMinter _ _ _ = traceError "wrong type of script purpose!"
 
 wrappedPolicy :: VoteMinterConfig -> WrappedMintingPolicyType
 wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) (unsafeFromBuiltinData b))
@@ -147,10 +222,16 @@ validator :: VoteMinterConfig -> Validator
 validator = Validator . plutusScript
 
 voteMinterPolicyId :: VoteMinterConfig -> CurrencySymbol
-voteMinterPolicyId = mpsSymbol . mintingPolicyHash . policy
+voteMinterPolicyId = mpsSymbol . plutonomyMintingPolicyHash . policy
 
 scriptAsCbor :: VoteMinterConfig -> BSL.ByteString
-scriptAsCbor = serialise . validator
+scriptAsCbor =
+  let
+    optimizerSettings = Plutonomy.defaultOptimizerOptions
+      { Plutonomy.ooSplitDelay = False
+      , Plutonomy.ooFloatOutLambda  = False
+      }
+  in serialise . Plutonomy.optimizeUPLCWith optimizerSettings . validator
 
 voteMinter :: VoteMinterConfig -> PlutusScript PlutusScriptV2
 voteMinter
@@ -202,10 +283,10 @@ data VoteTxInfo = VoteTxInfo
 data VoteDynamicConfig = VoteDynamicConfig
   { vdcTallyIndexNft                 :: BuiltinData
   , vdcTallyNft                      :: BuiltinData
-  , vdcTallyValidator                :: ValidatorHash
+  , vdcTallyValidator                :: BuiltinData
   , vdcTreasuryValidator             :: BuiltinData
   , vdcConfigurationValidator        :: BuiltinData
-  , vdcVoteCurrencySymbol            :: CurrencySymbol
+  , vdcVoteCurrencySymbol            :: BuiltinData
   , vdcVoteTokenName                 :: BuiltinData
   , vdcVoteValidator                 :: BuiltinData
   , vdcUpgradeMajorityPercent        :: BuiltinData
@@ -279,7 +360,7 @@ validateVote
       traceIfFalse
           "Missing Tally Validator input"
           (any
-            ( (== ScriptCredential vdcTallyValidator)
+            ( (== ScriptCredential (unsafeFromBuiltinData vdcTallyValidator))
             . vAddressCredential
             . vTxOutAddress
             . vTxInInfoResolved
@@ -292,7 +373,7 @@ validateVote
         !isSignedByOwner = any ((== addressCredential vOwner) . PubKeyCredential) (unsafeFromBuiltinData vTxInfoSignatories :: [PubKeyHash])
 
         hasVoteToken :: Value -> Bool
-        hasVoteToken (Value v) = case M.lookup vdcVoteCurrencySymbol v of
+        hasVoteToken (Value v) = case M.lookup (unsafeFromBuiltinData vdcVoteCurrencySymbol) v of
           Nothing -> False
           Just _ -> True
 
