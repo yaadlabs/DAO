@@ -51,10 +51,28 @@ scripts/compile.sh
 This will build all the code and compile the smart contracts.
 
 The compiled contracts can be found in:
+
 - scripts/configuration-nft.plutus
 - scripts/configuration.plutus
+- scripts/index-validator.plutus
+- scripts/tally-index.plutus
+- scripts/tally-nft.plutus
+- scripts/tally-validator.plutus
+- scripts/treasury-validator.plutus
 - scripts/vote-minter.plutus
 - scripts/vote-validator.plutus
+
+Along with their hashes and policy ids
+
+- scripts/configuration-hash.txt
+- scripts/configuration-nft-policy-id.txt
+- scripts/index-validator-hash.txt
+- scripts/tally-index-policy-id.txt
+- scripts/tally-nft-policy-id.txt
+- scripts/tally-validator-hash.txt
+- scripts/treasury-validator-hash.txt
+- scripts/vote-minter-policy-id.txt
+- scripts/vote-validator-hash.txt
 
 # Testing
 
@@ -80,7 +98,7 @@ The configuration includes data such as the percent needed for a relative majori
 
 ### Modifying the Configuration
 
-The configuration can be modified by upgrading the system. See upgrading for more details.
+The configuration can be modified by upgrading the system. See **Upgrade Proposals** for more details.
 
 ## Voting
 
@@ -98,6 +116,45 @@ If the vote is valid, a UTxO is created with the a vote datum that stores the pr
 
 Users have to include min Ada for the their vote NFT, and additionally ada to cover the fees of tallying their vote. Users can cancel their votes at any time and receive all the assets the used to create the vote UTxO.
 
-## Upgrading
+# Proposals
+
+There are are three types of proposals the DAO can vote on, **General**, **Travel**, and **Upgrade** proposals.
+
+## General Proposals
+
+General proposals allow an individual to receive up to the max amount of Ada as configured by the `dcMaxGeneralDisbursement` setting, in the global configuration datum. They use the following constructor:
+
+```haskell
+General
+  { ptGeneralPaymentAddress :: Address
+  , ptGeneralPaymentValue   :: Integer
+  }
+```
+
+They require the relative majority and majority percentage configured by `dcGeneralRelativeMajorityPercent` and `dcGeneralMajorityPercent` respectively.
+
+## Trip Proposals
+
+Trip proposals allow an individual to receive up to the max amount of Ada as configured by the `dcMaxTripDisbursement` setting, in the global configuration datum. They use the following constructor:
+
+```haskell
+Trip
+  { ptTravelAgentAddress :: Address
+  , ptTravelerAddress    :: Address
+  , ptTotalTravelCost    :: Integer
+  }
+```
+
+They require the relative majority and majority percentage configured by `dcTripRelativeMajorityPercent` and `dcTripMajorityPercent` respectively.
+
+## Upgrade Proposals
 
 The smart contract system is designed to be upgraded. Upgrades are special proposals that can be voted on. The proposal includes a minting contract that is used to validate the upgrade transaction. The security of the upgrade is delegated to this contract. The upgrade procedure ensures that there are enough votes for the upgrade, and that an upgrade token is minted in the transaction. This ensures that the upgrade minting contract is executed, so therefore the upgrade is valid.
+
+The upgrade proposal has the following type:
+
+```haskell
+Upgrade
+  { ptUpgradeMinter :: CurrencySymbol
+  }
+```

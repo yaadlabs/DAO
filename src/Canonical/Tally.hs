@@ -5,7 +5,6 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Short as BSS
 import           Plutus.V2.Ledger.Contexts
 import           Plutus.V1.Ledger.Credential
-import           Plutus.V1.Ledger.Crypto
 import           Plutus.V1.Ledger.Interval
 import           Plutus.V1.Ledger.Time
 import           Plutus.V1.Ledger.Address
@@ -342,15 +341,43 @@ data TallyTxInfo = TallyTxInfo
   , tTxInfoReferenceInputs    :: [TallyTxInInfo]
   , tTxInfoOutputs            :: [TallyTxOut]
   , tTxInfoFee                :: BuiltinData
-  , tTxInfoMint               :: Value
+  , tTxInfoMint               :: BuiltinData
   , tTxInfoDCert              :: BuiltinData
   , tTxInfoWdrl               :: BuiltinData
   , tTxInfoValidRange         :: POSIXTimeRange
-  , tTxInfoSignatories        :: [PubKeyHash]
+  , tTxInfoSignatories        :: BuiltinData
   , tTxInfoRedeemers          :: BuiltinData
   , tTxInfoData               :: Map DatumHash Datum
   , tTxInfoId                 :: BuiltinData
   }
+
+data TallyDynamicConfig = TallyDynamicConfig
+  { tdcTallyIndexNft                 :: BuiltinData
+  , tdcTallyNft                      :: CurrencySymbol
+  , tdcTallyValidator                :: BuiltinData
+  , tdcTreasuryValidator             :: BuiltinData
+  , tdcConfigurationValidator        :: BuiltinData
+  , tdcVoteCurrencySymbol            :: CurrencySymbol
+  , tdcVoteTokenName                 :: BuiltinData
+  , tdcVoteValidator                 :: ValidatorHash
+  , tdcUpgradeMajorityPercent        :: BuiltinData
+  , tdcUpgradRelativeMajorityPercent :: BuiltinData
+  , tdcGeneralMajorityPercent        :: BuiltinData
+  , tdcGeneralRelativeMajorityPercent:: BuiltinData
+  , tdcTripMajorityPercent           :: BuiltinData
+  , tdcTripRelativeMajorityPercent   :: BuiltinData
+  , tdcTotalVotes                    :: BuiltinData
+  , tdcVoteNft                       :: CurrencySymbol
+  , tdcVoteFungibleCurrencySymbol    :: CurrencySymbol
+  , tdcVoteFungibleTokenName         :: TokenName
+  , tdcProposalTallyEndOffset        :: BuiltinData
+  , tdcMaxGeneralDisbursement        :: BuiltinData
+  , tdcMaxTripDisbursement           :: BuiltinData
+  , tdcAgentDisbursementPercent      :: BuiltinData
+  , tdcFungibleVotePercent           :: Integer
+  }
+
+unstableMakeIsData ''TallyDynamicConfig
 
 -------------------------------------------------------------------------------
 -- Input Types
@@ -419,16 +446,13 @@ mergePayouts :: Address -> Value -> Map Address Value -> Map Address Value
 mergePayouts addr value =
   mapInsertWith (<>) addr value
 
-addressOutputsAt :: Address -> [TallyTxOut] -> [Value]
-addressOutputsAt addr outs =
-  let
-    flt TallyTxOut { tTxOutAddress, tTxOutValue }
-      | addr == tTxOutAddress = Just tTxOutValue
-      | otherwise = Nothing
-  in mapMaybe flt outs
-
+-- Optimize this to accum a value
 valuePaidTo' :: [TallyTxOut] -> Address -> Value
-valuePaidTo' outs addr = mconcat (addressOutputsAt addr outs)
+valuePaidTo' outs addr = go mempty outs where
+  go acc [] = acc
+  go acc (TallyTxOut { tTxOutAddress, tTxOutValue } :xs)
+    | addr == tTxOutAddress = go (acc <> tTxOutValue) xs
+    | otherwise = go acc xs
 
 validateTally
   :: TallyValidatorConfig
@@ -452,7 +476,7 @@ validateTally
         Nothing -> False
         Just c -> c == 1
 
-    DynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
+    TallyDynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
       [TallyTxInInfo {tTxInInfoResolved = TallyTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
       _ -> traceError "Too many NFT values"
 
@@ -462,20 +486,23 @@ validateTally
     (!oldValue, !thisValidatorHash) = ownValueAndValidator tTxInfoInputs thisOutRef
     -- Make sure there is only one tally and many votes
     expectedScripts :: Bool
-    expectedScripts = hasExpectedScripts tTxInfoInputs thisValidatorHash dcVoteValidator
+    !expectedScripts = hasExpectedScripts tTxInfoInputs thisValidatorHash tdcVoteValidator
 
-    hasVoteToken :: Value -> Bool
-    hasVoteToken (Value v) = case M.lookup dcVoteNft v of
-      Nothing -> False
-      Just _ -> True
+    hasVoteToken :: Value -> Maybe Value
+    hasVoteToken (Value v) =
+      case filter (\(k, _) -> tdcVoteNft == k) (M.toList v) of
+        [] -> Nothing
+        xs@[_] -> Just (Value (M.fromList xs))
+        _ -> traceError "Too many vote nfts"
+
 
     hasVoteWitness :: Value -> Bool
-    hasVoteWitness (Value v) = case M.lookup dcVoteCurrencySymbol v of
+    hasVoteWitness (Value v) = case M.lookup tdcVoteCurrencySymbol v of
       Nothing -> False
       Just _ -> True
 
     thisTallyTokenName :: TokenName
-    thisTallyTokenName = case M.lookup dcTallyNft (getValue oldValue) of
+    !thisTallyTokenName = case M.lookup tdcTallyNft (getValue oldValue) of
       Nothing -> traceError "Failed to find tally nft"
       Just m -> case M.toList m of
         [(t, c)]
@@ -488,37 +515,47 @@ validateTally
       -> (Integer, Integer, Map Address Value)
       -> (Integer, Integer, Map Address Value)
     stepVotes TallyTxInInfo { tTxInInfoResolved = TallyTxOut {..}} oldAcc@(oldForCount, oldAgainstCount, oldPayoutMap) =
-      if hasVoteToken tTxOutValue && hasVoteWitness tTxOutValue then
-        let
-          Vote {..} = convertDatum tTxInfoData tTxOutDatum
+      case (hasVoteToken tTxOutValue, hasVoteWitness tTxOutValue) of
+        (Just voteNft, True) ->
+          let
+            Vote {..} = convertDatum tTxInfoData tTxOutDatum
 
-          voteNft :: Value
-          voteNft = Value
-            ( M.fromList
-              ( filter (\(k, _) -> dcVoteNft == k)
-                       (M.toList (getValue tTxOutValue))
-              )
-            )
+            -- Count all the dcVoteFungibleCurrencySymbol with dcVoteFungibleTokenName tokens on the vote utxo
+            fungibleTokens :: Integer
+            !fungibleTokens = case M.lookup tdcVoteFungibleCurrencySymbol (getValue tTxOutValue) of
+              Nothing -> 0
+              Just m -> case M.lookup tdcVoteFungibleTokenName m of
+                Nothing -> 0
+                Just c -> c
 
-          -- Add the lovelaces and the NFT
-          votePayout :: Value
-          votePayout
-            =  V.singleton adaSymbol adaToken vReturnAda
-            <> voteNft
+            -- Calculate fungible votes using the dcFungibleVotePercent
+            fungibleVotes :: Integer
+            !fungibleVotes = if fungibleTokens == 0 then 0 else (fungibleTokens * tdcFungibleVotePercent) `divide` 1000
 
-          checkProposal :: Bool
-          !checkProposal = vProposalTokenName == thisTallyTokenName
+            -- Add the lovelaces and the NFT
+            votePayout :: Value
+            !votePayout = if fungibleTokens == 0
+              then Value (M.insert adaSymbol (M.singleton adaToken vReturnAda) (getValue voteNft))
+              else
+                 Value (M.insert tdcVoteFungibleCurrencySymbol (M.singleton tdcVoteFungibleTokenName fungibleTokens) (M.insert adaSymbol (M.singleton adaToken vReturnAda) (getValue voteNft)))
 
-        in if checkProposal then
-             ( oldForCount     + if vDirection == For then 1 else 0
-             , oldAgainstCount + if vDirection == For then 0 else 1
-             , mergePayouts vOwner votePayout oldPayoutMap
-             )
-           else
-            traceError "wrong vote proposal"
-      else
-        oldAcc
+            checkProposal :: Bool
+            !checkProposal = vProposalTokenName == thisTallyTokenName
 
+            newForCount :: Integer
+            !newForCount = oldForCount + if vDirection == For then 1 + fungibleVotes else 0
+
+            newAgainstCount :: Integer
+            !newAgainstCount = oldAgainstCount + if vDirection == For then 0 else 1 + fungibleVotes
+
+            newPayoutMap :: Map Address Value
+            !newPayoutMap = mergePayouts vOwner votePayout oldPayoutMap
+
+          in if checkProposal then
+              (newForCount, newAgainstCount, newPayoutMap)
+             else
+              traceError "wrong vote proposal"
+        _ -> oldAcc
 
     -- Collect the votes
     -- Make sure the votes are for the write proposal
@@ -533,12 +570,10 @@ validateTally
     addressedIsPaid outputs (addr, value) = valuePaidTo' outputs addr `geq` value
 
     voteNftAndAdaToVoters :: Bool
-    voteNftAndAdaToVoters = all (addressedIsPaid tTxInfoOutputs) (M.toList payoutMap)
+    !voteNftAndAdaToVoters = all (addressedIsPaid tTxInfoOutputs) (M.toList payoutMap)
 
-    tallyingIsActive :: Bool
-    tallyingIsActive
-      =  (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `after` tTxInfoValidRange
-      && tsProposalEndTime `before` tTxInfoValidRange
+    tallyingIsInactive :: Bool
+    !tallyingIsInactive = tsProposalEndTime `before` tTxInfoValidRange
 
     voteTokenAreAllBurned :: Bool
     !voteTokenAreAllBurned = not $ any (hasVoteWitness . tTxOutValue) tTxInfoOutputs
@@ -552,16 +587,16 @@ validateTally
       _ -> traceError "Wrong number of continuing outputs"
 
     newValueIsAtleastAsBigAsOldValue :: Bool
-    newValueIsAtleastAsBigAsOldValue = newValue `geq` oldValue
+    !newValueIsAtleastAsBigAsOldValue = newValue `geq` oldValue
 
     -- Tally datum is updated
     tallyDatumIsUpdated :: Bool
-    tallyDatumIsUpdated = newDatum ==
+    !tallyDatumIsUpdated = newDatum ==
       ts { tsFor     = oldFor     + forCount
          , tsAgainst = oldAgainst + againstCount
          }
 
-  in traceIfFalse "Tally is active" tallyingIsActive
+  in traceIfFalse "Tally is active" tallyingIsInactive
   && traceIfFalse "Unexpected scripts" expectedScripts
   && traceIfFalse "Not all vote tokens and Ada returned" voteNftAndAdaToVoters
   && traceIfFalse "Not all vote tokens are burned" voteTokenAreAllBurned
@@ -586,6 +621,7 @@ tallyValidator :: TallyValidatorConfig -> Validator
 tallyValidator cfg = let
     optimizerSettings = Plutonomy.defaultOptimizerOptions
       { Plutonomy.ooSplitDelay = False
+      , Plutonomy.ooFloatOutLambda = False
       }
   in Plutonomy.optimizeUPLCWith optimizerSettings $ Plutonomy.validatorToPlutus $ Plutonomy.mkValidatorScript $
     $$(PlutusTx.compile [|| wrapValidateTally ||])

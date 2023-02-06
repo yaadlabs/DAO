@@ -20,8 +20,8 @@ treasuryValidatorScript=$baseDir/treasury-validator.plutus
 
 configurationNft=$(cat $baseDir/configuration-nft-policy-id.txt)
 
-bodyFile=$tempDir/sell-tx-body.01
-outFile=$tempDir/sell-tx.01
+bodyFile=$tempDir/upgrade-tx-body.01
+outFile=$tempDir/upgrade-tx.01
 changeOutput=$(cardano-cli-balance-fixer change --address $updaterAddress $BLOCKCHAIN)
 
 extraOutput=""

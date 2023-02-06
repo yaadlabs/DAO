@@ -31,6 +31,7 @@ common lang
     -Wall -Wcompat -Wincomplete-record-updates
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -Wunused-packages
+    -Wno-partial-fields
 
 library
   import:          lang

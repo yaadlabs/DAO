@@ -1,4 +1,5 @@
 module Canonical.Types where
+import           Plutus.V1.Ledger.Address
 import           Plutus.V1.Ledger.Time
 import           Plutus.V1.Ledger.Value
 import           Plutus.V1.Ledger.Scripts
@@ -9,10 +10,22 @@ data ProposalType
   = Upgrade
       { ptUpgradeMinter :: CurrencySymbol
       }
+  | General
+      { ptGeneralPaymentAddress :: Address
+      , ptGeneralPaymentValue   :: Integer
+      }
+  | Trip
+      { ptTravelAgentAddress :: Address
+      , ptTravelerAddress    :: Address
+      , ptTotalTravelCost    :: Integer
+      }
 
 instance Eq ProposalType where
   x == y = case (x, y) of
     (Upgrade a, Upgrade b) -> a == b
+    (General a b, General c d) -> a == c && b == d
+    (Trip a b c, Trip d e f) -> a == d && b == e && c == f
+    _                      -> False
 
 data TallyState = TallyState
   { tsProposal        :: ProposalType
@@ -51,13 +64,21 @@ data DynamicConfig = DynamicConfig
   , dcVoteValidator                 :: ValidatorHash
   , dcUpgradeMajorityPercent        :: Integer -- times a 1000
   , dcUpgradRelativeMajorityPercent :: Integer -- times a 1000
+  , dcGeneralMajorityPercent        :: Integer -- times a 1000
+  , dcGeneralRelativeMajorityPercent:: Integer -- times a 1000
+  , dcTripMajorityPercent           :: Integer -- times a 1000
+  , dcTripRelativeMajorityPercent   :: Integer -- times a 1000
   , dcTotalVotes                    :: Integer
   , dcVoteNft                       :: CurrencySymbol
   , dcVoteFungibleCurrencySymbol    :: CurrencySymbol
   , dcVoteFungibleTokenName         :: TokenName
   , dcProposalTallyEndOffset        :: Integer -- in milliseconds
+  , dcMaxGeneralDisbursement        :: Integer
+  , dcMaxTripDisbursement           :: Integer
+  , dcAgentDisbursementPercent      :: Integer -- times a 1000
+  , dcFungibleVotePercent           :: Integer -- times a 1000
   }
 
+unstableMakeIsData ''DynamicConfig
 unstableMakeIsData ''TallyState
 unstableMakeIsData ''ProposalType
-unstableMakeIsData ''DynamicConfig
