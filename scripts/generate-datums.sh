@@ -30,7 +30,7 @@ voteTokenName=564F5445
 voteValidator=$(cat $thisDir/vote-validator-hash.txt)
 updateMajoriyPercent=500 # 50 percent
 upgradeRelativeMajorityPercent=110 # eleven percent
-genericMajoriyPercent=500 # 50 percent
+genericMajorityPercent=500 # 50 percent
 genericRelativeMajorityPercent=110 # eleven percent
 travelMajoriyPercent=500 # 50 percent
 travelRelativeMajorityPercent=110 # eleven percent
@@ -75,7 +75,7 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/initial-configuration.js
       "int" : $upgradeRelativeMajorityPercent
     },
     {
-      "int" : $genericMajoriyPercent
+      "int" : $genericMajorityPercent
     },
     {
       "int" : $genericRelativeMajorityPercent
@@ -153,7 +153,7 @@ cat << EOF > $tempDir/$BLOCKCHAIN_PREFIX/datums/$prefix/invalid-configuration.js
       "int" : $upgradeRelativeMajorityPercent
     },
     {
-      "int" : $genericMajoriyPercent
+      "int" : $genericMajorityPercent
     },
     {
       "int" : $genericRelativeMajorityPercent
