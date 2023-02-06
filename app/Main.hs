@@ -7,6 +7,8 @@ import           Options.Generic
 import           Canonical.AlwaysSucceed
 import           Canonical.ConfigurationNft
 import           Canonical.Vote
+import           Canonical.Treasury
+import           Canonical.Tally
 import           Prelude
 import           Plutus.V1.Ledger.Bytes
 import           Plutus.V1.Ledger.Crypto
@@ -45,6 +47,19 @@ data Options = Options
   , voteMinterPolicyIdOutput         :: FilePath
   , voteValidatorOutput              :: FilePath
   , voteValidatorHashOutput          :: FilePath
+  , treasuryValidatorOutput          :: FilePath
+  , treasuryValidatorHashOutput      :: FilePath
+  , tallyIndexNftOutput              :: FilePath
+  , tallyIndexNftPolicyIdOutput      :: FilePath
+  , tallyIndexNftTokenName           :: TokenName
+  , tallyIndexNftInitialUtxo         :: TxOutRef
+  , tallyNftOutput                   :: FilePath
+  , tallyNftPolicyIdOutput           :: FilePath
+  , indexValidatorOutput             :: FilePath
+  , indexValidatorHashOutput         :: FilePath
+  , tallyValidatorOutput             :: FilePath
+  , tallyValidatorHashOutput         :: FilePath
+  , indexValidatorNonce              :: Integer
   } deriving (Show, Generic)
 
 instance ParseField PubKeyHash where
@@ -132,3 +147,60 @@ run Options{..} = do
   writeSource voteValidatorOutput (voteScript voteValidatorConfig)
 
   writeFile voteValidatorHashOutput $ show (voteValidatorHash voteValidatorConfig)
+
+  let treasuryValidatorConfig = TreasuryValidatorConfig
+        { tvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , tvcConfigNftTokenName      = configurationNftTokenName
+        }
+
+  writeSource treasuryValidatorOutput (treasuryScript treasuryValidatorConfig)
+
+  writeFile treasuryValidatorHashOutput $ show (treasuryValidatorHash treasuryValidatorConfig)
+
+  let indexValidatorConfig = IndexValidatorConfig
+        { ivcConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , ivcConfigNftTokenName      = configurationNftTokenName
+        , ivcNonce                   = indexValidatorNonce
+        }
+
+  writeSource indexValidatorOutput (indexScript indexValidatorConfig)
+
+  let theIndexValidatorHash = indexValidatorHash indexValidatorConfig
+
+  writeFile indexValidatorHashOutput $ show theIndexValidatorHash
+
+  let indexNftConfig = IndexNftConfig
+        { incInitialUtxo    = tallyIndexNftInitialUtxo
+        , incTokenName      = tallyIndexNftTokenName
+        , incIndexValidator = theIndexValidatorHash
+        }
+
+  writeSource tallyIndexNftOutput $ tallyIndexNftMinter indexNftConfig
+
+  let theTallyIndexNftPolicyId = tallyIndexNftMinterPolicyId indexNftConfig
+
+  writeFile tallyIndexNftPolicyIdOutput $ show theTallyIndexNftPolicyId
+
+  let tallyNftConfig = TallyNftConfig
+        { tncIndexNftPolicyId        = theTallyIndexNftPolicyId
+        , tncIndexNftTokenName       = tallyIndexNftTokenName
+        , tncConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , tncConfigNftTokenName      = configurationNftTokenName
+        }
+
+  writeSource tallyNftOutput $ tallyNftMinter tallyNftConfig
+
+  let theTallyNftPolicyId = tallyNftMinterPolicyId tallyNftConfig
+
+  writeFile tallyNftPolicyIdOutput $ show theTallyNftPolicyId
+
+  let tallyValidatorConfig = TallyValidatorConfig
+        { tvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
+        , tvcConfigNftTokenName      = configurationNftTokenName
+        }
+
+  writeSource tallyValidatorOutput (tallyScript tallyValidatorConfig)
+
+  let theTallyValidatorHash = tallyValidatorHash tallyValidatorConfig
+
+  writeFile tallyValidatorHashOutput $ show theTallyValidatorHash

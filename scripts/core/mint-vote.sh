@@ -13,15 +13,17 @@ $baseDir/hash-datums.sh
 voterAddress=$1
 signingKey=$2
 datumFile=$3
-proposalUtxo=$4
+tallyUtxo=$4
 configurationUtxo=$5
+voteNft=$6
+lovelaceAmount=$7
 scriptAddr=$(cat $baseDir/$BLOCKCHAIN_PREFIX/vote-validator.addr)
 
 redeemer=$baseDir/redeemers/vote-minter/mint.json
 
 bodyFile=$tempDir/vote-mint-tx-body.01
 outFile=$tempDir/vote-mint-tx.01
-changeOutput=$(cardano-cli-balance-fixer change --address $voterAddress $BLOCKCHAIN -o '1 ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e.123456')
+changeOutput=$(cardano-cli-balance-fixer change --address $voterAddress $BLOCKCHAIN -o "1 $voteNft")
 
 
 voteMinterId=$(cat $baseDir/vote-minter-policy-id.txt)
@@ -45,8 +47,8 @@ cardano-cli transaction build \
     $(cardano-cli-balance-fixer input --address $voterAddress $BLOCKCHAIN) \
     --tx-in-collateral $(cardano-cli-balance-fixer collateral --address $voterAddress $BLOCKCHAIN) \
     --read-only-tx-in-reference $configurationUtxo \
-    --read-only-tx-in-reference $proposalUtxo \
-    --tx-out "$scriptAddr + 3500000 lovelace + 1 ce8822885d18e7d304ef0248af49359d687a94f0e3635eea14c6154e.123456 + $mintValue" \
+    --read-only-tx-in-reference $tallyUtxo \
+    --tx-out "$scriptAddr + $lovelaceAmount lovelace + 1 $voteNft + $mintValue" \
     --tx-out-inline-datum-file $datumFile \
     --tx-out "$voterAddress + 2137884 lovelace $extraOutput" \
     --required-signer $signingKey \

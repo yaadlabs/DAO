@@ -28,12 +28,17 @@ makeLift ''VoteMinterConfig
 
 data VoteDirection = For | Against
 
+instance Eq VoteDirection where
+  x == y = case (x, y) of
+    (For, For) -> True
+    (Against, Against) -> True
+    _ -> False
+
 data Vote = Vote
-  { vProposal  :: TxOutRef
-  , vDirection :: VoteDirection
-  , vCounted   :: Bool
-  , vOwner     :: Address
-  , vReturnAda :: Integer
+  { vProposalTokenName :: TokenName
+  , vDirection         :: VoteDirection
+  , vOwner             :: Address
+  , vReturnAda         :: Integer
   }
 
 data VoteMinterAction = Mint | Burn
@@ -78,12 +83,18 @@ mkVoteMinter VoteMinterConfig {..} action ScriptContext
           [TxOut {..}] -> (convertDatum txInfoData txOutDatum, txOutValue)
           _ -> traceError "Wrong number of proposal references"
 
-        Proposal {..} = case filter ((==vProposal) . txInInfoOutRef) txInfoReferenceInputs of
+        -- Find the reference input with the Tally nft currency symbol
+        hasTallyNft :: Value -> Bool
+        hasTallyNft (Value v) = case M.lookup dcTallyNft v of
+          Nothing -> False
+          Just _ -> True
+
+        TallyState {..} = case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Wrong number of proposal references"
 
         proposalIsActive :: Bool
-        !proposalIsActive = pEndTime `after` txInfoValidRange
+        !proposalIsActive = tsProposalEndTime `after` txInfoValidRange
 
         hasWitness :: Bool
         !hasWitness = case M.lookup thisCurrencySymbol (getValue voteValue) of
@@ -109,9 +120,6 @@ mkVoteMinter VoteMinterConfig {..} action ScriptContext
                 -> traceIfFalse "Impossible. Vote NFT is not an NFT" (c == 1)
               _ -> traceError "Wrong number of vote NFTs"
 
-        voteIsNotCounted :: Bool
-        !voteIsNotCounted = not vCounted
-
         totalAdaIsGreaterThanReturnAda :: Bool
         !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > vReturnAda
 
@@ -119,7 +127,6 @@ mkVoteMinter VoteMinterConfig {..} action ScriptContext
       && traceIfFalse "Vote Nft is missing"              hasVoteNft
       && traceIfFalse "Missing witness on output"        hasWitness
       && traceIfFalse "Wrong number of witnesses minted" onlyMintedOne
-      && traceIfFalse "Vote is counted"                  voteIsNotCounted
       && traceIfFalse "Total ada not high enough"        totalAdaIsGreaterThanReturnAda
 
 mkVoteMinter _ _ _ = traceError "wrong type of script purpose!"

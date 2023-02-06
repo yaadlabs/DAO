@@ -195,11 +195,9 @@ validateConfiguration
     hasTallyNft :: Value -> Bool
     hasTallyNft (Value v) = case M.lookup dcTallyNft v of
       Nothing -> False
-      Just m  -> case M.lookup dcTallyTokenName m of
-        Nothing -> False
-        Just c -> c == 1
+      Just _  -> True
 
-    TallyState {..} = case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
+    TallyState {tsProposal = Upgrade {ptUpgradeMinter},..} = case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
       [] -> traceError "Missing tally NFT"
       [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> unsafeFromBuiltinData $ case cTxOutDatum of
         OutputDatum (Datum dbs) -> dbs
@@ -223,12 +221,6 @@ validateConfiguration
       =  traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradRelativeMajorityPercent)
       && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
 
-    -- Find a the reference input with using the tsProposal TxOutRef
-    Proposal {pType = Upgrade {ptUpgradeMinter}, ..} = case filter ((==tsProposal) . cTxInInfoOutRef) cTxInfoReferenceInputs of
-      [] -> traceError "Missing proposal NFT"
-      [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> convertDatum cTxInfoData cTxOutDatum
-      _ -> traceError "Too many NFT values"
-
     -- Make sure the upgrade token was minted
     hasUpgradeMinterToken :: Bool
     !hasUpgradeMinterToken = case M.lookup ptUpgradeMinter (getValue cTxInfoMint) of
@@ -238,7 +230,7 @@ validateConfiguration
         _ -> False
 
     isAfterTallyEndTime :: Bool
-    isAfterTallyEndTime = (pEndTime + POSIXTime dcProposalTallyEndOffset) `before` cTxInfoValidRange
+    isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` cTxInfoValidRange
 
   in traceIfFalse "Missing configuration nft" hasConfigurationNft
   && traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
