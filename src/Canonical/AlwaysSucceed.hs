@@ -1,4 +1,9 @@
-module Canonical.AlwaysSucceed where
+module Canonical.AlwaysSucceed 
+  ( succeed
+  , succeed1
+  , succeedHash
+  , succeedHash1
+  ) where
 
 import           Canonical.Shared (validatorHash)
 import           Cardano.Api.Shelley (PlutusScript(PlutusScriptSerialised), PlutusScriptV2)

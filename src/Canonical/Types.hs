@@ -1,4 +1,9 @@
-module Canonical.Types where
+module Canonical.Types 
+  ( DynamicConfig(..)
+  , ProposalType(..)
+  , TallyState(..)
+  )
+  where
 
 import           Plutus.V1.Ledger.Address (Address)
 import           Plutus.V1.Ledger.Time (POSIXTime)

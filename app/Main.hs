@@ -1,21 +1,93 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Main where
+module Main (main) where
+
 import           Cardano.Api hiding (TxId)
-import           Options.Generic
-import           Canonical.AlwaysSucceed
-import           Canonical.ConfigurationNft
-import           Canonical.Vote
-import           Canonical.Treasury
+import           Options.Generic 
+  ( Generic
+  , ParseRecord
+  , ParseField
+  , ParseFields
+  , getRecord
+  , getOnly
+  , lispCaseModifiers
+  , parseRecord
+  , parseRecordWithModifiers
+  , parseField
+  , parseFields
+  , readField
+  )
+import           Canonical.AlwaysSucceed (succeed, succeed1, succeedHash, succeedHash1)
+import           Canonical.ConfigurationNft 
+  ( ConfigurationValidatorConfig
+      ( ConfigurationValidatorConfig
+      , cvcConfigNftCurrencySymbol
+      , cvcConfigNftTokenName
+      )
+  , NftConfig(NftConfig, ncTokenName, ncInitialUtxo)
+  , configurationScript 
+  , configurationValidatorHash
+  , nftMinterPolicyId
+  , nftMinter
+  )
+import           Canonical.Vote 
+  ( VoteMinterConfig(..)
+  , VoteValidatorConfig(..)
+  , voteScript
+  , voteMinter
+  , voteMinterPolicyId
+  , voteValidatorHash
+  )
+import           Canonical.Treasury 
+  ( TreasuryValidatorConfig(..)
+  , treasuryScript 
+  , treasuryValidatorHash
+  )
 import           Canonical.Tally
-import           Prelude
-import           Plutus.V1.Ledger.Bytes
-import           Plutus.V1.Ledger.Crypto
-import           Plutus.V1.Ledger.Scripts
-import           Plutus.V1.Ledger.Tx
-import           Plutus.V1.Ledger.Value
-import           Data.String
+  ( TallyNftConfig(..) 
+  , TallyValidatorConfig(..) 
+  , IndexNftConfig(..)
+  , IndexValidatorConfig(..)
+  , indexScript
+  , indexValidatorHash
+  , tallyIndexNftMinter
+  , tallyIndexNftMinterPolicyId
+  , tallyNftMinter
+  , tallyNftMinterPolicyId
+  , tallyScript
+  , tallyValidatorHash
+  )
+import           Prelude 
+  ( IO 
+  , Either(Left, Right) 
+  , Integer
+  , FilePath
+  , Maybe(Nothing)
+  , Show
+  , Read
+  , fmap
+  , read
+  , readsPrec
+  , print
+  , putStrLn
+  , show
+  , span
+  , tail
+  , writeFile
+  , ($)
+  , (<$>)
+  , (>>=)
+  , (=<<)
+  , (++)
+  , (/=)
+  )
+import           Plutus.V1.Ledger.Bytes (getLedgerBytes)
+import           Plutus.V1.Ledger.Crypto (PubKeyHash)
+import           Plutus.V1.Ledger.Scripts (ValidatorHash)
+import           Plutus.V1.Ledger.Tx (TxOutRef(TxOutRef), TxId(TxId))
+import           Plutus.V1.Ledger.Value (TokenName)
+import           Data.String (fromString)
 
 instance Read TokenName where
   readsPrec _ x = [(fromString x, "")]

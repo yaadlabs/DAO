@@ -59,13 +59,13 @@ library
   hs-source-dirs:  src
   ghc-options:
     -fobject-code -fno-ignore-interface-pragmas
-    -fno-omit-interface-pragmas -Wno-unused-packages -Wall -Werror
+    -fno-omit-interface-pragmas -Wno-unused-packages -Wall -Werror -Wmissing-export-lists
 
 executable create-sc
   import:         lang
   hs-source-dirs: app
   main-is:        Main.hs
-  ghc-options:    -threaded -rtsopts -with-rtsopts=-T -Wall -Werror
+  ghc-options:    -threaded -rtsopts -with-rtsopts=-T -Wall -Werror -Wmissing-export-lists
   build-depends:
     , cardano-api
     , optparse-generic

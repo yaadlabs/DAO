@@ -1,4 +1,13 @@
-module Canonical.Vote where
+module Canonical.Vote
+  ( Vote(..) 
+  , VoteDirection(..)
+  , VoteMinterConfig(..)
+  , VoteValidatorConfig(..)
+  , voteScript
+  , voteMinter
+  , voteMinterPolicyId
+  , voteValidatorHash
+  ) where
 
 import           Cardano.Api.Shelley (PlutusScript(PlutusScriptSerialised), PlutusScriptV2)
 import           Codec.Serialise (serialise)

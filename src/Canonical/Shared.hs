@@ -1,4 +1,11 @@
-module Canonical.Shared where
+module Canonical.Shared 
+  ( WrappedMintingPolicyType
+  , convertDatum 
+  , hasSingleToken
+  , mintingPolicyHash
+  , plutonomyMintingPolicyHash
+  , validatorHash 
+  ) where
 
 import           Plutus.V1.Ledger.Scripts
 import           Plutus.V1.Ledger.Value
@@ -14,21 +21,6 @@ import           Codec.Serialise (serialise)
 import qualified Plutonomy
 
 type WrappedMintingPolicyType = BuiltinData -> BuiltinData -> ()
-
-{-# INLINABLE extractDatumBytes #-}
-extractDatumBytes :: [(DatumHash, Datum)] -> DatumHash -> BuiltinData
-extractDatumBytes datums dh = getDatum $ extractDatum datums dh
-
-{-# INLINABLE extractDatum #-}
-extractDatum :: [(DatumHash, Datum)] -> DatumHash -> Datum
-extractDatum datums dh = go datums where
-  go = \case
-    [] -> traceError "Failed to find datum"
-    (x, y):xs ->
-      if x == dh then
-        y
-      else
-        go xs
 
 {-# INLINABLE hasSingleToken #-}
 hasSingleToken :: Value -> CurrencySymbol -> TokenName -> Bool

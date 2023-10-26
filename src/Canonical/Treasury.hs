@@ -1,4 +1,8 @@
-module Canonical.Treasury where
+module Canonical.Treasury
+  ( TreasuryValidatorConfig(..)
+  , treasuryScript
+  , treasuryValidatorHash 
+  ) where
 
 import           Cardano.Api.Shelley (PlutusScript(PlutusScriptSerialised), PlutusScriptV2)
 import           Codec.Serialise (serialise)

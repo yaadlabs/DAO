@@ -1,4 +1,17 @@
-module Canonical.Tally where
+module Canonical.Tally
+  ( IndexValidatorConfig(..)
+  , IndexNftConfig(..)
+  , TallyNftConfig(..)
+  , TallyValidatorConfig(..)
+  , indexScript
+  , indexValidatorHash
+  , tallyIndexNftMinter
+  , tallyIndexNftMinterPolicyId
+  , tallyNftMinter
+  , tallyNftMinterPolicyId
+  , tallyScript
+  , tallyValidatorHash
+  ) where
 
 import           Cardano.Api.Shelley (PlutusScript(PlutusScriptSerialised), PlutusScriptV2)
 import           Codec.Serialise (serialise)

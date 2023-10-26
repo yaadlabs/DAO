@@ -1,4 +1,13 @@
-module Canonical.ConfigurationNft where
+module Canonical.ConfigurationNft 
+  ( ConfigurationValidatorConfig(..)
+  , NftConfig(..)
+  , configurationScript
+  , configurationValidator
+  , configurationValidatorHash
+  , nftMinter
+  , nftMinterPolicyId
+  , validateConfiguration
+  ) where
 
 import           Cardano.Api.Shelley (PlutusScript(PlutusScriptSerialised), PlutusScriptV2)
 import           Codec.Serialise (serialise)
