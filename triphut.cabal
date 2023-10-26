@@ -52,6 +52,7 @@ library
     , plutus-ledger-api
     , plutus-tx
     , plutus-tx-plugin
+    , plutus-simple-model
     , serialise
     , plutonomy
 
