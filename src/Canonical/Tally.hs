@@ -1,24 +1,94 @@
 module Canonical.Tally where
-import           Cardano.Api.Shelley (PlutusScript(..), PlutusScriptV2)
+
+import           Cardano.Api.Shelley (PlutusScript(PlutusScriptSerialised), PlutusScriptV2)
 import           Codec.Serialise (serialise)
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Short as BSS
-import           Plutus.V2.Ledger.Contexts
-import           Plutus.V1.Ledger.Credential
-import           Plutus.V1.Ledger.Interval
-import           Plutus.V1.Ledger.Time
-import           Plutus.V1.Ledger.Address
-import           Plutus.V1.Ledger.Scripts
-import           Plutus.V2.Ledger.Tx
+import           Plutus.V2.Ledger.Contexts 
+  ( TxInfo(TxInfo, txInfoMint, txInfoData, txInfoInputs, txInfoOutputs, txInfoReferenceInputs)
+  , ScriptContext(ScriptContext, scriptContextPurpose, scriptContextTxInfo)
+  , ScriptPurpose(Minting, Spending)
+  , TxInInfo(TxInInfo, txInInfoResolved, txInInfoOutRef)
+  , findTxInByTxOutRef
+  , getContinuingOutputs
+  )
+import           Plutus.V1.Ledger.Credential (Credential(ScriptCredential))
+import           Plutus.V1.Ledger.Interval (before)
+import           Plutus.V1.Ledger.Time (POSIXTimeRange)
+import           Plutus.V1.Ledger.Address (Address(Address, addressCredential))
+import           Plutus.V1.Ledger.Scripts 
+  ( ValidatorHash
+  , Validator(Validator)
+  , MintingPolicy
+  , Script
+  , Datum(Datum)
+  , DatumHash
+  , mkMintingPolicyScript
+  , unMintingPolicyScript
+  )
+import           Plutus.V2.Ledger.Tx 
+  ( TxOutRef
+  , TxOut(TxOut, txOutAddress, txOutDatum, txOutValue)
+  , OutputDatum(OutputDatum, OutputDatumHash, NoOutputDatum)
+  )
 import           Plutus.V1.Ledger.Value as V
-import           PlutusTx
+import           PlutusTx 
+  ( applyCode
+  , compile
+  , liftCode
+  , unstableMakeIsData
+  , makeIsDataIndexed
+  , makeLift
+  , unsafeFromBuiltinData
+  )
 import qualified PlutusTx.AssocMap as M
 import           PlutusTx.AssocMap (Map)
-import           PlutusTx.Prelude
+import           PlutusTx.Prelude 
+  ( Integer 
+  , Bool(True, False)
+  , BuiltinData
+  , BuiltinByteString
+  , Maybe(Just, Nothing)
+  , Eq
+  , all
+  , any
+  , check
+  , divide
+  , filter
+  , foldr
+  , length
+  , map
+  , mempty
+  , modulo
+  , not
+  , otherwise
+  , traceIfFalse
+  , traceError
+  , (.)
+  , (<>)
+  , (+)
+  , (*)
+  , ($)
+  , (&&)
+  , (==)
+  , (||)
+  )
 import qualified Plutonomy
 import           Canonical.Shared
+  ( WrappedMintingPolicyType
+  , convertDatum
+  , hasSingleToken
+  , mintingPolicyHash
+  , validatorHash
+  )
 import           Canonical.Types
-import           Canonical.Vote (Vote(..), VoteDirection(..))
+  ( DynamicConfig(DynamicConfig, dcTallyValidator)
+  , TallyState(TallyState, tsFor, tsAgainst, tsProposalEndTime)
+  )
+import           Canonical.Vote 
+  ( Vote(Vote, vDirection, vOwner, vProposalTokenName, vReturnAda)
+  , VoteDirection(For)
+  )
 
 data IndexNftDatum = IndexNftDatum
   { indIndex :: Integer

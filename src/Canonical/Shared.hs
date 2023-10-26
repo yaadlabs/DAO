@@ -1,4 +1,5 @@
 module Canonical.Shared where
+
 import           Plutus.V1.Ledger.Scripts
 import           Plutus.V1.Ledger.Value
 import           Plutus.V2.Ledger.Tx

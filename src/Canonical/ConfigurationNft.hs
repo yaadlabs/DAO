@@ -1,23 +1,91 @@
 module Canonical.ConfigurationNft where
-import           Cardano.Api.Shelley (PlutusScript(..), PlutusScriptV2)
+
+import           Cardano.Api.Shelley (PlutusScript(PlutusScriptSerialised), PlutusScriptV2)
 import           Codec.Serialise (serialise)
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Short as BSS
-import           Plutus.V1.Ledger.Credential
-import           Plutus.V1.Ledger.Crypto
-import           Plutus.V2.Ledger.Contexts
-import           Plutus.V1.Ledger.Interval
-import           Plutus.V1.Ledger.Time
-import           Plutus.V1.Ledger.Scripts
-import           Plutus.V2.Ledger.Tx
-import           Plutus.V1.Ledger.Value
-import           PlutusTx
+import           Plutus.V1.Ledger.Credential (Credential)
+import           Plutus.V1.Ledger.Crypto (PubKeyHash)
+import           Plutus.V2.Ledger.Contexts 
+  ( ScriptPurpose(Minting)
+  , ScriptContext(ScriptContext, scriptContextPurpose, scriptContextTxInfo)
+  , TxInfo(TxInfo, txInfoData, txInfoInputs, txInfoOutputs, txInfoMint)
+  , TxInInfo(txInInfoOutRef)
+  )
+import           Plutus.V1.Ledger.Interval (before)
+import           Plutus.V1.Ledger.Time (POSIXTime(POSIXTime), POSIXTimeRange)
+import           Plutus.V1.Ledger.Scripts 
+  ( Validator(Validator)
+  , ValidatorHash
+  , DatumHash
+  , Datum(Datum)
+  , MintingPolicy
+  , Script
+  , mkMintingPolicyScript
+  , unMintingPolicyScript
+  )
+import           Plutus.V2.Ledger.Tx 
+  ( TxOutRef
+  , TxOut(TxOut, txOutDatum, txOutValue)
+  , OutputDatum(OutputDatum, OutputDatumHash, NoOutputDatum)
+  )
+import           Plutus.V1.Ledger.Value 
+  ( TokenName
+  , Value(Value)
+  , CurrencySymbol
+  , mpsSymbol
+  , getValue
+  )
+import           PlutusTx 
+  ( makeLift
+  , applyCode
+  , liftCode
+  , compile
+  , unstableMakeIsData
+  , makeIsDataIndexed
+  , unsafeFromBuiltinData
+  )
 import qualified PlutusTx.AssocMap as M
 import           PlutusTx.AssocMap (Map)
-import           PlutusTx.Prelude
+import           PlutusTx.Prelude 
+  ( BuiltinData
+  , Bool(False, True)
+  , Maybe(Just, Nothing)
+  , Integer
+  , any
+  , check
+  , divide
+  , filter
+  , traceIfFalse
+  , traceError
+  , (.)
+  , ($)
+  , (&&)
+  , (==)
+  , (>=)
+  , (+)
+  , (*)
+  )
 import qualified Plutonomy
-import           Canonical.Types
-import           Canonical.Shared
+import           Canonical.Types 
+  ( DynamicConfig
+      ( DynamicConfig
+      , dcUpgradeMajorityPercent
+      , dcUpgradRelativeMajorityPercent
+      , dcTotalVotes
+      , dcTallyNft
+      , dcProposalTallyEndOffset
+      )
+  , TallyState(TallyState, tsFor, tsAgainst, tsProposal, tsProposalEndTime)
+  , ProposalType(Upgrade)
+  )
+import           Canonical.Shared 
+  ( WrappedMintingPolicyType
+  , hasSingleToken
+  , convertDatum
+  , mintingPolicyHash
+  , validatorHash
+  )
 
 data NftConfig = NftConfig
   { ncInitialUtxo :: TxOutRef

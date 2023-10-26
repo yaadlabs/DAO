@@ -1,10 +1,11 @@
 module Canonical.Types where
-import           Plutus.V1.Ledger.Address
-import           Plutus.V1.Ledger.Time
-import           Plutus.V1.Ledger.Value
-import           Plutus.V1.Ledger.Scripts
-import           PlutusTx.Prelude
-import           PlutusTx
+
+import           Plutus.V1.Ledger.Address (Address)
+import           Plutus.V1.Ledger.Time (POSIXTime)
+import           Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
+import           Plutus.V1.Ledger.Scripts (ValidatorHash)
+import           PlutusTx.Prelude (Bool(False), Integer, Eq, (==), (&&))
+import           PlutusTx (unstableMakeIsData)
 
 data ProposalType
   = Upgrade

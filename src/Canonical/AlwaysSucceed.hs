@@ -1,13 +1,16 @@
 module Canonical.AlwaysSucceed where
-import           Canonical.Shared
-import           Cardano.Api.Shelley (PlutusScript(..), PlutusScriptV2)
+
+import           Canonical.Shared (validatorHash)
+import           Cardano.Api.Shelley (PlutusScript(PlutusScriptSerialised), PlutusScriptV2)
 import           Codec.Serialise (serialise)
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Short as SBS
-import           Plutus.V1.Ledger.Scripts
-import           Plutus.V2.Ledger.Contexts
-import           PlutusTx
-import           PlutusTx.Prelude
+import           Plutus.V1.Ledger.Scripts (Validator, ValidatorHash, mkValidatorScript)
+import           Plutus.V2.Ledger.Contexts 
+  ( TxInfo(TxInfo, txInfoId)
+  , ScriptContext(ScriptContext, scriptContextTxInfo))
+import           PlutusTx (compile, unsafeFromBuiltinData)
+import           PlutusTx.Prelude (BuiltinData, Bool(True), check, (.), ($), (==))
 
 succeedValidator :: BuiltinData -> BuiltinData -> BuiltinData -> Bool
 succeedValidator _ _ _ = True

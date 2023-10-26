@@ -1,22 +1,46 @@
 module Canonical.Vote where
-import           Cardano.Api.Shelley (PlutusScript(..), PlutusScriptV2)
+
+import           Cardano.Api.Shelley (PlutusScript(PlutusScriptSerialised), PlutusScriptV2)
 import           Codec.Serialise (serialise)
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Short as BSS
-import           Plutus.V1.Ledger.Address
-import           Plutus.V2.Ledger.Contexts
-import           Plutus.V1.Ledger.Crypto
-import           Plutus.V1.Ledger.Credential
-import           Plutus.V1.Ledger.Interval
-import           Plutus.V1.Ledger.Scripts
-import           Plutus.V1.Ledger.Value
+import           Plutus.V1.Ledger.Address (Address, addressCredential)
+import           Plutus.V2.Ledger.Contexts (TxInInfo(TxInInfo, txInInfoResolved))
+import           Plutus.V1.Ledger.Crypto (PubKeyHash)
+import           Plutus.V1.Ledger.Credential (Credential(ScriptCredential, PubKeyCredential))
+import           Plutus.V1.Ledger.Interval (after)
+import           Plutus.V1.Ledger.Scripts 
+  ( Datum
+  , DatumHash
+  , MintingPolicy
+  , Script
+  , Validator(Validator)
+  , ValidatorHash
+  , mkMintingPolicyScript
+  , unMintingPolicyScript
+  )
+import           Plutus.V1.Ledger.Value 
+  ( CurrencySymbol
+  , TokenName
+  , Value(Value)
+  , adaSymbol
+  , adaToken
+  , getValue
+  , mpsSymbol
+  , valueOf
+  )
 import           Plutus.V2.Ledger.Tx hiding (Mint)
 import           PlutusTx.AssocMap (Map)
 import qualified PlutusTx.AssocMap as M
-import           PlutusTx
+import           PlutusTx (applyCode, compile, liftCode, makeLift, unsafeFromBuiltinData, unstableMakeIsData)
 import           PlutusTx.Prelude
-import           Canonical.Shared
-import           Canonical.Types
+import           Canonical.Shared 
+  ( WrappedMintingPolicyType
+  , convertDatum 
+  , plutonomyMintingPolicyHash
+  , validatorHash
+  )
+import           Canonical.Types (TallyState(TallyState, tsProposalEndTime))
 import qualified Plutonomy
 
 data VoteMinterConfig = VoteMinterConfig

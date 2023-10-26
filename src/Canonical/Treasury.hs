@@ -1,23 +1,81 @@
 module Canonical.Treasury where
-import           Cardano.Api.Shelley (PlutusScript(..), PlutusScriptV2)
+
+import           Cardano.Api.Shelley (PlutusScript(PlutusScriptSerialised), PlutusScriptV2)
 import           Codec.Serialise (serialise)
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Short as BSS
-import           Plutus.V1.Ledger.Address
-import           Plutus.V2.Ledger.Contexts
-import           Plutus.V1.Ledger.Crypto
-import           Plutus.V1.Ledger.Credential
-import           Plutus.V1.Ledger.Interval
-import           Plutus.V1.Ledger.Scripts
-import           Plutus.V1.Ledger.Time
+import           Plutus.V1.Ledger.Address (Address(Address, addressCredential))
+import           Plutus.V1.Ledger.Crypto (PubKeyHash)
+import           Plutus.V1.Ledger.Credential (Credential(ScriptCredential))
+import           Plutus.V1.Ledger.Interval (before)
+import           Plutus.V1.Ledger.Scripts (Datum(Datum), DatumHash, Validator, ValidatorHash)
+import           Plutus.V1.Ledger.Time (POSIXTime(POSIXTime), POSIXTimeRange)
 import           Plutus.V1.Ledger.Value as V
 import           Plutus.V2.Ledger.Tx hiding (Mint)
 import           PlutusTx.AssocMap (Map)
 import qualified PlutusTx.AssocMap as M
-import           PlutusTx
-import           PlutusTx.Prelude
-import           Canonical.Shared
-import qualified Canonical.Types as T
+import           PlutusTx 
+  ( applyCode
+  , compile
+  , unstableMakeIsData
+  , makeIsDataIndexed
+  , makeLift
+  , liftCode
+  , unsafeFromBuiltinData
+  )
+import           PlutusTx.Prelude 
+  ( BuiltinData
+  , Maybe(Nothing, Just)
+  , Bool(False, True)
+  , Integer
+  , check
+  , divide
+  , filter
+  , mapMaybe
+  , mconcat
+  , min
+  , otherwise
+  , traceError
+  , traceIfFalse
+  , (.)
+  , ($)
+  , (+)
+  , (*)
+  , (-)
+  , (&&)
+  , (==)
+  , (/=)
+  , (>=)
+  )
+import           Canonical.Shared (validatorHash)
+import           Canonical.Types
+  ( DynamicConfig
+      ( DynamicConfig
+      , dcUpgradeMajorityPercent
+      , dcUpgradRelativeMajorityPercent
+      , dcGeneralMajorityPercent
+      , dcGeneralRelativeMajorityPercent
+      , dcMaxGeneralDisbursement
+      , dcAgentDisbursementPercent
+      , dcMaxTripDisbursement
+      , dcTripMajorityPercent
+      , dcTripRelativeMajorityPercent
+      , dcTotalVotes
+      , dcTallyNft
+      , dcProposalTallyEndOffset
+      )
+  , ProposalType
+     ( General
+     , Trip
+     , Upgrade
+     , ptGeneralPaymentValue
+     , ptGeneralPaymentAddress
+     , ptTravelAgentAddress
+     , ptTravelerAddress
+     , ptTotalTravelCost
+     )
+  , TallyState(TallyState, tsProposal, tsProposalEndTime, tsFor, tsAgainst)
+  )
 import qualified Plutonomy
 
 -------------------------------------------------------------------------------
@@ -166,7 +224,7 @@ validateTreasury
         Just c -> c == 1
 
     -- filter the reference inputs for the configuration nft
-    T.DynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
+    DynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
       [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
         OutputDatum (Datum dbs) -> dbs
         OutputDatumHash dh -> case M.lookup dh tTxInfoData of
@@ -180,7 +238,7 @@ validateTreasury
       Nothing -> False
       Just {} -> True
 
-    T.TallyState {..} = case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
+    TallyState {..} = case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
       [] -> traceError "Missing tally NFT"
       [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
         OutputDatum (Datum dbs) -> dbs
@@ -204,7 +262,7 @@ validateTreasury
 
   in onlyOneOfThisScript tTxInfoInputs thisValidator thisTxRef
   && case tsProposal of
-      T.Trip {..} ->
+      Trip {..} ->
          let
           hasEnoughVotes :: Bool
           !hasEnoughVotes
@@ -243,7 +301,7 @@ validateTreasury
         && traceIfFalse "Not paying enough to the travel agent address" paidToTravelAgentAddress
         && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
 
-      T.General {..} ->
+      General {..} ->
         let
           hasEnoughVotes :: Bool
           !hasEnoughVotes
@@ -272,7 +330,7 @@ validateTreasury
         && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
         && traceIfFalse "Not paying to the correct address" paidToAddress
 
-      T.Upgrade upgradeMinter ->
+      Upgrade upgradeMinter ->
         let
           hasEnoughVotes :: Bool
           !hasEnoughVotes
