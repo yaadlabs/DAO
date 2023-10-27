@@ -7,9 +7,10 @@ maintainer:    jonathan@Canonicalllc.com
 build-type:    Simple
 copyright: 2021 Canonical LLC
 
-common lang
-  build-depends:    base ^>=4.14
+common common-lang
   default-language: Haskell2010
+
+common common-extensions
   default-extensions:
     DataKinds
     MultiParamTypeClasses
@@ -26,15 +27,22 @@ common lang
     NoImplicitPrelude
     CPP
     DeriveGeneric
+    DerivingStrategies
 
+common common-options
   ghc-options:
     -Wall -Wcompat -Wincomplete-record-updates
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
-    -Wunused-packages
-    -Wno-partial-fields
+    -Wunused-packages -Wmissing-deriving-strategies
+
+common common-deps
+  build-depends:
+    , base ^>=4.14
+    , cardano-api
+    , plutus-ledger-api
 
 library
-  import:          lang
+  import: common-lang, common-deps, common-options, common-extensions
   exposed-modules:
     Canonical.AlwaysSucceed
     Canonical.ConfigurationNft
@@ -47,27 +55,22 @@ library
   build-depends:
     , aeson
     , bytestring
-    , cardano-api
     , containers
-    , plutus-ledger-api
     , plutus-tx
     , plutus-tx-plugin
-    , plutus-simple-model
     , serialise
     , plutonomy
 
   hs-source-dirs:  src
   ghc-options:
     -fobject-code -fno-ignore-interface-pragmas
-    -fno-omit-interface-pragmas -Wno-unused-packages -Wall -Werror -Wmissing-export-lists
+    -fno-omit-interface-pragmas -Wno-unused-packages
 
 executable create-sc
-  import:         lang
+  import: common-lang, common-deps, common-options, common-extensions
   hs-source-dirs: app
   main-is:        Main.hs
-  ghc-options:    -threaded -rtsopts -with-rtsopts=-T -Wall -Werror -Wmissing-export-lists
+  ghc-options:    -threaded -rtsopts -with-rtsopts=-T
   build-depends:
-    , cardano-api
-    , optparse-generic
     , triphut
-    , plutus-ledger-api
+    , optparse-generic

@@ -50,7 +50,25 @@ import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (applyCode, compile, liftCode, makeLift, unsafeFromBuiltinData, unstableMakeIsData)
 import PlutusTx.AssocMap (Map)
 import qualified PlutusTx.AssocMap as M
-import PlutusTx.Prelude
+import PlutusTx.Prelude (
+  Bool (False, True),
+  BuiltinData,
+  Eq,
+  Integer,
+  Maybe (Just, Nothing),
+  any,
+  check,
+  filter,
+  not,
+  traceError,
+  traceIfFalse,
+  ($),
+  (&&),
+  (.),
+  (<),
+  (==),
+  (>),
+ )
 
 data VoteMinterConfig = VoteMinterConfig
   { vmcConfigNftCurrencySymbol :: CurrencySymbol

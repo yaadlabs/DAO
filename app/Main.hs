@@ -160,7 +160,7 @@ data Options = Options
   , tallyValidatorHashOutput :: FilePath
   , indexValidatorNonce :: Integer
   }
-  deriving (Show, Generic)
+  deriving stock (Show, Generic)
 
 instance ParseField PubKeyHash where
   parseField x y z w = fromString <$> parseField x y z w
