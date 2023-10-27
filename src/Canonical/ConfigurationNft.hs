@@ -2,11 +2,9 @@ module Canonical.ConfigurationNft (
   ConfigurationValidatorConfig (..),
   NftConfig (..),
   configurationScript,
-  configurationValidator,
   configurationValidatorHash,
   nftMinter,
   nftMinterPolicyId,
-  validateConfiguration,
 ) where
 
 import Canonical.Shared (
