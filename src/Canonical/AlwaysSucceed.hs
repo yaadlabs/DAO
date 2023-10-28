@@ -8,8 +8,8 @@ module Canonical.AlwaysSucceed (
 import Canonical.Shared (validatorHash)
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 import Codec.Serialise (serialise)
-import qualified Data.ByteString.Lazy as LB
-import qualified Data.ByteString.Short as SBS
+import Data.ByteString.Lazy qualified as LB
+import Data.ByteString.Short qualified as SBS
 import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash, mkValidatorScript)
 import Plutus.V2.Ledger.Contexts (
   ScriptContext (ScriptContext, scriptContextTxInfo),

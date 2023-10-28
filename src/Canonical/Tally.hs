@@ -30,9 +30,9 @@ import Canonical.Vote (
  )
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 import Codec.Serialise (serialise)
-import qualified Data.ByteString.Lazy as BSL
-import qualified Data.ByteString.Short as BSS
-import qualified Plutonomy
+import Data.ByteString.Lazy qualified as BSL
+import Data.ByteString.Short qualified as BSS
+import Plutonomy qualified
 import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Interval (before)
@@ -71,12 +71,11 @@ import PlutusTx (
   unstableMakeIsData,
  )
 import PlutusTx.AssocMap (Map)
-import qualified PlutusTx.AssocMap as M
+import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinByteString,
   BuiltinData,
-  Eq,
   Integer,
   Maybe (Just, Nothing),
   all,
@@ -102,6 +101,7 @@ import PlutusTx.Prelude (
   (==),
   (||),
  )
+import PlutusTx.Prelude qualified as PlutusTx
 
 data IndexNftDatum = IndexNftDatum
   { indIndex :: Integer
@@ -529,7 +529,7 @@ hasExpectedScripts theInputs theTallyValidator voteValidator =
     traceIfFalse "More than one tally input" onlyOneTallyScript
       && traceIfFalse "Invalid script inputs" onlyTallyOrVote
 
-mapInsertWith :: Eq k => (a -> a -> a) -> k -> a -> Map k a -> Map k a
+mapInsertWith :: PlutusTx.Eq k => (a -> a -> a) -> k -> a -> Map k a -> Map k a
 mapInsertWith f k v xs = case M.lookup k xs of
   Nothing -> M.insert k v xs
   Just v' -> M.insert k (f v v') xs

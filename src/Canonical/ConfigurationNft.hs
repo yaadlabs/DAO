@@ -28,9 +28,9 @@ import Canonical.Types (
  )
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 import Codec.Serialise (serialise)
-import qualified Data.ByteString.Lazy as BSL
-import qualified Data.ByteString.Short as BSS
-import qualified Plutonomy
+import Data.ByteString.Lazy qualified as BSL
+import Data.ByteString.Short qualified as BSS
+import Plutonomy qualified
 import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Interval (before)
@@ -73,7 +73,7 @@ import PlutusTx (
   unstableMakeIsData,
  )
 import PlutusTx.AssocMap (Map)
-import qualified PlutusTx.AssocMap as M
+import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinData,

@@ -10,7 +10,8 @@ import Plutus.V1.Ledger.Scripts (ValidatorHash)
 import Plutus.V1.Ledger.Time (POSIXTime)
 import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
 import PlutusTx (unstableMakeIsData)
-import PlutusTx.Prelude (Bool (False), Eq, Integer, (&&), (==))
+import PlutusTx.Prelude (Bool (False), Integer, (&&), (==))
+import PlutusTx.Prelude qualified as PlutusTx
 
 data ProposalType
   = Upgrade
@@ -26,7 +27,7 @@ data ProposalType
       , ptTotalTravelCost :: Integer
       }
 
-instance Eq ProposalType where
+instance PlutusTx.Eq ProposalType where
   x == y = case (x, y) of
     (Upgrade a, Upgrade b) -> a == b
     (General a b, General c d) -> a == c && b == d
@@ -40,7 +41,7 @@ data TallyState = TallyState
   , tsAgainst :: Integer
   }
 
-instance Eq TallyState where
+instance PlutusTx.Eq TallyState where
   TallyState
     { tsProposal = xProposal
     , tsProposalEndTime = xProposalEndTime

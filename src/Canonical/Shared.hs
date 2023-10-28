@@ -7,18 +7,40 @@ module Canonical.Shared (
   validatorHash,
 ) where
 
-import qualified Cardano.Api.Shelley as Shelly
+import Cardano.Api.Shelley qualified as Shelly
 import Codec.Serialise (serialise)
-import qualified Data.ByteString.Lazy as BSL
-import qualified Data.ByteString.Short as BSS
-import qualified Plutonomy
-import Plutus.V1.Ledger.Scripts
-import Plutus.V1.Ledger.Value
-import Plutus.V2.Ledger.Tx
-import PlutusTx
+import Data.ByteString.Lazy qualified as BSL
+import Data.ByteString.Short qualified as BSS
+import Plutonomy qualified
+import Plutus.V1.Ledger.Scripts (
+  Datum (Datum),
+  DatumHash,
+  MintingPolicy,
+  MintingPolicyHash (MintingPolicyHash),
+  Script,
+  ScriptHash (ScriptHash),
+  Validator (Validator),
+  ValidatorHash (ValidatorHash),
+  getMintingPolicy,
+  getScriptHash,
+  getValidator,
+ )
+import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value (Value))
+import Plutus.V2.Ledger.Tx (OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash))
+import PlutusTx (UnsafeFromData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
-import qualified PlutusTx.AssocMap as M
-import PlutusTx.Prelude
+import PlutusTx.AssocMap qualified as M
+import PlutusTx.Prelude (
+  Bool (False),
+  BuiltinData,
+  Maybe (Just),
+  toBuiltin,
+  traceError,
+  ($),
+  (&&),
+  (.),
+  (==),
+ )
 
 type WrappedMintingPolicyType = BuiltinData -> BuiltinData -> ()
 

@@ -28,6 +28,7 @@ common common-extensions
     CPP
     DeriveGeneric
     DerivingStrategies
+    ImportQualifiedPost
 
 common common-options
   ghc-options:

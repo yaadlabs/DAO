@@ -18,9 +18,9 @@ import Canonical.Shared (
 import Canonical.Types (TallyState (TallyState, tsProposalEndTime))
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 import Codec.Serialise (serialise)
-import qualified Data.ByteString.Lazy as BSL
-import qualified Data.ByteString.Short as BSS
-import qualified Plutonomy
+import Data.ByteString.Lazy qualified as BSL
+import Data.ByteString.Short qualified as BSS
+import Plutonomy qualified
 import Plutus.V1.Ledger.Address (Address, addressCredential)
 import Plutus.V1.Ledger.Credential (Credential (PubKeyCredential, ScriptCredential))
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
@@ -49,11 +49,10 @@ import Plutus.V2.Ledger.Contexts (TxInInfo (TxInInfo, txInInfoResolved))
 import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (applyCode, compile, liftCode, makeLift, unsafeFromBuiltinData, unstableMakeIsData)
 import PlutusTx.AssocMap (Map)
-import qualified PlutusTx.AssocMap as M
+import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinData,
-  Eq,
   Integer,
   Maybe (Just, Nothing),
   any,
@@ -69,6 +68,7 @@ import PlutusTx.Prelude (
   (==),
   (>),
  )
+import PlutusTx.Prelude qualified as PlutusTx
 
 data VoteMinterConfig = VoteMinterConfig
   { vmcConfigNftCurrencySymbol :: CurrencySymbol
@@ -79,7 +79,7 @@ makeLift ''VoteMinterConfig
 
 data VoteDirection = For | Against
 
-instance Eq VoteDirection where
+instance PlutusTx.Eq VoteDirection where
   x == y = case (x, y) of
     (For, For) -> True
     (Against, Against) -> True
