@@ -21,16 +21,7 @@ import Canonical.Types (
     dcUpgradRelativeMajorityPercent,
     dcUpgradeMajorityPercent
   ),
-  ProposalType (
-    General,
-    Trip,
-    Upgrade,
-    ptGeneralPaymentAddress,
-    ptGeneralPaymentValue,
-    ptTotalTravelCost,
-    ptTravelAgentAddress,
-    ptTravelerAddress
-  ),
+  ProposalType (General, Trip, Upgrade),
   TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
@@ -268,7 +259,7 @@ validateTreasury
      in
       onlyOneOfThisScript tTxInfoInputs thisValidator thisTxRef
         && case tsProposal of
-          Trip {..} ->
+          Trip travelAgentAddress travelerAddress totalTravelCost ->
             let
               hasEnoughVotes :: Bool
               !hasEnoughVotes =
@@ -277,13 +268,13 @@ validateTreasury
 
               -- Get the disbursed amount
               disbursedAmount :: Value
-              !disbursedAmount = V.singleton adaSymbol adaToken (min dcMaxTripDisbursement ptTotalTravelCost)
+              !disbursedAmount = V.singleton adaSymbol adaToken (min dcMaxTripDisbursement totalTravelCost)
 
               travelAgentLovelaces :: Integer
-              !travelAgentLovelaces = (ptTotalTravelCost * dcAgentDisbursementPercent) `divide` 1000
+              !travelAgentLovelaces = (totalTravelCost * dcAgentDisbursementPercent) `divide` 1000
 
               travelerLovelaces :: Integer
-              !travelerLovelaces = ptTotalTravelCost - travelAgentLovelaces
+              !travelerLovelaces = totalTravelCost - travelAgentLovelaces
 
               -- Make sure the disbursed amount is less than the max
               -- Find the total value returned to the script address
@@ -297,16 +288,17 @@ validateTreasury
 
               -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
               paidToTravelAgentAddress :: Bool
-              !paidToTravelAgentAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs ptTravelAgentAddress) >= travelAgentLovelaces
+              !paidToTravelAgentAddress =
+                lovelacesOf (valuePaidTo' tTxInfoOutputs travelAgentAddress) >= travelAgentLovelaces
 
               paidToTravelerAddress :: Bool
-              !paidToTravelerAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs ptTravelerAddress) >= travelerLovelaces
+              !paidToTravelerAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs travelerAddress) >= travelerLovelaces
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
                 && traceIfFalse "Not paying enough to the travel agent address" paidToTravelAgentAddress
                 && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
-          General {..} ->
+          General generalPaymentAddress generalPaymentValue ->
             let
               hasEnoughVotes :: Bool
               !hasEnoughVotes =
@@ -315,7 +307,7 @@ validateTreasury
 
               -- Get the disbursed amount
               disbursedAmount :: Value
-              !disbursedAmount = V.singleton adaSymbol adaToken (min dcMaxGeneralDisbursement ptGeneralPaymentValue)
+              !disbursedAmount = V.singleton adaSymbol adaToken (min dcMaxGeneralDisbursement generalPaymentValue)
 
               -- Make sure the disbursed amount is less than the max
               -- Find the total value returned to the script address
@@ -329,7 +321,7 @@ validateTreasury
 
               -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
               paidToAddress :: Bool
-              !paidToAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs ptGeneralPaymentAddress) >= ptGeneralPaymentValue
+              !paidToAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs generalPaymentAddress) >= generalPaymentValue
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough

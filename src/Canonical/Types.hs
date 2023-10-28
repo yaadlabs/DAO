@@ -13,26 +13,34 @@ import PlutusTx (unstableMakeIsData)
 import PlutusTx.Prelude (Bool (False), Integer, (&&), (==))
 import PlutusTx.Prelude qualified as PlutusTx
 
+{- | This represents the three possible types of proposals.
+     A `Trip` proposal, a `General` proposal or an `Upgrade` proposal.
+-}
 data ProposalType
-  = Upgrade
-      { ptUpgradeMinter :: CurrencySymbol
-      }
-  | General
-      { ptGeneralPaymentAddress :: Address
-      , ptGeneralPaymentValue :: Integer
-      }
-  | Trip
-      { ptTravelAgentAddress :: Address
-      , ptTravelerAddress :: Address
-      , ptTotalTravelCost :: Integer
-      }
+  = -- | Upgrade a proposal
+    Upgrade
+      CurrencySymbol
+      -- ^ Symbol of the upgrade minting policy
+  | -- | A general proposal
+    General
+      Address
+      -- ^ General payment address
+      Integer
+      -- ^ General payment amount
+  | -- | A trip proposal
+    Trip
+      Address
+      -- ^ Travel agent address
+      Address
+      -- ^ Traveller address
+      Integer
+      -- ^ Total travel cost
 
 instance PlutusTx.Eq ProposalType where
-  x == y = case (x, y) of
-    (Upgrade a, Upgrade b) -> a == b
-    (General a b, General c d) -> a == c && b == d
-    (Trip a b c, Trip d e f) -> a == d && b == e && c == f
-    _ -> False
+  Upgrade a == Upgrade b = a == b
+  General a b == General c d = a == c && b == d
+  Trip a b c == Trip d e f = a == d && b == e && c == f
+  _ == _ = False
 
 data TallyState = TallyState
   { tsProposal :: ProposalType
