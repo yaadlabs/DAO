@@ -98,7 +98,7 @@ data TreasuryTxInInfo = TreasuryTxInInfo
   , tTxInInfoResolved :: TreasuryTxOut
   }
 
-data TreasuryScriptPurpose = TreasurySpend TxOutRef
+newtype TreasuryScriptPurpose = TreasurySpend TxOutRef
 
 data TreasuryScriptContext = TreasuryScriptContext
   { tScriptContextTxInfo :: TreasuryTxInfo

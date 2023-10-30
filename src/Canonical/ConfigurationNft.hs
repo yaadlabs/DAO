@@ -195,7 +195,7 @@ data ConfigurationTxInInfo = ConfigurationTxInInfo
   , cTxInInfoResolved :: ConfigurationTxOut
   }
 
-data ConfigurationScriptPurpose = ConfigurationSpend TxOutRef
+newtype ConfigurationScriptPurpose = ConfigurationSpend TxOutRef
 
 data ConfigurationScriptContext = ConfigurationScriptContext
   { cScriptContextTxInfo :: ConfigurationTxInfo

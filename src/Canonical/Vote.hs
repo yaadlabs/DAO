@@ -115,7 +115,7 @@ data VoteMinterTxInInfo = VoteMinterTxInInfo
   , vmTxInInfoResolved :: VoteMinterTxOut
   }
 
-data VoteMinterScriptPurpose = VMMinting CurrencySymbol
+newtype VoteMinterScriptPurpose = VMMinting CurrencySymbol
 
 data VoteMinterScriptContext = VoteMinterScriptContext
   { vmScriptContextTxInfo :: VoteMinterTxInfo

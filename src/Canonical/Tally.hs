@@ -103,7 +103,7 @@ import PlutusTx.Prelude (
  )
 import PlutusTx.Prelude qualified as PlutusTx
 
-data IndexNftDatum = IndexNftDatum
+newtype IndexNftDatum = IndexNftDatum
   { indIndex :: Integer
   }
 
@@ -420,7 +420,7 @@ data TallyTxInInfo = TallyTxInInfo
   , tTxInInfoResolved :: TallyTxOut
   }
 
-data TallyScriptPurpose = TallySpend TxOutRef
+newtype TallyScriptPurpose = TallySpend TxOutRef
 
 data TallyScriptContext = TallyScriptContext
   { tScriptContextTxInfo :: TallyTxInfo
