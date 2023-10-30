@@ -1,4 +1,4 @@
-module Canonical.ConfigurationNft (
+module Triphut.ConfigurationNft (
   ConfigurationValidatorConfig (..),
   NftConfig (..),
   configurationScript,
@@ -7,25 +7,6 @@ module Canonical.ConfigurationNft (
   nftMinterPolicyId,
 ) where
 
-import Canonical.Shared (
-  WrappedMintingPolicyType,
-  convertDatum,
-  hasSingleToken,
-  mintingPolicyHash,
-  validatorHash,
- )
-import Canonical.Types (
-  DynamicConfig (
-    DynamicConfig,
-    dcProposalTallyEndOffset,
-    dcTallyNft,
-    dcTotalVotes,
-    dcUpgradRelativeMajorityPercent,
-    dcUpgradeMajorityPercent
-  ),
-  ProposalType (Upgrade),
-  TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
- )
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
@@ -92,6 +73,25 @@ import PlutusTx.Prelude (
   (.),
   (==),
   (>=),
+ )
+import Triphut.Shared (
+  WrappedMintingPolicyType,
+  convertDatum,
+  hasSingleToken,
+  mintingPolicyHash,
+  validatorHash,
+ )
+import Triphut.Types (
+  DynamicConfig (
+    DynamicConfig,
+    dcProposalTallyEndOffset,
+    dcTallyNft,
+    dcTotalVotes,
+    dcUpgradRelativeMajorityPercent,
+    dcUpgradeMajorityPercent
+  ),
+  ProposalType (Upgrade),
+  TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
 
 data NftConfig = NftConfig

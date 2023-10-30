@@ -3,8 +3,29 @@
 
 module Main (main) where
 
-import Canonical.AlwaysSucceed (succeed, succeed1, succeedHash, succeedHash1)
-import Canonical.ConfigurationNft (
+import Cardano.Api hiding (TxId)
+import Data.String (fromString)
+import Options.Generic (
+  Generic,
+  ParseField,
+  ParseFields,
+  ParseRecord,
+  getOnly,
+  getRecord,
+  lispCaseModifiers,
+  parseField,
+  parseFields,
+  parseRecord,
+  parseRecordWithModifiers,
+  readField,
+ )
+import Plutus.V1.Ledger.Bytes (getLedgerBytes)
+import Plutus.V1.Ledger.Crypto (PubKeyHash)
+import Plutus.V1.Ledger.Scripts (ValidatorHash)
+import Plutus.V1.Ledger.Tx (TxId (TxId), TxOutRef (TxOutRef))
+import Plutus.V1.Ledger.Value (TokenName)
+import Triphut.AlwaysSucceed (succeed, succeed1, succeedHash, succeedHash1)
+import Triphut.ConfigurationNft (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
     cvcConfigNftCurrencySymbol,
@@ -16,7 +37,7 @@ import Canonical.ConfigurationNft (
   nftMinter,
   nftMinterPolicyId,
  )
-import Canonical.Tally (
+import Triphut.Tally (
   IndexNftConfig (IndexNftConfig, incIndexValidator, incInitialUtxo, incTokenName),
   IndexValidatorConfig (
     IndexValidatorConfig,
@@ -45,7 +66,7 @@ import Canonical.Tally (
   tallyScript,
   tallyValidatorHash,
  )
-import Canonical.Treasury (
+import Triphut.Treasury (
   TreasuryValidatorConfig (
     TreasuryValidatorConfig,
     tvcConfigNftCurrencySymbol,
@@ -54,7 +75,7 @@ import Canonical.Treasury (
   treasuryScript,
   treasuryValidatorHash,
  )
-import Canonical.Vote (
+import Triphut.Vote (
   VoteMinterConfig (
     VoteMinterConfig,
     vmcConfigNftCurrencySymbol,
@@ -70,27 +91,6 @@ import Canonical.Vote (
   voteScript,
   voteValidatorHash,
  )
-import Cardano.Api hiding (TxId)
-import Data.String (fromString)
-import Options.Generic (
-  Generic,
-  ParseField,
-  ParseFields,
-  ParseRecord,
-  getOnly,
-  getRecord,
-  lispCaseModifiers,
-  parseField,
-  parseFields,
-  parseRecord,
-  parseRecordWithModifiers,
-  readField,
- )
-import Plutus.V1.Ledger.Bytes (getLedgerBytes)
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
-import Plutus.V1.Ledger.Scripts (ValidatorHash)
-import Plutus.V1.Ledger.Tx (TxId (TxId), TxOutRef (TxOutRef))
-import Plutus.V1.Ledger.Value (TokenName)
 import Prelude (
   Either (Left, Right),
   FilePath,

@@ -32,26 +32,31 @@ common common-extensions
 
 common common-options
   ghc-options:
-    -Wall -Werror -Wcompat -Wincomplete-record-updates
+    -Wall -Wcompat -Wincomplete-record-updates
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -Wunused-packages -Wmissing-deriving-strategies
 
-common common-deps
+common common-depends
   build-depends:
     , base ^>=4.14
     , cardano-api
     , plutus-ledger-api
 
+common common-test-depends
+  build-depends:
+   , plutus-simple-model
+   , tasty
+
 library
-  import: common-lang, common-deps, common-options, common-extensions
+  import: common-lang, common-depends, common-options, common-extensions
   exposed-modules:
-    Canonical.AlwaysSucceed
-    Canonical.ConfigurationNft
-    Canonical.Vote
-    Canonical.Treasury
-    Canonical.Types
-    Canonical.Shared
-    Canonical.Tally
+    Triphut.AlwaysSucceed
+    Triphut.ConfigurationNft
+    Triphut.Vote
+    Triphut.Treasury
+    Triphut.Types
+    Triphut.Shared
+    Triphut.Tally
 
   build-depends:
     , aeson
@@ -62,16 +67,30 @@ library
     , serialise
     , plutonomy
 
-  hs-source-dirs:  src
+  hs-source-dirs:  triphut
   ghc-options:
     -fobject-code -fno-ignore-interface-pragmas
     -fno-omit-interface-pragmas -Wno-unused-packages
 
+library triphut-specs
+  import: common-lang, common-depends, common-options, common-extensions, common-test-depends
+  hs-source-dirs: triphut-specs
+  build-depends:
+    , triphut
+
 executable create-sc
-  import: common-lang, common-deps, common-options, common-extensions
+  import: common-lang, common-depends, common-options, common-extensions
   hs-source-dirs: app
   main-is:        Main.hs
   ghc-options:    -threaded -rtsopts -with-rtsopts=-T
   build-depends:
     , triphut
     , optparse-generic
+
+test-suite triphut-test
+  import: common-lang, common-depends, common-options, common-extensions, common-test-depends
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs: triphut-test
+  build-depends:
+    , triphut-specs

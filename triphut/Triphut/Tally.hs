@@ -1,4 +1,4 @@
-module Canonical.Tally (
+module Triphut.Tally (
   IndexValidatorConfig (..),
   IndexNftConfig (..),
   TallyNftConfig (..),
@@ -13,21 +13,6 @@ module Canonical.Tally (
   tallyValidatorHash,
 ) where
 
-import Canonical.Shared (
-  WrappedMintingPolicyType,
-  convertDatum,
-  hasSingleToken,
-  mintingPolicyHash,
-  validatorHash,
- )
-import Canonical.Types (
-  DynamicConfig (DynamicConfig, dcTallyValidator),
-  TallyState (TallyState, tsAgainst, tsFor, tsProposalEndTime),
- )
-import Canonical.Vote (
-  Vote (Vote, vDirection, vOwner, vProposalTokenName, vReturnAda),
-  VoteDirection (For),
- )
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
@@ -102,6 +87,21 @@ import PlutusTx.Prelude (
   (||),
  )
 import PlutusTx.Prelude qualified as PlutusTx
+import Triphut.Shared (
+  WrappedMintingPolicyType,
+  convertDatum,
+  hasSingleToken,
+  mintingPolicyHash,
+  validatorHash,
+ )
+import Triphut.Types (
+  DynamicConfig (DynamicConfig, dcTallyValidator),
+  TallyState (TallyState, tsAgainst, tsFor, tsProposalEndTime),
+ )
+import Triphut.Vote (
+  Vote (Vote, vDirection, vOwner, vProposalTokenName, vReturnAda),
+  VoteDirection (For),
+ )
 
 data IndexNftDatum = IndexNftDatum
   { indIndex :: Integer

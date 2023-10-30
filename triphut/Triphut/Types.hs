@@ -1,4 +1,4 @@
-module Canonical.Types (
+module Triphut.Types (
   DynamicConfig (..),
   ProposalType (..),
   TallyState (..),

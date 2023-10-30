@@ -1,29 +1,9 @@
-module Canonical.Treasury (
+module Triphut.Treasury (
   TreasuryValidatorConfig (..),
   treasuryScript,
   treasuryValidatorHash,
 ) where
 
-import Canonical.Shared (validatorHash)
-import Canonical.Types (
-  DynamicConfig (
-    DynamicConfig,
-    dcAgentDisbursementPercent,
-    dcGeneralMajorityPercent,
-    dcGeneralRelativeMajorityPercent,
-    dcMaxGeneralDisbursement,
-    dcMaxTripDisbursement,
-    dcProposalTallyEndOffset,
-    dcTallyNft,
-    dcTotalVotes,
-    dcTripMajorityPercent,
-    dcTripRelativeMajorityPercent,
-    dcUpgradRelativeMajorityPercent,
-    dcUpgradeMajorityPercent
-  ),
-  ProposalType (General, Trip, Upgrade),
-  TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
- )
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
@@ -71,6 +51,26 @@ import PlutusTx.Prelude (
   (/=),
   (==),
   (>=),
+ )
+import Triphut.Shared (validatorHash)
+import Triphut.Types (
+  DynamicConfig (
+    DynamicConfig,
+    dcAgentDisbursementPercent,
+    dcGeneralMajorityPercent,
+    dcGeneralRelativeMajorityPercent,
+    dcMaxGeneralDisbursement,
+    dcMaxTripDisbursement,
+    dcProposalTallyEndOffset,
+    dcTallyNft,
+    dcTotalVotes,
+    dcTripMajorityPercent,
+    dcTripRelativeMajorityPercent,
+    dcUpgradRelativeMajorityPercent,
+    dcUpgradeMajorityPercent
+  ),
+  ProposalType (General, Trip, Upgrade),
+  TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
 
 -------------------------------------------------------------------------------

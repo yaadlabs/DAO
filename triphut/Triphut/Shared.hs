@@ -1,4 +1,4 @@
-module Canonical.Shared (
+module Triphut.Shared (
   WrappedMintingPolicyType,
   convertDatum,
   hasSingleToken,

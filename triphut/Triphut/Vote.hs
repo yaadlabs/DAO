@@ -1,4 +1,4 @@
-module Canonical.Vote (
+module Triphut.Vote (
   Vote (..),
   VoteDirection (..),
   VoteMinterConfig (..),
@@ -9,13 +9,6 @@ module Canonical.Vote (
   voteValidatorHash,
 ) where
 
-import Canonical.Shared (
-  WrappedMintingPolicyType,
-  convertDatum,
-  plutonomyMintingPolicyHash,
-  validatorHash,
- )
-import Canonical.Types (TallyState (TallyState, tsProposalEndTime))
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
@@ -69,6 +62,13 @@ import PlutusTx.Prelude (
   (>),
  )
 import PlutusTx.Prelude qualified as PlutusTx
+import Triphut.Shared (
+  WrappedMintingPolicyType,
+  convertDatum,
+  plutonomyMintingPolicyHash,
+  validatorHash,
+ )
+import Triphut.Types (TallyState (TallyState, tsProposalEndTime))
 
 data VoteMinterConfig = VoteMinterConfig
   { vmcConfigNftCurrencySymbol :: CurrencySymbol
