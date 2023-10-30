@@ -18,6 +18,7 @@ import Canonical.Shared (
   convertDatum,
   hasOneOfToken,
   hasSingleToken,
+  hasSymbolInValue,
   isScriptCredential,
   mintingPolicyHash,
   validatorHash,
@@ -569,9 +570,7 @@ validateTally
           _ -> traceError "Too many vote nfts"
 
       hasVoteWitness :: Value -> Bool
-      hasVoteWitness (Value v) = case M.lookup tdcVoteCurrencySymbol v of
-        Nothing -> False
-        Just _ -> True
+      hasVoteWitness = hasSymbolInValue tdcVoteFungibleCurrencySymbol
 
       thisTallyTokenName :: TokenName
       !thisTallyTokenName = case M.lookup tdcTallyNft (getValue oldValue) of

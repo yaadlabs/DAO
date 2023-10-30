@@ -4,7 +4,13 @@ module Canonical.Treasury (
   treasuryValidatorHash,
 ) where
 
-import Canonical.Shared (hasOneOfToken, isScriptCredential, validatorHash)
+import Canonical.Shared (
+  convertDatum,
+  hasOneOfToken,
+  hasSymbolInValue,
+  isScriptCredential,
+  validatorHash,
+ )
 import Canonical.Types (
   DynamicConfig (
     DynamicConfig,
@@ -42,7 +48,7 @@ import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Interval (before)
-import Plutus.V1.Ledger.Scripts (Datum (Datum), DatumHash, Validator, ValidatorHash)
+import Plutus.V1.Ledger.Scripts (Datum, DatumHash, Validator, ValidatorHash)
 import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime), POSIXTimeRange)
 import Plutus.V1.Ledger.Value as V
 import Plutus.V2.Ledger.Tx hiding (Mint)
@@ -220,29 +226,17 @@ validateTreasury
       hasConfigurationNft :: Value -> Bool
       hasConfigurationNft = hasOneOfToken tvcConfigNftCurrencySymbol tvcConfigNftTokenName
 
+      hasTallyNft :: Value -> Bool
+      hasTallyNft = hasSymbolInValue dcTallyNft
+
       -- filter the reference inputs for the configuration nft
       DynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
-        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
-          OutputDatum (Datum dbs) -> dbs
-          OutputDatumHash dh -> case M.lookup dh tTxInfoData of
-            Just (Datum dbs) -> dbs
-            _ -> traceError "Missing datum"
-          NoOutputDatum -> traceError "Script input missing datum hash"
+        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
         _ -> traceError "Too many NFT values"
-
-      hasTallyNft :: Value -> Bool
-      hasTallyNft (Value v) = case M.lookup dcTallyNft v of
-        Nothing -> False
-        Just {} -> True
 
       TallyState {..} = case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
         [] -> traceError "Missing tally NFT"
-        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
-          OutputDatum (Datum dbs) -> dbs
-          OutputDatumHash dh -> case M.lookup dh tTxInfoData of
-            Just (Datum dbs) -> dbs
-            _ -> traceError "Missing datum"
-          NoOutputDatum -> traceError "Script input missing datum hash"
+        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
         _ -> traceError "Too many NFT values"
 
       totalVotes :: Integer

@@ -13,6 +13,7 @@ import Canonical.Shared (
   WrappedMintingPolicyType,
   convertDatum,
   hasOneOfToken,
+  hasSymbolInValue,
   plutonomyMintingPolicyHash,
   validatorHash,
  )
@@ -39,7 +40,7 @@ import Plutus.V1.Ledger.Scripts (
 import Plutus.V1.Ledger.Value (
   CurrencySymbol,
   TokenName,
-  Value (Value),
+  Value,
   adaSymbol,
   adaToken,
   getValue,
@@ -213,9 +214,7 @@ mkVoteMinter
 
         -- Find the reference input with the Tally nft currency symbol
         hasTallyNft :: Value -> Bool
-        hasTallyNft (Value v) = case M.lookup vmdcTallyNft v of
-          Nothing -> False
-          Just _ -> True
+        hasTallyNft = hasSymbolInValue vmdcTallyNft
 
         TallyState {..} = case filter (hasTallyNft . txOutValue . txInInfoResolved) (unsafeFromBuiltinData vmTxInfoReferenceInputs) of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum theData txOutDatum
@@ -416,9 +415,7 @@ validateVote
             !isSignedByOwner = any ((== addressCredential vOwner) . PubKeyCredential) (unsafeFromBuiltinData vTxInfoSignatories :: [PubKeyHash])
 
             hasVoteToken :: Value -> Bool
-            hasVoteToken (Value v) = case M.lookup (unsafeFromBuiltinData vdcVoteCurrencySymbol) v of
-              Nothing -> False
-              Just _ -> True
+            hasVoteToken = hasSymbolInValue (unsafeFromBuiltinData vdcVoteCurrencySymbol)
 
             voteTokenAreAllBurned :: Bool
             !voteTokenAreAllBurned = not $ any (hasVoteToken . vTxOutValue) (unsafeFromBuiltinData vTxInfoOutputs :: [VoteTxOut])
