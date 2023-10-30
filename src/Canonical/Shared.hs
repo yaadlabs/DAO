@@ -2,6 +2,9 @@ module Canonical.Shared (
   WrappedMintingPolicyType,
   convertDatum,
   hasSingleToken,
+  hasSymbolInValue,
+  hasOneOfToken,
+  isScriptCredential,
   mintingPolicyHash,
   plutonomyMintingPolicyHash,
   validatorHash,
@@ -12,6 +15,7 @@ import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as BSS
 import Plutonomy qualified
+import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Scripts (
   Datum (Datum),
   DatumHash,
@@ -31,9 +35,11 @@ import PlutusTx (UnsafeFromData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
-  Bool (False),
+  Bool (False, True),
   BuiltinData,
-  Maybe (Just),
+  Maybe (Just, Nothing),
+  const,
+  maybe,
   toBuiltin,
   traceError,
   ($),
@@ -44,13 +50,31 @@ import PlutusTx.Prelude (
 
 type WrappedMintingPolicyType = BuiltinData -> BuiltinData -> ()
 
+{-# INLINEABLE isScriptCredential #-}
+isScriptCredential :: Credential -> Bool
+isScriptCredential = \case
+  ScriptCredential _ -> True
+  _ -> False
+
+{-# INLINEABLE hasSymbolInValue #-}
+hasSymbolInValue :: CurrencySymbol -> Value -> Bool
+hasSymbolInValue symbol (Value value) = maybe False (const True) (M.lookup symbol value)
+
 {-# INLINEABLE hasSingleToken #-}
 hasSingleToken :: Value -> CurrencySymbol -> TokenName -> Bool
 hasSingleToken (Value v) s t = case M.lookup s v of
   Just m -> case M.toList m of
     [(t', c)] -> t' == t && c == 1
     _ -> traceError "wrong number of tokens with policy id"
-  _ -> False
+  Nothing -> False
+
+{-# INLINEABLE hasOneOfToken #-}
+hasOneOfToken :: CurrencySymbol -> TokenName -> Value -> Bool
+hasOneOfToken symbol tokenName (Value value) = case M.lookup symbol value of
+  Just map' -> case M.lookup tokenName map' of
+    Just c -> c == 1
+    Nothing -> False
+  Nothing -> False
 
 {-# INLINEABLE convertDatum #-}
 convertDatum :: UnsafeFromData a => Map DatumHash Datum -> OutputDatum -> a

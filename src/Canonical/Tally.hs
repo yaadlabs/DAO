@@ -16,7 +16,9 @@ module Canonical.Tally (
 import Canonical.Shared (
   WrappedMintingPolicyType,
   convertDatum,
+  hasOneOfToken,
   hasSingleToken,
+  isScriptCredential,
   mintingPolicyHash,
   validatorHash,
  )
@@ -37,7 +39,7 @@ import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Interval (before)
 import Plutus.V1.Ledger.Scripts (
-  Datum (Datum),
+  Datum,
   DatumHash,
   MintingPolicy,
   Script,
@@ -57,7 +59,7 @@ import Plutus.V2.Ledger.Contexts (
   getContinuingOutputs,
  )
 import Plutus.V2.Ledger.Tx (
-  OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash),
+  OutputDatum,
   TxOut (TxOut, txOutAddress, txOutDatum, txOutValue),
   TxOutRef,
  )
@@ -314,11 +316,7 @@ mkTallyNftMinter
     } =
     let
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft (Value v) = case M.lookup tncConfigNftCurrencySymbol v of
-        Nothing -> False
-        Just m -> case M.lookup tncConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      hasConfigurationNft = hasOneOfToken tncConfigNftCurrencySymbol tncConfigNftTokenName
 
       DynamicConfig {..} = case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
         [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
@@ -337,19 +335,10 @@ mkTallyNftMinter
         [x] -> x
         _ -> traceError "wrong number of outputs"
 
-      TallyState {..} = unsafeFromBuiltinData $ case outputDatum of
-        OutputDatum (Datum dbs) -> dbs
-        OutputDatumHash dh -> case M.lookup dh txInfoData of
-          Just (Datum dbs) -> dbs
-          _ -> traceError "Missing datum"
-        NoOutputDatum -> traceError "Script input missing datum hash"
+      TallyState {..} = convertDatum txInfoData outputDatum
 
       hasIndexNft :: Value -> Bool
-      hasIndexNft (Value v) = case M.lookup tncIndexNftPolicyId v of
-        Nothing -> False
-        Just m -> case M.lookup tncIndexNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      hasIndexNft = hasOneOfToken tncIndexNftPolicyId tncIndexNftTokenName
 
       IndexNftDatum {..} = case filter (hasIndexNft . txOutValue . txInInfoResolved) txInfoInputs of
         [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
@@ -498,11 +487,6 @@ ownValueAndValidator ins txOutRef = go ins
             _ -> traceError "Impossible. Expected ScriptCredential"
           else go xs
 
-isScriptCredential :: Credential -> Bool
-isScriptCredential = \case
-  ScriptCredential _ -> True
-  _ -> False
-
 hasExpectedScripts :: [TallyTxInInfo] -> ValidatorHash -> ValidatorHash -> Bool
 hasExpectedScripts theInputs theTallyValidator voteValidator =
   let
@@ -563,11 +547,7 @@ validateTally
     } =
     let
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft (Value v) = case M.lookup tvcConfigNftCurrencySymbol v of
-        Nothing -> False
-        Just m -> case M.lookup tvcConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      hasConfigurationNft = hasOneOfToken tvcConfigNftCurrencySymbol tvcConfigNftTokenName
 
       TallyDynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
         [TallyTxInInfo {tTxInInfoResolved = TallyTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum

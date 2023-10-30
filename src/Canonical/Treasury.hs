@@ -4,7 +4,7 @@ module Canonical.Treasury (
   treasuryValidatorHash,
 ) where
 
-import Canonical.Shared (validatorHash)
+import Canonical.Shared (hasOneOfToken, isScriptCredential, validatorHash)
 import Canonical.Types (
   DynamicConfig (
     DynamicConfig,
@@ -181,11 +181,6 @@ ownValueAndValidator ins txOutRef = go ins
             _ -> traceError "Impossible. Expected ScriptCredential"
           else go xs
 
-isScriptCredential :: Credential -> Bool
-isScriptCredential = \case
-  ScriptCredential _ -> True
-  _ -> False
-
 onlyOneOfThisScript :: [TreasuryTxInInfo] -> ValidatorHash -> TxOutRef -> Bool
 onlyOneOfThisScript ins vh expectedRef = go ins
   where
@@ -223,11 +218,7 @@ validateTreasury
       (!inputValue, !thisValidator) = ownValueAndValidator tTxInfoInputs thisTxRef
 
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft (Value v) = case M.lookup tvcConfigNftCurrencySymbol v of
-        Nothing -> False
-        Just m -> case M.lookup tvcConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      hasConfigurationNft = hasOneOfToken tvcConfigNftCurrencySymbol tvcConfigNftTokenName
 
       -- filter the reference inputs for the configuration nft
       DynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of

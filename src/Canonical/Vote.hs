@@ -12,6 +12,7 @@ module Canonical.Vote (
 import Canonical.Shared (
   WrappedMintingPolicyType,
   convertDatum,
+  hasOneOfToken,
   plutonomyMintingPolicyHash,
   validatorHash,
  )
@@ -196,11 +197,7 @@ mkVoteMinter
     Mint ->
       let
         hasConfigurationNft :: Value -> Bool
-        hasConfigurationNft (Value v) = case M.lookup vmcConfigNftCurrencySymbol v of
-          Nothing -> False
-          Just m -> case M.lookup vmcConfigNftTokenName m of
-            Nothing -> False
-            Just c -> c == 1
+        hasConfigurationNft = hasOneOfToken vmcConfigNftCurrencySymbol vmcConfigNftTokenName
 
         theData :: Map DatumHash Datum
         theData = unsafeFromBuiltinData vmTxInfoData
@@ -228,11 +225,7 @@ mkVoteMinter
         !proposalIsActive = tsProposalEndTime `after` (unsafeFromBuiltinData vmTxInfoValidRange)
 
         hasWitness :: Bool
-        !hasWitness = case M.lookup thisCurrencySymbol (getValue voteValue) of
-          Nothing -> False
-          Just m -> case M.lookup vmdcVoteTokenName m of
-            Nothing -> False
-            Just c -> c == 1
+        !hasWitness = hasOneOfToken thisCurrencySymbol vmdcVoteTokenName voteValue
 
         onlyMintedOne :: Bool
         !onlyMintedOne = case M.lookup thisCurrencySymbol (getValue vmTxInfoMint) of
@@ -399,11 +392,7 @@ validateVote
     } =
     let
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft (Value v) = case M.lookup vvcConfigNftCurrencySymbol v of
-        Nothing -> False
-        Just m -> case M.lookup vvcConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      hasConfigurationNft = hasOneOfToken vvcConfigNftCurrencySymbol vvcConfigNftTokenName
 
       VoteDynamicConfig {..} = case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
         [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum

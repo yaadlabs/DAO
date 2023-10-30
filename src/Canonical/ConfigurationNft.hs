@@ -10,7 +10,9 @@ module Canonical.ConfigurationNft (
 import Canonical.Shared (
   WrappedMintingPolicyType,
   convertDatum,
+  hasOneOfToken,
   hasSingleToken,
+  hasSymbolInValue,
   mintingPolicyHash,
   validatorHash,
  )
@@ -263,16 +265,10 @@ validateConfiguration
       !thisScriptValue = ownValue cTxInfoInputs thisOutRef
 
       hasConfigurationNft :: Bool
-      !hasConfigurationNft = case M.lookup cvcConfigNftCurrencySymbol (getValue thisScriptValue) of
-        Nothing -> False
-        Just m -> case M.lookup cvcConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      !hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName thisScriptValue
 
       hasTallyNft :: Value -> Bool
-      hasTallyNft (Value v) = case M.lookup dcTallyNft v of
-        Nothing -> False
-        Just _ -> True
+      hasTallyNft = hasSymbolInValue dcTallyNft
 
       TallyState {tsProposal = proposal, ..} = case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
         [] -> traceError "Missing tally NFT"
