@@ -35,7 +35,7 @@ import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Interval (before)
 import Plutus.V1.Ledger.Scripts (
-  Datum (Datum),
+  Datum,
   DatumHash,
   MintingPolicy,
   Script,
@@ -59,7 +59,7 @@ import Plutus.V2.Ledger.Contexts (
   TxInfo (TxInfo, txInfoData, txInfoInputs, txInfoMint, txInfoOutputs),
  )
 import Plutus.V2.Ledger.Tx (
-  OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash),
+  OutputDatum,
   TxOut (TxOut, txOutDatum, txOutValue),
   TxOutRef,
  )
@@ -276,12 +276,7 @@ validateConfiguration
 
       TallyState {tsProposal = proposal, ..} = case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
         [] -> traceError "Missing tally NFT"
-        [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> unsafeFromBuiltinData $ case cTxOutDatum of
-          OutputDatum (Datum dbs) -> dbs
-          OutputDatumHash dh -> case M.lookup dh cTxInfoData of
-            Just (Datum dbs) -> dbs
-            _ -> traceError "Missing datum"
-          NoOutputDatum -> traceError "Script input missing datum hash"
+        [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] -> convertDatum cTxInfoData cTxOutDatum
         _ -> traceError "Too many NFT values"
 
       upgradeMinter :: CurrencySymbol
