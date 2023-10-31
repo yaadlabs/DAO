@@ -46,6 +46,8 @@ common common-test-depends
   build-depends:
    , plutus-simple-model
    , tasty
+   , tasty-hunit
+   , plutus-tx
 
 library
   import: common-lang, common-depends, common-options, common-extensions
@@ -75,6 +77,9 @@ library
 library triphut-specs
   import: common-lang, common-depends, common-options, common-extensions, common-test-depends
   hs-source-dirs: triphut-specs
+  exposed-modules:
+    Spec.Utils
+    Spec.Utils.Unit
   build-depends:
     , triphut
 
