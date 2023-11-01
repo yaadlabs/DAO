@@ -9,6 +9,7 @@ import Canonical.Shared (
   hasOneOfToken,
   hasSymbolInValue,
   isScriptCredential,
+  lovelacesOf,
   validatorHash,
  )
 import Canonical.Types (
@@ -167,13 +168,6 @@ getContinuingOutputs' vh outs =
           == ScriptCredential vh
     )
     outs
-
-lovelacesOf :: Value -> Integer
-lovelacesOf (Value v) = case M.lookup adaSymbol v of
-  Nothing -> 0
-  Just m -> case M.lookup adaToken m of
-    Nothing -> 0
-    Just c -> c
 
 ownValueAndValidator :: [TreasuryTxInInfo] -> TxOutRef -> (Value, ValidatorHash)
 ownValueAndValidator ins txOutRef = go ins

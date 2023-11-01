@@ -16,9 +16,11 @@ module Canonical.Tally (
 import Canonical.Shared (
   WrappedMintingPolicyType,
   convertDatum,
+  countOfTokenInValue,
   hasOneOfToken,
   hasSingleToken,
   hasSymbolInValue,
+  integerToByteString,
   isScriptCredential,
   mintingPolicyHash,
   validatorHash,
@@ -77,7 +79,6 @@ import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
   Bool (False, True),
-  BuiltinByteString,
   BuiltinData,
   Integer,
   Maybe (Just, Nothing),
@@ -90,7 +91,6 @@ import PlutusTx.Prelude (
   length,
   map,
   mempty,
-  modulo,
   not,
   otherwise,
   traceError,
@@ -281,23 +281,6 @@ indexScript =
 -- Tally Nft Minter
 -------------------------------------------------------------------------------
 
-{-# INLINEABLE integerToByteString #-}
-integerToByteString :: Integer -> BuiltinByteString
-integerToByteString n
-  | n == 0 = "0"
-  | n == 1 = "1"
-  | n == 2 = "2"
-  | n == 3 = "3"
-  | n == 4 = "4"
-  | n == 5 = "5"
-  | n == 6 = "6"
-  | n == 7 = "7"
-  | n == 8 = "8"
-  | n == 9 = "9"
-  | otherwise =
-      integerToByteString (n `divide` 10)
-        <> integerToByteString (n `modulo` 10)
-
 data TallyNftConfig = TallyNftConfig
   { tncIndexNftPolicyId :: CurrencySymbol
   , tncIndexNftTokenName :: TokenName
@@ -324,13 +307,7 @@ mkTallyNftMinter
         _ -> traceError "Too many Config NFT values"
 
       hasTallyNft :: Value -> Bool
-      hasTallyNft (Value v) = case M.lookup thisCurrencySymbol v of
-        Nothing -> False
-        Just m -> case M.lookup theTokenName m of
-          Nothing -> False
-          Just c
-            | c == 1 -> True
-            | otherwise -> traceError "wrong nft count"
+      hasTallyNft = hasOneOfToken thisCurrencySymbol theTokenName
 
       TxOut {txOutDatum = outputDatum, txOutAddress = outputAddress} = case filter (hasTallyNft . txOutValue) txInfoOutputs of
         [x] -> x
@@ -593,11 +570,7 @@ validateTally
 
               -- Count all the dcVoteFungibleCurrencySymbol with dcVoteFungibleTokenName tokens on the vote utxo
               fungibleTokens :: Integer
-              !fungibleTokens = case M.lookup tdcVoteFungibleCurrencySymbol (getValue tTxOutValue) of
-                Nothing -> 0
-                Just m -> case M.lookup tdcVoteFungibleTokenName m of
-                  Nothing -> 0
-                  Just c -> c
+              !fungibleTokens = countOfTokenInValue tdcVoteFungibleCurrencySymbol tdcVoteFungibleTokenName tTxOutValue
 
               -- Calculate fungible votes using the dcFungibleVotePercent
               fungibleVotes :: Integer
