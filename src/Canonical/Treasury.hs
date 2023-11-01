@@ -8,6 +8,7 @@ import Canonical.Shared (
   convertDatum,
   hasOneOfToken,
   hasSymbolInValue,
+  hasTokenInValue,
   isScriptCredential,
   lovelacesOf,
   validatorHash,
@@ -63,7 +64,6 @@ import PlutusTx (
   unstableMakeIsData,
  )
 import PlutusTx.AssocMap (Map)
-import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinData,
@@ -322,11 +322,7 @@ validateTreasury
 
               -- Make sure the upgrade token was minted
               hasUpgradeMinterToken :: Bool
-              !hasUpgradeMinterToken = case M.lookup upgradeMinter (getValue tTxInfoMint) of
-                Nothing -> False
-                Just m -> case M.toList m of
-                  [(_, c)] -> c == 1
-                  _ -> False
+              !hasUpgradeMinterToken = hasTokenInValue upgradeMinter "Treasury Minter" tTxInfoMint
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken

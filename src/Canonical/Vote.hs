@@ -12,9 +12,11 @@ module Canonical.Vote (
 import Canonical.Shared (
   WrappedMintingPolicyType,
   convertDatum,
+  hasBurnedTokens,
   hasOneOfToken,
   hasSingleToken,
   hasSymbolInValue,
+  hasTokenInValue,
   plutonomyMintingPolicyHash,
   validatorHash,
  )
@@ -44,7 +46,6 @@ import Plutus.V1.Ledger.Value (
   Value,
   adaSymbol,
   adaToken,
-  getValue,
   mpsSymbol,
   valueOf,
  )
@@ -52,12 +53,10 @@ import Plutus.V2.Ledger.Contexts (TxInInfo (TxInInfo, txInInfoResolved))
 import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (applyCode, compile, liftCode, makeLift, unsafeFromBuiltinData, unstableMakeIsData)
 import PlutusTx.AssocMap (Map)
-import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinData,
   Integer,
-  Maybe (Just, Nothing),
   any,
   check,
   filter,
@@ -67,7 +66,6 @@ import PlutusTx.Prelude (
   ($),
   (&&),
   (.),
-  (<),
   (==),
   (>),
  )
@@ -189,11 +187,7 @@ mkVoteMinter
     Burn ->
       let
         burnsTokens :: Bool
-        !burnsTokens = case M.lookup thisCurrencySymbol (getValue vmTxInfoMint) of
-          Nothing -> traceError "Impossible. Vote minter called but no vote tokens are minted"
-          Just m -> case M.toList m of
-            [(_, c)] -> traceIfFalse "Count is not less than zero" (c < 0)
-            _ -> traceError "Wrong number of tokens"
+        !burnsTokens = hasBurnedTokens thisCurrencySymbol vmTxInfoMint "Vote Minter Burn"
        in
         traceIfFalse "Not burning tokens" burnsTokens
     Mint ->
@@ -231,12 +225,7 @@ mkVoteMinter
         !onlyMintedOne = hasSingleToken vmTxInfoMint thisCurrencySymbol vmdcVoteTokenName
 
         hasVoteNft :: Bool
-        !hasVoteNft = case M.lookup vmdcVoteNft (getValue voteValue) of
-          Nothing -> False
-          Just m -> case M.toList m of
-            [(_, c)] ->
-              traceIfFalse "Impossible. Vote NFT is not an NFT" (c == 1)
-            _ -> traceError "Wrong number of vote NFTs"
+        !hasVoteNft = hasTokenInValue vmdcVoteNft "Vote NFT" voteValue
 
         totalAdaIsGreaterThanReturnAda :: Bool
         !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > vReturnAda

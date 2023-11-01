@@ -1,5 +1,8 @@
 module Canonical.Shared (
   WrappedMintingPolicyType,
+  hasBurnedTokens,
+  hasTokenInValue,
+  getTokenNameOfNft,
   countOfTokenInValue,
   convertDatum,
   hasSingleToken,
@@ -41,10 +44,12 @@ import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinByteString,
   BuiltinData,
+  BuiltinString,
   Integer,
   Maybe (Just, Nothing),
   const,
   divide,
+  id,
   maybe,
   modulo,
   otherwise,
@@ -54,6 +59,7 @@ import PlutusTx.Prelude (
   ($),
   (&&),
   (.),
+  (<),
   (<>),
   (==),
  )
@@ -73,12 +79,44 @@ hasSymbolInValue symbol (Value value) = maybe False (const True) (Map.lookup sym
 {-# INLINEABLE hasSingleToken #-}
 hasSingleToken :: Value -> CurrencySymbol -> TokenName -> Bool
 hasSingleToken (Value value) symbol tokenName = case Map.lookup symbol value of
+  Nothing -> False
   Just map' -> case Map.toList map' of
     [(tn, c)] ->
       traceIfFalse "Wrong token name" (tn == tokenName)
         && traceIfFalse "Should be exactly one" (c == 1)
     _ -> traceError "Wrong number of tokens with policy id"
-  Nothing -> False
+
+{- | Return `Maybe TokenName` if the value contains exactly one of the given token
+ Returns `Maybe` in order to be used by the separate
+ `hasTokenInValue` and `getTokenNameOfNft` helpers
+-}
+getTokenNameOfNftMaybe :: CurrencySymbol -> Value -> BuiltinString -> Maybe TokenName
+getTokenNameOfNftMaybe symbol (Value value) specificToken = case Map.lookup symbol value of
+  Nothing -> traceError $ specificToken <> ": Symbol not found"
+  Just map' -> case Map.toList map' of
+    [(tokenName, c)]
+      | c == 1 -> Just tokenName
+      | otherwise -> traceError $ specificToken <> ": Token count should be exactly one"
+    _ -> traceError $ specificToken <> ": Incorrect number of tokens"
+
+-- | Return true if the value contains exactly one of the given token
+hasTokenInValue :: CurrencySymbol -> BuiltinString -> Value -> Bool
+hasTokenInValue symbol specificToken value =
+  maybe False (const True) (getTokenNameOfNftMaybe symbol value specificToken)
+
+-- | Retrive the token name of corresponding symbol from value
+getTokenNameOfNft :: CurrencySymbol -> Value -> BuiltinString -> TokenName
+getTokenNameOfNft symbol value specificToken =
+  maybe (traceError $ specificToken <> ": not found") id (getTokenNameOfNftMaybe symbol value specificToken)
+
+-- | Check that tokens were burned, otherwise trace the specific error
+hasBurnedTokens :: CurrencySymbol -> Value -> BuiltinString -> Bool
+hasBurnedTokens symbol (Value value) specificMessage =
+  case Map.lookup symbol value of
+    Nothing -> traceError $ specificMessage <> ": Symbol not found"
+    Just map' -> case Map.toList map' of
+      [(_, c)] -> traceIfFalse (specificMessage <> ": Count is not less than zero") (c < 0)
+      _ -> traceError $ specificMessage <> ": Wrong number of tokens"
 
 {- | Get the count of tokens with the given `CurrencySymbol`
  and `TokenName` in the given `Value`

@@ -13,6 +13,7 @@ import Canonical.Shared (
   hasOneOfToken,
   hasSingleToken,
   hasSymbolInValue,
+  hasTokenInValue,
   mintingPolicyHash,
   validatorHash,
  )
@@ -50,8 +51,7 @@ import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime), POSIXTimeRange)
 import Plutus.V1.Ledger.Value (
   CurrencySymbol,
   TokenName,
-  Value (Value),
-  getValue,
+  Value,
   mpsSymbol,
  )
 import Plutus.V2.Ledger.Contexts (
@@ -75,12 +75,10 @@ import PlutusTx (
   unstableMakeIsData,
  )
 import PlutusTx.AssocMap (Map)
-import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
-  Bool (False, True),
+  Bool (False),
   BuiltinData,
   Integer,
-  Maybe (Just, Nothing),
   any,
   check,
   divide,
@@ -113,11 +111,7 @@ mkNftMinter
     } =
     let
       hasWitness :: Value -> Bool
-      hasWitness (Value v) = case M.lookup thisCurrencySymbol v of
-        Just m -> case M.toList m of
-          [(_, c)] -> if c == 1 then True else traceError "wrong token count"
-          _ -> traceError "wrong number of tokens with policy id"
-        _ -> False
+      hasWitness = hasTokenInValue thisCurrencySymbol "Configuration Witness"
 
       hasUTxO :: Bool
       !hasUTxO = any (\i -> txInInfoOutRef i == ncInitialUtxo) txInfoInputs
@@ -296,11 +290,7 @@ validateConfiguration
 
       -- Make sure the upgrade token was minted
       hasUpgradeMinterToken :: Bool
-      !hasUpgradeMinterToken = case M.lookup upgradeMinter (getValue cTxInfoMint) of
-        Nothing -> False
-        Just m -> case M.toList m of
-          [(_, c)] -> c == 1
-          _ -> False
+      !hasUpgradeMinterToken = hasTokenInValue upgradeMinter "validateConfiguration, upgradeMinter" cTxInfoMint
 
       isAfterTallyEndTime :: Bool
       isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` cTxInfoValidRange

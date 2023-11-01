@@ -17,9 +17,11 @@ import Canonical.Shared (
   WrappedMintingPolicyType,
   convertDatum,
   countOfTokenInValue,
+  getTokenNameOfNft,
   hasOneOfToken,
   hasSingleToken,
   hasSymbolInValue,
+  hasTokenInValue,
   integerToByteString,
   isScriptCredential,
   mintingPolicyHash,
@@ -129,11 +131,7 @@ mkIndexNftMinter
     } =
     let
       hasWitness :: Value -> Bool
-      hasWitness (Value v) = case M.lookup thisCurrencySymbol v of
-        Just m -> case M.toList m of
-          [(_, c)] -> if c == 1 then True else traceError "wrong token count"
-          _ -> traceError "wrong number of tokens with policy id"
-        _ -> False
+      hasWitness = hasTokenInValue thisCurrencySymbol "IndexNft Minter, hasWitness"
 
       hasUTxO :: Bool
       !hasUTxO = any (\i -> txInInfoOutRef i == incInitialUtxo) txInfoInputs
@@ -550,13 +548,7 @@ validateTally
       hasVoteWitness = hasSymbolInValue tdcVoteFungibleCurrencySymbol
 
       thisTallyTokenName :: TokenName
-      !thisTallyTokenName = case M.lookup tdcTallyNft (getValue oldValue) of
-        Nothing -> traceError "Failed to find tally nft"
-        Just m -> case M.toList m of
-          [(t, c)]
-            | c == 1 -> t
-            | otherwise -> traceError "bad tally nft count"
-          _ -> traceError "wrong number of tally nfts"
+      !thisTallyTokenName = getTokenNameOfNft tdcTallyNft oldValue "Tally Nft"
 
       stepVotes ::
         TallyTxInInfo ->
