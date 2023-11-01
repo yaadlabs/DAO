@@ -50,6 +50,7 @@ import PlutusTx.Prelude (
   otherwise,
   toBuiltin,
   traceError,
+  traceIfFalse,
   ($),
   (&&),
   (.),
@@ -71,10 +72,12 @@ hasSymbolInValue symbol (Value value) = maybe False (const True) (Map.lookup sym
 
 {-# INLINEABLE hasSingleToken #-}
 hasSingleToken :: Value -> CurrencySymbol -> TokenName -> Bool
-hasSingleToken (Value v) s t = case Map.lookup s v of
-  Just m -> case Map.toList m of
-    [(t', c)] -> t' == t && c == 1
-    _ -> traceError "wrong number of tokens with policy id"
+hasSingleToken (Value value) symbol tokenName = case Map.lookup symbol value of
+  Just map' -> case Map.toList map' of
+    [(tn, c)] ->
+      traceIfFalse "Wrong token name" (tn == tokenName)
+        && traceIfFalse "Should be exactly one" (c == 1)
+    _ -> traceError "Wrong number of tokens with policy id"
   Nothing -> False
 
 {- | Get the count of tokens with the given `CurrencySymbol`

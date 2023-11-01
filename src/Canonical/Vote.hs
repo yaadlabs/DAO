@@ -13,6 +13,7 @@ import Canonical.Shared (
   WrappedMintingPolicyType,
   convertDatum,
   hasOneOfToken,
+  hasSingleToken,
   hasSymbolInValue,
   plutonomyMintingPolicyHash,
   validatorHash,
@@ -227,13 +228,7 @@ mkVoteMinter
         !hasWitness = hasOneOfToken thisCurrencySymbol vmdcVoteTokenName voteValue
 
         onlyMintedOne :: Bool
-        !onlyMintedOne = case M.lookup thisCurrencySymbol (getValue vmTxInfoMint) of
-          Nothing -> traceError "Nothing of this currency symbol minted"
-          Just m -> case M.toList m of
-            [(t, c)] ->
-              traceIfFalse "Wrong number of witnesses minted" (c == 1)
-                && traceIfFalse "Wrong token name" (t == vmdcVoteTokenName)
-            _ -> traceError "Invalid tokens minted"
+        !onlyMintedOne = hasSingleToken vmTxInfoMint thisCurrencySymbol vmdcVoteTokenName
 
         hasVoteNft :: Bool
         !hasVoteNft = case M.lookup vmdcVoteNft (getValue voteValue) of
