@@ -32,7 +32,7 @@ common common-extensions
 
 common common-options
   ghc-options:
-    -Wall -Wcompat -Wincomplete-record-updates
+    -Wall -Wcompat -Wincomplete-record-updates -fexpose-all-unfoldings
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -Wunused-packages -Wmissing-deriving-strategies
 
@@ -48,6 +48,7 @@ common common-test-depends
    , tasty
    , tasty-hunit
    , plutus-tx
+   , plutus-tx-plugin
 
 library
   import: common-lang, common-depends, common-options, common-extensions
@@ -78,6 +79,9 @@ library triphut-specs
   import: common-lang, common-depends, common-options, common-extensions, common-test-depends
   hs-source-dirs: triphut-specs
   exposed-modules:
+    Spec.AlwaysSucceed.Script
+    Spec.ConfigurationNft.Script
+    Spec.Vote.Script
     Spec.Utils
     Spec.Utils.Unit
   build-depends:
