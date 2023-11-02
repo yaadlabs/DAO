@@ -7,6 +7,8 @@ module Triphut.Vote (
   voteMinter,
   voteMinterPolicyId,
   voteValidatorHash,
+  mkVoteMinter,
+  wrappedPolicy,
 ) where
 
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)

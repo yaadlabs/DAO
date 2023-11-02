@@ -3,6 +3,8 @@ module Triphut.AlwaysSucceed (
   succeed1,
   succeedHash,
   succeedHash1,
+  succeedWrapped,
+  succeedWrapped1,
 ) where
 
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)

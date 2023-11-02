@@ -3,6 +3,7 @@ module Triphut.ConfigurationNft (
   NftConfig (..),
   configurationScript,
   configurationValidatorHash,
+  mkNftMinter,
   nftMinter,
   nftMinterPolicyId,
 ) where
