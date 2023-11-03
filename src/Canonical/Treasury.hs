@@ -4,7 +4,15 @@ module Canonical.Treasury (
   treasuryValidatorHash,
 ) where
 
-import Canonical.Shared (validatorHash)
+import Canonical.Shared (
+  convertDatum,
+  hasOneOfToken,
+  hasSymbolInValue,
+  hasTokenInValue,
+  isScriptCredential,
+  lovelacesOf,
+  validatorHash,
+ )
 import Canonical.Types (
   DynamicConfig (
     DynamicConfig,
@@ -33,7 +41,7 @@ import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Interval (before)
-import Plutus.V1.Ledger.Scripts (Datum (Datum), DatumHash, Validator, ValidatorHash)
+import Plutus.V1.Ledger.Scripts (Datum, DatumHash, Validator, ValidatorHash)
 import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime), POSIXTimeRange)
 import Plutus.V1.Ledger.Value as V
 import Plutus.V2.Ledger.Tx hiding (Mint)
@@ -47,7 +55,6 @@ import PlutusTx (
   unstableMakeIsData,
  )
 import PlutusTx.AssocMap (Map)
-import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinData,
@@ -89,7 +96,7 @@ data TreasuryTxInInfo = TreasuryTxInInfo
   , tTxInInfoResolved :: TreasuryTxOut
   }
 
-data TreasuryScriptPurpose = TreasurySpend TxOutRef
+newtype TreasuryScriptPurpose = TreasurySpend TxOutRef
 
 data TreasuryScriptContext = TreasuryScriptContext
   { tScriptContextTxInfo :: TreasuryTxInfo
@@ -153,13 +160,6 @@ getContinuingOutputs' vh outs =
     )
     outs
 
-lovelacesOf :: Value -> Integer
-lovelacesOf (Value v) = case M.lookup adaSymbol v of
-  Nothing -> 0
-  Just m -> case M.lookup adaToken m of
-    Nothing -> 0
-    Just c -> c
-
 ownValueAndValidator :: [TreasuryTxInInfo] -> TxOutRef -> (Value, ValidatorHash)
 ownValueAndValidator ins txOutRef = go ins
   where
@@ -171,11 +171,6 @@ ownValueAndValidator ins txOutRef = go ins
             ScriptCredential vh -> (tTxOutValue, vh)
             _ -> traceError "Impossible. Expected ScriptCredential"
           else go xs
-
-isScriptCredential :: Credential -> Bool
-isScriptCredential = \case
-  ScriptCredential _ -> True
-  _ -> False
 
 onlyOneOfThisScript :: [TreasuryTxInInfo] -> ValidatorHash -> TxOutRef -> Bool
 onlyOneOfThisScript ins vh expectedRef = go ins
@@ -214,35 +209,19 @@ validateTreasury
       (!inputValue, !thisValidator) = ownValueAndValidator tTxInfoInputs thisTxRef
 
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft (Value v) = case M.lookup tvcConfigNftCurrencySymbol v of
-        Nothing -> False
-        Just m -> case M.lookup tvcConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      hasConfigurationNft = hasOneOfToken tvcConfigNftCurrencySymbol tvcConfigNftTokenName
+
+      hasTallyNft :: Value -> Bool
+      hasTallyNft = hasSymbolInValue dcTallyNft
 
       -- filter the reference inputs for the configuration nft
       DynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
-        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
-          OutputDatum (Datum dbs) -> dbs
-          OutputDatumHash dh -> case M.lookup dh tTxInfoData of
-            Just (Datum dbs) -> dbs
-            _ -> traceError "Missing datum"
-          NoOutputDatum -> traceError "Script input missing datum hash"
+        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
         _ -> traceError "Too many NFT values"
-
-      hasTallyNft :: Value -> Bool
-      hasTallyNft (Value v) = case M.lookup dcTallyNft v of
-        Nothing -> False
-        Just {} -> True
 
       TallyState {..} = case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
         [] -> traceError "Missing tally NFT"
-        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> unsafeFromBuiltinData $ case tTxOutDatum of
-          OutputDatum (Datum dbs) -> dbs
-          OutputDatumHash dh -> case M.lookup dh tTxInfoData of
-            Just (Datum dbs) -> dbs
-            _ -> traceError "Missing datum"
-          NoOutputDatum -> traceError "Script input missing datum hash"
+        [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
         _ -> traceError "Too many NFT values"
 
       totalVotes :: Integer
@@ -335,11 +314,7 @@ validateTreasury
 
               -- Make sure the upgrade token was minted
               hasUpgradeMinterToken :: Bool
-              !hasUpgradeMinterToken = case M.lookup upgradeMinter (getValue tTxInfoMint) of
-                Nothing -> False
-                Just m -> case M.toList m of
-                  [(_, c)] -> c == 1
-                  _ -> False
+              !hasUpgradeMinterToken = hasTokenInValue upgradeMinter "Treasury Minter" tTxInfoMint
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
