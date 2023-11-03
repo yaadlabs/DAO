@@ -1,9 +1,7 @@
 module Spec.Utils (spec) where
 
 import Spec.Utils.Unit (unitSpec)
-import Test.Tasty (TestTree, adjustOption, testGroup)
-import Test.Tasty.HUnit (assertBool, testCase)
-import Prelude (($))
+import Test.Tasty (TestTree, testGroup)
 
 -- | Utility functions tests
 spec :: TestTree

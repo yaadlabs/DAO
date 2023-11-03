@@ -3,8 +3,8 @@ module Triphut.AlwaysSucceed (
   succeed1,
   succeedHash,
   succeedHash1,
-  succeedWrapped,
-  succeedWrapped1,
+  succeedValidator,
+  succeedValidator1,
 ) where
 
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
@@ -20,7 +20,7 @@ import PlutusTx (compile, unsafeFromBuiltinData)
 import PlutusTx.Prelude (Bool (True), BuiltinData, check, ($), (.), (==))
 import Triphut.Shared (validatorHash)
 
-succeedValidator :: BuiltinData -> BuiltinData -> BuiltinData -> Bool
+succeedValidator :: BuiltinData -> BuiltinData -> ScriptContext -> Bool
 succeedValidator _ _ _ = True
 
 succeedWrapped :: BuiltinData -> BuiltinData -> BuiltinData -> ()
