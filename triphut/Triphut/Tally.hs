@@ -22,7 +22,7 @@ import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Interval (before)
 import Plutus.V1.Ledger.Scripts (
-  Datum (Datum),
+  Datum,
   DatumHash,
   MintingPolicy,
   Script,
@@ -42,7 +42,7 @@ import Plutus.V2.Ledger.Contexts (
   getContinuingOutputs,
  )
 import Plutus.V2.Ledger.Tx (
-  OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash),
+  OutputDatum,
   TxOut (TxOut, txOutAddress, txOutDatum, txOutValue),
   TxOutRef,
  )
@@ -59,7 +59,6 @@ import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
   Bool (False, True),
-  BuiltinByteString,
   BuiltinData,
   Integer,
   Maybe (Just, Nothing),
@@ -72,7 +71,6 @@ import PlutusTx.Prelude (
   length,
   map,
   mempty,
-  modulo,
   not,
   otherwise,
   traceError,
@@ -90,7 +88,14 @@ import PlutusTx.Prelude qualified as PlutusTx
 import Triphut.Shared (
   WrappedMintingPolicyType,
   convertDatum,
+  countOfTokenInValue,
+  getTokenNameOfNft,
+  hasOneOfToken,
   hasSingleToken,
+  hasSymbolInValue,
+  hasTokenInValue,
+  integerToByteString,
+  isScriptCredential,
   mintingPolicyHash,
   validatorHash,
  )
@@ -103,7 +108,7 @@ import Triphut.Vote (
   VoteDirection (For),
  )
 
-data IndexNftDatum = IndexNftDatum
+newtype IndexNftDatum = IndexNftDatum
   { indIndex :: Integer
   }
 
@@ -126,11 +131,7 @@ mkIndexNftMinter
     } =
     let
       hasWitness :: Value -> Bool
-      hasWitness (Value v) = case M.lookup thisCurrencySymbol v of
-        Just m -> case M.toList m of
-          [(_, c)] -> if c == 1 then True else traceError "wrong token count"
-          _ -> traceError "wrong number of tokens with policy id"
-        _ -> False
+      hasWitness = hasTokenInValue thisCurrencySymbol "IndexNft Minter, hasWitness"
 
       hasUTxO :: Bool
       !hasUTxO = any (\i -> txInInfoOutRef i == incInitialUtxo) txInfoInputs
@@ -278,23 +279,6 @@ indexScript =
 -- Tally Nft Minter
 -------------------------------------------------------------------------------
 
-{-# INLINEABLE integerToByteString #-}
-integerToByteString :: Integer -> BuiltinByteString
-integerToByteString n
-  | n == 0 = "0"
-  | n == 1 = "1"
-  | n == 2 = "2"
-  | n == 3 = "3"
-  | n == 4 = "4"
-  | n == 5 = "5"
-  | n == 6 = "6"
-  | n == 7 = "7"
-  | n == 8 = "8"
-  | n == 9 = "9"
-  | otherwise =
-      integerToByteString (n `divide` 10)
-        <> integerToByteString (n `modulo` 10)
-
 data TallyNftConfig = TallyNftConfig
   { tncIndexNftPolicyId :: CurrencySymbol
   , tncIndexNftTokenName :: TokenName
@@ -314,42 +298,23 @@ mkTallyNftMinter
     } =
     let
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft (Value v) = case M.lookup tncConfigNftCurrencySymbol v of
-        Nothing -> False
-        Just m -> case M.lookup tncConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      hasConfigurationNft = hasOneOfToken tncConfigNftCurrencySymbol tncConfigNftTokenName
 
       DynamicConfig {..} = case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
         [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
         _ -> traceError "Too many Config NFT values"
 
       hasTallyNft :: Value -> Bool
-      hasTallyNft (Value v) = case M.lookup thisCurrencySymbol v of
-        Nothing -> False
-        Just m -> case M.lookup theTokenName m of
-          Nothing -> False
-          Just c
-            | c == 1 -> True
-            | otherwise -> traceError "wrong nft count"
+      hasTallyNft = hasOneOfToken thisCurrencySymbol theTokenName
 
       TxOut {txOutDatum = outputDatum, txOutAddress = outputAddress} = case filter (hasTallyNft . txOutValue) txInfoOutputs of
         [x] -> x
         _ -> traceError "wrong number of outputs"
 
-      TallyState {..} = unsafeFromBuiltinData $ case outputDatum of
-        OutputDatum (Datum dbs) -> dbs
-        OutputDatumHash dh -> case M.lookup dh txInfoData of
-          Just (Datum dbs) -> dbs
-          _ -> traceError "Missing datum"
-        NoOutputDatum -> traceError "Script input missing datum hash"
+      TallyState {..} = convertDatum txInfoData outputDatum
 
       hasIndexNft :: Value -> Bool
-      hasIndexNft (Value v) = case M.lookup tncIndexNftPolicyId v of
-        Nothing -> False
-        Just m -> case M.lookup tncIndexNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      hasIndexNft = hasOneOfToken tncIndexNftPolicyId tncIndexNftTokenName
 
       IndexNftDatum {..} = case filter (hasIndexNft . txOutValue . txInInfoResolved) txInfoInputs of
         [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
@@ -420,7 +385,7 @@ data TallyTxInInfo = TallyTxInInfo
   , tTxInInfoResolved :: TallyTxOut
   }
 
-data TallyScriptPurpose = TallySpend TxOutRef
+newtype TallyScriptPurpose = TallySpend TxOutRef
 
 data TallyScriptContext = TallyScriptContext
   { tScriptContextTxInfo :: TallyTxInfo
@@ -498,11 +463,6 @@ ownValueAndValidator ins txOutRef = go ins
             _ -> traceError "Impossible. Expected ScriptCredential"
           else go xs
 
-isScriptCredential :: Credential -> Bool
-isScriptCredential = \case
-  ScriptCredential _ -> True
-  _ -> False
-
 hasExpectedScripts :: [TallyTxInInfo] -> ValidatorHash -> ValidatorHash -> Bool
 hasExpectedScripts theInputs theTallyValidator voteValidator =
   let
@@ -563,11 +523,7 @@ validateTally
     } =
     let
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft (Value v) = case M.lookup tvcConfigNftCurrencySymbol v of
-        Nothing -> False
-        Just m -> case M.lookup tvcConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      hasConfigurationNft = hasOneOfToken tvcConfigNftCurrencySymbol tvcConfigNftTokenName
 
       TallyDynamicConfig {..} = case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
         [TallyTxInInfo {tTxInInfoResolved = TallyTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
@@ -589,18 +545,10 @@ validateTally
           _ -> traceError "Too many vote nfts"
 
       hasVoteWitness :: Value -> Bool
-      hasVoteWitness (Value v) = case M.lookup tdcVoteCurrencySymbol v of
-        Nothing -> False
-        Just _ -> True
+      hasVoteWitness = hasSymbolInValue tdcVoteFungibleCurrencySymbol
 
       thisTallyTokenName :: TokenName
-      !thisTallyTokenName = case M.lookup tdcTallyNft (getValue oldValue) of
-        Nothing -> traceError "Failed to find tally nft"
-        Just m -> case M.toList m of
-          [(t, c)]
-            | c == 1 -> t
-            | otherwise -> traceError "bad tally nft count"
-          _ -> traceError "wrong number of tally nfts"
+      !thisTallyTokenName = getTokenNameOfNft tdcTallyNft oldValue "Tally Nft"
 
       stepVotes ::
         TallyTxInInfo ->
@@ -614,11 +562,7 @@ validateTally
 
               -- Count all the dcVoteFungibleCurrencySymbol with dcVoteFungibleTokenName tokens on the vote utxo
               fungibleTokens :: Integer
-              !fungibleTokens = case M.lookup tdcVoteFungibleCurrencySymbol (getValue tTxOutValue) of
-                Nothing -> 0
-                Just m -> case M.lookup tdcVoteFungibleTokenName m of
-                  Nothing -> 0
-                  Just c -> c
+              !fungibleTokens = countOfTokenInValue tdcVoteFungibleCurrencySymbol tdcVoteFungibleTokenName tTxOutValue
 
               -- Calculate fungible votes using the dcFungibleVotePercent
               fungibleVotes :: Integer

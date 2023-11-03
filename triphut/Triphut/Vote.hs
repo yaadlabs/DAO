@@ -33,10 +33,9 @@ import Plutus.V1.Ledger.Scripts (
 import Plutus.V1.Ledger.Value (
   CurrencySymbol,
   TokenName,
-  Value (Value),
+  Value,
   adaSymbol,
   adaToken,
-  getValue,
   mpsSymbol,
   valueOf,
  )
@@ -44,12 +43,10 @@ import Plutus.V2.Ledger.Contexts (TxInInfo (TxInInfo, txInInfoResolved))
 import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (applyCode, compile, liftCode, makeLift, unsafeFromBuiltinData, unstableMakeIsData)
 import PlutusTx.AssocMap (Map)
-import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinData,
   Integer,
-  Maybe (Just, Nothing),
   any,
   check,
   filter,
@@ -59,7 +56,6 @@ import PlutusTx.Prelude (
   ($),
   (&&),
   (.),
-  (<),
   (==),
   (>),
  )
@@ -67,6 +63,11 @@ import PlutusTx.Prelude qualified as PlutusTx
 import Triphut.Shared (
   WrappedMintingPolicyType,
   convertDatum,
+  hasBurnedTokens,
+  hasOneOfToken,
+  hasSingleToken,
+  hasSymbolInValue,
+  hasTokenInValue,
   plutonomyMintingPolicyHash,
   validatorHash,
  )
@@ -117,7 +118,7 @@ data VoteMinterTxInInfo = VoteMinterTxInInfo
   , vmTxInInfoResolved :: VoteMinterTxOut
   }
 
-data VoteMinterScriptPurpose = VMMinting CurrencySymbol
+newtype VoteMinterScriptPurpose = VMMinting CurrencySymbol
 
 data VoteMinterScriptContext = VoteMinterScriptContext
   { vmScriptContextTxInfo :: VoteMinterTxInfo
@@ -188,21 +189,13 @@ mkVoteMinter
     Burn ->
       let
         burnsTokens :: Bool
-        !burnsTokens = case M.lookup thisCurrencySymbol (getValue vmTxInfoMint) of
-          Nothing -> traceError "Impossible. Vote minter called but no vote tokens are minted"
-          Just m -> case M.toList m of
-            [(_, c)] -> traceIfFalse "Count is not less than zero" (c < 0)
-            _ -> traceError "Wrong number of tokens"
+        !burnsTokens = hasBurnedTokens thisCurrencySymbol vmTxInfoMint "Vote Minter Burn"
        in
         traceIfFalse "Not burning tokens" burnsTokens
     Mint ->
       let
         hasConfigurationNft :: Value -> Bool
-        hasConfigurationNft (Value v) = case M.lookup vmcConfigNftCurrencySymbol v of
-          Nothing -> False
-          Just m -> case M.lookup vmcConfigNftTokenName m of
-            Nothing -> False
-            Just c -> c == 1
+        hasConfigurationNft = hasOneOfToken vmcConfigNftCurrencySymbol vmcConfigNftTokenName
 
         theData :: Map DatumHash Datum
         theData = unsafeFromBuiltinData vmTxInfoData
@@ -218,9 +211,7 @@ mkVoteMinter
 
         -- Find the reference input with the Tally nft currency symbol
         hasTallyNft :: Value -> Bool
-        hasTallyNft (Value v) = case M.lookup vmdcTallyNft v of
-          Nothing -> False
-          Just _ -> True
+        hasTallyNft = hasSymbolInValue vmdcTallyNft
 
         TallyState {..} = case filter (hasTallyNft . txOutValue . txInInfoResolved) (unsafeFromBuiltinData vmTxInfoReferenceInputs) of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum theData txOutDatum
@@ -230,28 +221,13 @@ mkVoteMinter
         !proposalIsActive = tsProposalEndTime `after` (unsafeFromBuiltinData vmTxInfoValidRange)
 
         hasWitness :: Bool
-        !hasWitness = case M.lookup thisCurrencySymbol (getValue voteValue) of
-          Nothing -> False
-          Just m -> case M.lookup vmdcVoteTokenName m of
-            Nothing -> False
-            Just c -> c == 1
+        !hasWitness = hasOneOfToken thisCurrencySymbol vmdcVoteTokenName voteValue
 
         onlyMintedOne :: Bool
-        !onlyMintedOne = case M.lookup thisCurrencySymbol (getValue vmTxInfoMint) of
-          Nothing -> traceError "Nothing of this currency symbol minted"
-          Just m -> case M.toList m of
-            [(t, c)] ->
-              traceIfFalse "Wrong number of witnesses minted" (c == 1)
-                && traceIfFalse "Wrong token name" (t == vmdcVoteTokenName)
-            _ -> traceError "Invalid tokens minted"
+        !onlyMintedOne = hasSingleToken vmTxInfoMint thisCurrencySymbol vmdcVoteTokenName
 
         hasVoteNft :: Bool
-        !hasVoteNft = case M.lookup vmdcVoteNft (getValue voteValue) of
-          Nothing -> False
-          Just m -> case M.toList m of
-            [(_, c)] ->
-              traceIfFalse "Impossible. Vote NFT is not an NFT" (c == 1)
-            _ -> traceError "Wrong number of vote NFTs"
+        !hasVoteNft = hasTokenInValue vmdcVoteNft "Vote NFT" voteValue
 
         totalAdaIsGreaterThanReturnAda :: Bool
         !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > vReturnAda
@@ -401,11 +377,7 @@ validateVote
     } =
     let
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft (Value v) = case M.lookup vvcConfigNftCurrencySymbol v of
-        Nothing -> False
-        Just m -> case M.lookup vvcConfigNftTokenName m of
-          Nothing -> False
-          Just c -> c == 1
+      hasConfigurationNft = hasOneOfToken vvcConfigNftCurrencySymbol vvcConfigNftTokenName
 
       VoteDynamicConfig {..} = case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
         [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
@@ -429,9 +401,7 @@ validateVote
             !isSignedByOwner = any ((== addressCredential vOwner) . PubKeyCredential) (unsafeFromBuiltinData vTxInfoSignatories :: [PubKeyHash])
 
             hasVoteToken :: Value -> Bool
-            hasVoteToken (Value v) = case M.lookup (unsafeFromBuiltinData vdcVoteCurrencySymbol) v of
-              Nothing -> False
-              Just _ -> True
+            hasVoteToken = hasSymbolInValue (unsafeFromBuiltinData vdcVoteCurrencySymbol)
 
             voteTokenAreAllBurned :: Bool
             !voteTokenAreAllBurned = not $ any (hasVoteToken . vTxOutValue) (unsafeFromBuiltinData vTxInfoOutputs :: [VoteTxOut])
