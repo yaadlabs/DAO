@@ -17,7 +17,8 @@ import Plutus.V1.Ledger.Scripts (
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
-import Triphut.ConfigurationNft (NftConfig (NftConfig), mkNftMinter)
+import Triphut.ConfigurationNft (NftConfig (NftConfig))
+import Triphut.ConfigurationNft.Script (mkNftMinter)
 
 configNftTypedMintingPolicy :: NftConfig -> TypedPolicy ()
 configNftTypedMintingPolicy config =

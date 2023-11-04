@@ -55,11 +55,15 @@ library
   exposed-modules:
     Triphut.AlwaysSucceed
     Triphut.ConfigurationNft
-    Triphut.Vote
-    Triphut.Treasury
-    Triphut.Types
+    Triphut.ConfigurationNft.Script
     Triphut.Shared
     Triphut.Tally
+    Triphut.Tally.Script
+    Triphut.Treasury
+    Triphut.Treasury.Script
+    Triphut.Types
+    Triphut.Vote
+    Triphut.Vote.Script
 
   build-depends:
     , aeson

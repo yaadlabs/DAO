@@ -6,8 +6,8 @@ module Spec.Tally.Script (
 )
 where
 
-import Triphut.Tally (IndexNftConfig (IndexNftConfig), mkIndexNftMinter)
-
+import Triphut.Tally (IndexNftConfig (IndexNftConfig))
+import Triphut.Tally.Script (mkIndexNftMinter)
 import Plutus.Model.V2 (
   TypedPolicy,
   mkTypedPolicy,

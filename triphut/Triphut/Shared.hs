@@ -197,7 +197,13 @@ plutonomyMintingPolicyHash =
         , Plutonomy.ooFloatOutLambda = False
         }
    in
-    MintingPolicyHash . getScriptHash . scriptHash . getValidator . Plutonomy.optimizeUPLCWith optimizerSettings . Validator . getMintingPolicy
+    MintingPolicyHash
+      . getScriptHash
+      . scriptHash
+      . getValidator
+      . Plutonomy.optimizeUPLCWith optimizerSettings
+      . Validator
+      . getMintingPolicy
 
 validatorHash :: Validator -> ValidatorHash
 validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator

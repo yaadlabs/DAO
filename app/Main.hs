@@ -32,6 +32,8 @@ import Triphut.ConfigurationNft (
     cvcConfigNftTokenName
   ),
   NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
+ )
+import Triphut.ConfigurationNft.Script (
   configurationScript,
   configurationValidatorHash,
   nftMinter,
@@ -57,6 +59,8 @@ import Triphut.Tally (
     tvcConfigNftCurrencySymbol,
     tvcConfigNftTokenName
   ),
+ )
+import Triphut.Tally.Script (
   indexScript,
   indexValidatorHash,
   tallyIndexNftMinter,
@@ -72,9 +76,8 @@ import Triphut.Treasury (
     tvcConfigNftCurrencySymbol,
     tvcConfigNftTokenName
   ),
-  treasuryScript,
-  treasuryValidatorHash,
  )
+import Triphut.Treasury.Script (treasuryScript, treasuryValidatorHash)
 import Triphut.Vote (
   VoteMinterConfig (
     VoteMinterConfig,
@@ -86,6 +89,8 @@ import Triphut.Vote (
     vvcConfigNftCurrencySymbol,
     vvcConfigNftTokenName
   ),
+ )
+import Triphut.Vote.Script (
   voteMinter,
   voteMinterPolicyId,
   voteScript,

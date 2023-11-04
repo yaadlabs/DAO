@@ -18,7 +18,8 @@ import Plutus.V1.Ledger.Scripts (
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
-import Triphut.Vote (VoteMinterConfig (VoteMinterConfig), wrappedPolicy)
+import Triphut.Vote (VoteMinterConfig (VoteMinterConfig))
+import Triphut.Vote.Script (wrappedPolicy)
 
 voteTypedMintingPolicy :: VoteMinterConfig -> TypedPolicy ()
 voteTypedMintingPolicy config =
