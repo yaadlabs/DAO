@@ -35,7 +35,7 @@ import Plutus.V1.Ledger.Scripts (
   getScriptHash,
   getValidator,
  )
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value (Value), adaSymbol, adaToken)
+import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value (Value, getValue), adaSymbol, adaToken)
 import Plutus.V2.Ledger.Tx (OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash))
 import PlutusTx (UnsafeFromData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
@@ -47,10 +47,9 @@ import PlutusTx.Prelude (
   BuiltinString,
   Integer,
   Maybe (Just, Nothing),
-  const,
   divide,
-  id,
-  maybe,
+  fromMaybe,
+  isJust,
   modulo,
   otherwise,
   toBuiltin,
@@ -74,7 +73,7 @@ isScriptCredential = \case
 
 {-# INLINEABLE hasSymbolInValue #-}
 hasSymbolInValue :: CurrencySymbol -> Value -> Bool
-hasSymbolInValue symbol (Value value) = maybe False (const True) (Map.lookup symbol value)
+hasSymbolInValue symbol = isJust . Map.lookup symbol . getValue
 
 {-# INLINEABLE hasSingleToken #-}
 hasSingleToken :: Value -> CurrencySymbol -> TokenName -> Bool
@@ -90,33 +89,32 @@ hasSingleToken (Value value) symbol tokenName = case Map.lookup symbol value of
  Returns `Maybe` in order to be used by the separate
  `hasTokenInValue` and `getTokenNameOfNft` helpers
 -}
-getTokenNameOfNftMaybe :: CurrencySymbol -> Value -> BuiltinString -> Maybe TokenName
-getTokenNameOfNftMaybe symbol (Value value) specificToken = case Map.lookup symbol value of
-  Nothing -> traceError $ specificToken <> ": Symbol not found"
+getTokenNameOfNftMaybe :: CurrencySymbol -> BuiltinString -> Value -> Maybe TokenName
+getTokenNameOfNftMaybe symbol errorMessage (Value value) = case Map.lookup symbol value of
+  Nothing -> traceError $ errorMessage <> ": Symbol not found"
   Just map' -> case Map.toList map' of
     [(tokenName, c)]
       | c == 1 -> Just tokenName
-      | otherwise -> traceError $ specificToken <> ": Token count should be exactly one"
-    _ -> traceError $ specificToken <> ": Incorrect number of tokens"
+      | otherwise -> traceError $ errorMessage <> ": Token count should be exactly one"
+    _ -> traceError $ errorMessage <> ": Incorrect number of tokens"
 
 -- | Return true if the value contains exactly one of the given token
 hasTokenInValue :: CurrencySymbol -> BuiltinString -> Value -> Bool
-hasTokenInValue symbol specificToken value =
-  maybe False (const True) (getTokenNameOfNftMaybe symbol value specificToken)
+hasTokenInValue symbol errorMessage = isJust . getTokenNameOfNftMaybe symbol errorMessage
 
 -- | Retrive the token name of corresponding symbol from value
 getTokenNameOfNft :: CurrencySymbol -> Value -> BuiltinString -> TokenName
-getTokenNameOfNft symbol value specificToken =
-  maybe (traceError $ specificToken <> ": not found") id (getTokenNameOfNftMaybe symbol value specificToken)
+getTokenNameOfNft symbol value errorMessage =
+  fromMaybe (traceError $ errorMessage <> ": not found") (getTokenNameOfNftMaybe symbol errorMessage value)
 
 -- | Check that tokens were burned, otherwise trace the specific error
 hasBurnedTokens :: CurrencySymbol -> Value -> BuiltinString -> Bool
-hasBurnedTokens symbol (Value value) specificMessage =
+hasBurnedTokens symbol (Value value) errorMessage =
   case Map.lookup symbol value of
-    Nothing -> traceError $ specificMessage <> ": Symbol not found"
+    Nothing -> traceError $ errorMessage <> ": Symbol not found"
     Just map' -> case Map.toList map' of
-      [(_, c)] -> traceIfFalse (specificMessage <> ": Count is not less than zero") (c < 0)
-      _ -> traceError $ specificMessage <> ": Wrong number of tokens"
+      [(_, c)] -> traceIfFalse (errorMessage <> ": Count is not less than zero") (c < 0)
+      _ -> traceError $ errorMessage <> ": Wrong number of tokens"
 
 {- | Get the count of tokens with the given `CurrencySymbol`
  and `TokenName` in the given `Value`
@@ -125,9 +123,7 @@ countOfTokenInValue :: CurrencySymbol -> TokenName -> Value -> Integer
 countOfTokenInValue symbol tokenName (Value value) =
   case Map.lookup symbol value of
     Nothing -> 0
-    Just map' -> case Map.lookup tokenName map' of
-      Nothing -> 0
-      Just c -> c
+    Just map' -> fromMaybe 0 $ Map.lookup tokenName map'
 
 -- | Get the count of lovelaces in the given `Value`
 lovelacesOf :: Value -> Integer

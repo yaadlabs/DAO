@@ -496,8 +496,7 @@ mapInsertWith f k v xs = case M.lookup k xs of
   Just v' -> M.insert k (f v v') xs
 
 mergePayouts :: Address -> Value -> Map Address Value -> Map Address Value
-mergePayouts addr value =
-  mapInsertWith (<>) addr value
+mergePayouts = mapInsertWith (<>)
 
 -- Optimize this to accum a value
 valuePaidTo' :: [TallyTxOut] -> Address -> Value

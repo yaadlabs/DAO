@@ -218,7 +218,7 @@ mkVoteMinter
           _ -> traceError "Wrong number of tally references"
 
         proposalIsActive :: Bool
-        !proposalIsActive = tsProposalEndTime `after` (unsafeFromBuiltinData vmTxInfoValidRange)
+        !proposalIsActive = tsProposalEndTime `after` unsafeFromBuiltinData vmTxInfoValidRange
 
         hasWitness :: Bool
         !hasWitness = hasOneOfToken thisCurrencySymbol vmdcVoteTokenName voteValue

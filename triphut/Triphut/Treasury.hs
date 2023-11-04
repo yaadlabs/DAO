@@ -152,13 +152,12 @@ getContinuingOutputs' ::
   ValidatorHash ->
   [TreasuryTxOut] ->
   [TreasuryTxOut]
-getContinuingOutputs' vh outs =
+getContinuingOutputs' vh =
   filter
     ( \TreasuryTxOut {..} ->
         addressCredential tTxOutAddress
           == ScriptCredential vh
     )
-    outs
 
 ownValueAndValidator :: [TreasuryTxInInfo] -> TxOutRef -> (Value, ValidatorHash)
 ownValueAndValidator ins txOutRef = go ins
@@ -178,13 +177,10 @@ onlyOneOfThisScript ins vh expectedRef = go ins
     go = \case
       [] -> True
       TreasuryTxInInfo {tTxInInfoOutRef, tTxInInfoResolved = TreasuryTxOut {tTxOutAddress = Address {..}}} : xs ->
-        if isScriptCredential addressCredential
-          then
-            if tTxInInfoOutRef /= expectedRef
-              then case addressCredential of
-                ScriptCredential vh' | vh' == vh -> False
-                _ -> go xs
-              else go xs
+        if isScriptCredential addressCredential && tTxInInfoOutRef /= expectedRef
+          then case addressCredential of
+            ScriptCredential vh' | vh' == vh -> False
+            _ -> go xs
           else go xs
 
 validateTreasury ::
