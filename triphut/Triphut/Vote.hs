@@ -379,9 +379,10 @@ validateVote
       hasConfigurationNft :: Value -> Bool
       hasConfigurationNft = hasOneOfToken vvcConfigNftCurrencySymbol vvcConfigNftTokenName
 
-      VoteDynamicConfig {..} = case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
-        [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
-        _ -> traceError "Too many NFT values"
+      VoteDynamicConfig {..} =
+        case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
+          [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
+          _ -> traceError "Too many NFT values"
      in
       case action of
         Count ->
@@ -398,13 +399,17 @@ validateVote
         Cancel ->
           let
             isSignedByOwner :: Bool
-            !isSignedByOwner = any ((== addressCredential vOwner) . PubKeyCredential) (unsafeFromBuiltinData vTxInfoSignatories :: [PubKeyHash])
+            !isSignedByOwner =
+              any
+                ((== addressCredential vOwner) . PubKeyCredential)
+                (unsafeFromBuiltinData vTxInfoSignatories :: [PubKeyHash])
 
             hasVoteToken :: Value -> Bool
             hasVoteToken = hasSymbolInValue (unsafeFromBuiltinData vdcVoteCurrencySymbol)
 
             voteTokenAreAllBurned :: Bool
-            !voteTokenAreAllBurned = not $ any (hasVoteToken . vTxOutValue) (unsafeFromBuiltinData vTxInfoOutputs :: [VoteTxOut])
+            !voteTokenAreAllBurned =
+              not $ any (hasVoteToken . vTxOutValue) (unsafeFromBuiltinData vTxInfoOutputs :: [VoteTxOut])
            in
             traceIfFalse "Not signed by owner" isSignedByOwner
               && traceIfFalse "All vote tokens are not burned" voteTokenAreAllBurned

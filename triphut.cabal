@@ -81,9 +81,10 @@ library triphut-specs
   exposed-modules:
     Spec.AlwaysSucceed.Script
     Spec.ConfigurationNft.Script
-    Spec.Vote.Script
+    Spec.Tally.Script
     Spec.Utils
     Spec.Utils.Unit
+    Spec.Vote.Script
   build-depends:
     , triphut
 

@@ -11,6 +11,7 @@ module Triphut.Tally (
   tallyNftMinterPolicyId,
   tallyScript,
   tallyValidatorHash,
+  mkIndexNftMinter,
 ) where
 
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
