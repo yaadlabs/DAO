@@ -9,7 +9,6 @@ import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as BSS
-import Plutonomy qualified
 import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Interval (before)
@@ -96,6 +95,7 @@ import Triphut.Shared (
   integerToByteString,
   isScriptCredential,
   mintingPolicyHash,
+  mkValidatorWithSettings,
   validatorHash,
   wrapValidate,
  )
@@ -444,23 +444,11 @@ validateTally
         && traceIfFalse "Tally datum is not updated" tallyDatumIsUpdated
         && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
 
-wrapValidateTally :: TallyValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-wrapValidateTally = wrapValidate validateTally
-
 tallyValidator :: TallyValidatorConfig -> Validator
-tallyValidator cfg =
-  let
-    optimizerSettings =
-      Plutonomy.defaultOptimizerOptions
-        { Plutonomy.ooSplitDelay = False
-        , Plutonomy.ooFloatOutLambda = False
-        }
-   in
-    Plutonomy.optimizeUPLCWith optimizerSettings $
-      Plutonomy.validatorToPlutus $
-        Plutonomy.mkValidatorScript $
-          $$(PlutusTx.compile [||wrapValidateTally||])
-            `applyCode` liftCode cfg
+tallyValidator config = mkValidatorWithSettings compiledCode False
+  where
+    wrapValidateTally = wrapValidate validateTally
+    compiledCode = $$(PlutusTx.compile [||wrapValidateTally||]) `applyCode` liftCode config
 
 tallyValidatorHash :: TallyValidatorConfig -> ValidatorHash
 tallyValidatorHash = validatorHash . tallyValidator

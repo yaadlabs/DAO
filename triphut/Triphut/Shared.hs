@@ -1,5 +1,6 @@
 module Triphut.Shared (
   WrappedMintingPolicyType,
+  mkValidatorWithSettings,
   wrapValidate,
   hasBurnedTokens,
   hasTokenInValue,
@@ -41,6 +42,7 @@ import Plutus.V2.Ledger.Tx (OutputDatum (NoOutputDatum, OutputDatum, OutputDatum
 import PlutusTx (UnsafeFromData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as Map
+import PlutusTx.Code (CompiledCode)
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinByteString,
@@ -168,8 +170,8 @@ integerToByteString n
 -- | Transforms a validator function `validate` to its lower level representaion
 wrapValidate ::
   (UnsafeFromData b, UnsafeFromData c, UnsafeFromData d) =>
-  (a -> b -> c -> d -> Bool) ->
-  a ->
+  (config -> b -> c -> d -> Bool) ->
+  config ->
   BuiltinData ->
   BuiltinData ->
   BuiltinData ->
@@ -182,6 +184,25 @@ wrapValidate validate config x y z =
         (unsafeFromBuiltinData y)
         (unsafeFromBuiltinData z)
     )
+
+-- | Make Validator with given Plutonomy optimisations
+mkValidatorWithSettings ::
+  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ()) ->
+  Bool ->
+  Validator
+mkValidatorWithSettings
+  compiledCode
+  setFloatOutputLambda =
+    let
+      optimizerSettings =
+        Plutonomy.defaultOptimizerOptions
+          { Plutonomy.ooSplitDelay = False
+          , Plutonomy.ooFloatOutLambda = setFloatOutputLambda
+          }
+     in
+      Plutonomy.optimizeUPLCWith optimizerSettings $
+        Plutonomy.validatorToPlutus $
+          Plutonomy.mkValidatorScript compiledCode
 
 toCardanoApiScript :: Script -> Shelly.Script Shelly.PlutusScriptV2
 toCardanoApiScript =

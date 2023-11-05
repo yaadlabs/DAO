@@ -40,7 +40,6 @@ import PlutusTx (applyCode, compile, liftCode, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (
   Bool (False),
-  BuiltinData,
   any,
   check,
   filter,
@@ -61,6 +60,7 @@ import Triphut.Shared (
   hasSingleToken,
   hasSymbolInValue,
   hasTokenInValue,
+  mkValidatorWithSettings,
   plutonomyMintingPolicyHash,
   validatorHash,
   wrapValidate,
@@ -305,23 +305,11 @@ validateVote
             traceIfFalse "Not signed by owner" isSignedByOwner
               && traceIfFalse "All vote tokens are not burned" voteTokenAreAllBurned
 
-wrapValidateVote :: VoteValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-wrapValidateVote = wrapValidate validateVote
-
 voteValidator :: VoteValidatorConfig -> Validator
-voteValidator cfg =
-  let
-    optimizerSettings =
-      Plutonomy.defaultOptimizerOptions
-        { Plutonomy.ooSplitDelay = False
-        , Plutonomy.ooFloatOutLambda = False
-        }
-   in
-    Plutonomy.optimizeUPLCWith optimizerSettings $
-      Plutonomy.validatorToPlutus $
-        Plutonomy.mkValidatorScript $
-          $$(PlutusTx.compile [||wrapValidateVote||])
-            `applyCode` liftCode cfg
+voteValidator config = mkValidatorWithSettings compiledCode False
+  where
+    wrapValidateVote = wrapValidate validateVote
+    compiledCode = $$(PlutusTx.compile [||wrapValidateVote||]) `applyCode` liftCode config
 
 voteValidatorHash :: VoteValidatorConfig -> ValidatorHash
 voteValidatorHash = validatorHash . voteValidator

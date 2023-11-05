@@ -8,7 +8,6 @@ import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as BSS
-import Plutonomy qualified
 import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Interval (before)
@@ -34,7 +33,6 @@ import PlutusTx.Prelude (
   otherwise,
   traceError,
   traceIfFalse,
-  ($),
   (&&),
   (*),
   (+),
@@ -51,6 +49,7 @@ import Triphut.Shared (
   hasTokenInValue,
   isScriptCredential,
   lovelacesOf,
+  mkValidatorWithSettings,
   validatorHash,
   wrapValidate,
  )
@@ -287,23 +286,11 @@ onlyOneOfThisScript ins vh expectedRef = go ins
             _ -> go xs
           else go xs
 
-wrapValidateTreasury :: TreasuryValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-wrapValidateTreasury = wrapValidate validateTreasury
-
 treasuryValidator :: TreasuryValidatorConfig -> Validator
-treasuryValidator cfg =
-  let
-    optimizerSettings =
-      Plutonomy.defaultOptimizerOptions
-        { Plutonomy.ooSplitDelay = False
-        , Plutonomy.ooFloatOutLambda = False
-        }
-   in
-    Plutonomy.optimizeUPLCWith optimizerSettings $
-      Plutonomy.validatorToPlutus $
-        Plutonomy.mkValidatorScript $
-          $$(PlutusTx.compile [||wrapValidateTreasury||])
-            `applyCode` liftCode cfg
+treasuryValidator config = mkValidatorWithSettings compiledCode False
+  where
+    wrapValidateTreasury = wrapValidate validateTreasury
+    compiledCode = $$(PlutusTx.compile [||wrapValidateTreasury||]) `applyCode` liftCode config
 
 treasuryValidatorHash :: TreasuryValidatorConfig -> ValidatorHash
 treasuryValidatorHash = validatorHash . treasuryValidator

@@ -43,7 +43,6 @@ import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as BSS
-import Plutonomy qualified
 import Plutus.V1.Ledger.Interval (before)
 import Plutus.V1.Ledger.Scripts (
   MintingPolicy,
@@ -101,6 +100,7 @@ import Triphut.Shared (
   hasSymbolInValue,
   hasTokenInValue,
   mintingPolicyHash,
+  mkValidatorWithSettings,
   validatorHash,
   wrapValidate,
  )
@@ -252,22 +252,11 @@ validateConfiguration
         && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
         && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 
-wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-wrapValidateConfiguration = wrapValidate validateConfiguration
-
 configurationValidator :: ConfigurationValidatorConfig -> Validator
-configurationValidator cfg =
-  let
-    optimizerSettings =
-      Plutonomy.defaultOptimizerOptions
-        { Plutonomy.ooSplitDelay = False
-        }
-   in
-    Plutonomy.optimizeUPLCWith optimizerSettings $
-      Plutonomy.validatorToPlutus $
-        Plutonomy.mkValidatorScript $
-          $$(PlutusTx.compile [||wrapValidateConfiguration||])
-            `applyCode` liftCode cfg
+configurationValidator config = mkValidatorWithSettings compiledCode False
+  where
+    wrapValidateConfiguration = wrapValidate validateConfiguration
+    compiledCode = $$(PlutusTx.compile [||wrapValidateConfiguration||]) `applyCode` liftCode config
 
 configurationValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 configurationValidatorHash = validatorHash . configurationValidator

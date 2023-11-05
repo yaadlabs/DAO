@@ -10,7 +10,6 @@ import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as BSS
-import Plutonomy qualified
 import Plutus.V1.Ledger.Address (Address (addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Scripts (
@@ -52,7 +51,7 @@ import PlutusTx (
   unsafeFromBuiltinData,
  )
 import PlutusTx.Prelude (
-  Bool (False),
+  Bool (True),
   BuiltinData,
   Maybe (Just, Nothing),
   any,
@@ -82,6 +81,7 @@ import Triphut.Shared (
   hasSingleToken,
   hasTokenInValue,
   mintingPolicyHash,
+  mkValidatorWithSettings,
   validatorHash,
   wrapValidate,
  )
@@ -124,22 +124,11 @@ validateIndex
         && ivcNonce == ivcNonce -- to help with testing
 validateIndex _ _ _ _ = traceError "Wrong script purpose"
 
-wrapValidateIndex :: IndexValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-wrapValidateIndex = wrapValidate validateIndex
-
 indexValidator :: IndexValidatorConfig -> Validator
-indexValidator cfg =
-  let
-    optimizerSettings =
-      Plutonomy.defaultOptimizerOptions
-        { Plutonomy.ooSplitDelay = False
-        }
-   in
-    Plutonomy.optimizeUPLCWith optimizerSettings $
-      Plutonomy.validatorToPlutus $
-        Plutonomy.mkValidatorScript $
-          $$(PlutusTx.compile [||wrapValidateIndex||])
-            `applyCode` liftCode cfg
+indexValidator config = mkValidatorWithSettings compiledCode True
+  where
+    wrapValidateIndex = wrapValidate validateIndex
+    compiledCode = $$(PlutusTx.compile [||wrapValidateIndex||]) `applyCode` liftCode config
 
 indexValidatorHash :: IndexValidatorConfig -> ValidatorHash
 indexValidatorHash = validatorHash . indexValidator
