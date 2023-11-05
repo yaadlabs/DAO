@@ -8,7 +8,6 @@ module Triphut.ConfigurationNft (
   NftConfig (..),
 ) where
 
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Scripts (
   Datum,
   DatumHash,
@@ -59,16 +58,9 @@ data ConfigurationScriptContext = ConfigurationScriptContext
 data ConfigurationTxInfo = ConfigurationTxInfo
   { cTxInfoInputs :: [ConfigurationTxInInfo]
   , cTxInfoReferenceInputs :: [ConfigurationTxInInfo]
-  , cTxInfoOutputs :: [ConfigurationTxOut]
-  , cTxInfoFee :: BuiltinData
   , cTxInfoMint :: Value
-  , cTxInfoDCert :: BuiltinData
-  , cTxInfoWdrl :: BuiltinData
   , cTxInfoValidRange :: POSIXTimeRange
-  , cTxInfoSignatories :: [PubKeyHash]
-  , cTxInfoRedeemers :: BuiltinData
   , cTxInfoData :: Map DatumHash Datum
-  , cTxInfoId :: BuiltinData
   }
 
 data ConfigurationValidatorConfig = ConfigurationValidatorConfig

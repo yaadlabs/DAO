@@ -217,6 +217,7 @@ validatorToScript f config =
     . serialise
     $ f config
 
+-- | Convert policy with a config to Plutus script
 policyToScript :: (config -> MintingPolicy) -> config -> PlutusScript PlutusScriptV2
 policyToScript f =
   PlutusScriptSerialised
