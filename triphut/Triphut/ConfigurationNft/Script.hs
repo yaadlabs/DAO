@@ -75,7 +75,7 @@ import PlutusTx (
   unsafeFromBuiltinData,
  )
 import PlutusTx.Prelude (
-  Bool (False),
+  Bool (True),
   BuiltinData,
   Integer,
   any,
@@ -254,7 +254,7 @@ validateConfiguration
         && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 
 configurationValidator :: ConfigurationValidatorConfig -> Validator
-configurationValidator config = mkValidatorWithSettings compiledCode False
+configurationValidator config = mkValidatorWithSettings compiledCode True
   where
     wrapValidateConfiguration = wrapValidate validateConfiguration
     compiledCode = $$(PlutusTx.compile [||wrapValidateConfiguration||]) `applyCode` liftCode config
