@@ -63,6 +63,7 @@ import Triphut.Shared (
   mkValidatorWithSettings,
   plutonomyMintingPolicyHash,
   validatorHash,
+  validatorToScript,
   wrapValidate,
  )
 import Triphut.Types (TallyState (TallyState, tsProposalEndTime))
@@ -315,9 +316,4 @@ voteValidatorHash :: VoteValidatorConfig -> ValidatorHash
 voteValidatorHash = validatorHash . voteValidator
 
 voteScript :: VoteValidatorConfig -> PlutusScript PlutusScriptV2
-voteScript =
-  PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . serialise
-    . voteValidator
+voteScript = validatorToScript voteValidator

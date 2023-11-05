@@ -4,16 +4,19 @@ module Triphut.Treasury.Script (
   treasuryValidatorHash,
 ) where
 
-import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
-import Codec.Serialise (serialise)
-import Data.ByteString.Lazy qualified as BSL
-import Data.ByteString.Short qualified as BSS
+import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
 import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Interval (before)
 import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash)
 import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
-import Plutus.V1.Ledger.Value as V
+import Plutus.V1.Ledger.Value (
+  Value,
+  adaSymbol,
+  adaToken,
+  geq,
+  singleton,
+ )
 import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (
   applyCode,
@@ -51,6 +54,7 @@ import Triphut.Shared (
   lovelacesOf,
   mkValidatorWithSettings,
   validatorHash,
+  validatorToScript,
   wrapValidate,
  )
 import Triphut.Treasury (
@@ -166,7 +170,7 @@ validateTreasury
 
               -- Get the disbursed amount
               disbursedAmount :: Value
-              !disbursedAmount = V.singleton adaSymbol adaToken (min dcMaxTripDisbursement totalTravelCost)
+              !disbursedAmount = singleton adaSymbol adaToken (min dcMaxTripDisbursement totalTravelCost)
 
               travelAgentLovelaces :: Integer
               !travelAgentLovelaces = (totalTravelCost * dcAgentDisbursementPercent) `divide` 1000
@@ -205,7 +209,7 @@ validateTreasury
 
               -- Get the disbursed amount
               disbursedAmount :: Value
-              !disbursedAmount = V.singleton adaSymbol adaToken (min dcMaxGeneralDisbursement generalPaymentValue)
+              !disbursedAmount = singleton adaSymbol adaToken (min dcMaxGeneralDisbursement generalPaymentValue)
 
               -- Make sure the disbursed amount is less than the max
               -- Find the total value returned to the script address
@@ -296,9 +300,4 @@ treasuryValidatorHash :: TreasuryValidatorConfig -> ValidatorHash
 treasuryValidatorHash = validatorHash . treasuryValidator
 
 treasuryScript :: TreasuryValidatorConfig -> PlutusScript PlutusScriptV2
-treasuryScript =
-  PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . serialise
-    . treasuryValidator
+treasuryScript = validatorToScript treasuryValidator

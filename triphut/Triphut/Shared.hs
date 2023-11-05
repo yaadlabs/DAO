@@ -1,5 +1,6 @@
 module Triphut.Shared (
   WrappedMintingPolicyType,
+  validatorToScript,
   mkValidatorWithSettings,
   wrapValidate,
   hasBurnedTokens,
@@ -18,6 +19,7 @@ module Triphut.Shared (
   validatorHash,
 ) where
 
+import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 import Cardano.Api.Shelley qualified as Shelly
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
@@ -203,6 +205,15 @@ mkValidatorWithSettings
       Plutonomy.optimizeUPLCWith optimizerSettings $
         Plutonomy.validatorToPlutus $
           Plutonomy.mkValidatorScript compiledCode
+
+-- | Convert validator with a config to Plutus script
+validatorToScript :: (config -> Validator) -> config -> PlutusScript PlutusScriptV2
+validatorToScript f config =
+  PlutusScriptSerialised
+    . BSS.toShort
+    . BSL.toStrict
+    . serialise
+    $ f config
 
 toCardanoApiScript :: Script -> Shelly.Script Shelly.PlutusScriptV2
 toCardanoApiScript =

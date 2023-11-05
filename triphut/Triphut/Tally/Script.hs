@@ -97,6 +97,7 @@ import Triphut.Shared (
   mintingPolicyHash,
   mkValidatorWithSettings,
   validatorHash,
+  validatorToScript,
   wrapValidate,
  )
 import Triphut.Tally (
@@ -454,9 +455,4 @@ tallyValidatorHash :: TallyValidatorConfig -> ValidatorHash
 tallyValidatorHash = validatorHash . tallyValidator
 
 tallyScript :: TallyValidatorConfig -> PlutusScript PlutusScriptV2
-tallyScript =
-  PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . serialise
-    . tallyValidator
+tallyScript = validatorToScript tallyValidator

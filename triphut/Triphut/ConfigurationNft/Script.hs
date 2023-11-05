@@ -102,6 +102,7 @@ import Triphut.Shared (
   mintingPolicyHash,
   mkValidatorWithSettings,
   validatorHash,
+  validatorToScript,
   wrapValidate,
  )
 import Triphut.Types (
@@ -262,12 +263,7 @@ configurationValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 configurationValidatorHash = validatorHash . configurationValidator
 
 configurationScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
-configurationScript =
-  PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . serialise
-    . configurationValidator
+configurationScript = validatorToScript configurationValidator
 
 ownValue :: [ConfigurationTxInInfo] -> TxOutRef -> Value
 ownValue ins txOutRef = go ins

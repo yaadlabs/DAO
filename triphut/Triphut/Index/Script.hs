@@ -83,6 +83,7 @@ import Triphut.Shared (
   mintingPolicyHash,
   mkValidatorWithSettings,
   validatorHash,
+  validatorToScript,
   wrapValidate,
  )
 
@@ -134,12 +135,7 @@ indexValidatorHash :: IndexValidatorConfig -> ValidatorHash
 indexValidatorHash = validatorHash . indexValidator
 
 indexScript :: IndexValidatorConfig -> PlutusScript PlutusScriptV2
-indexScript =
-  PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . serialise
-    . indexValidator
+indexScript = validatorToScript indexValidator
 
 -- | Nft Index Policy
 mkIndexNftMinter :: IndexNftConfig -> BuiltinData -> ScriptContext -> Bool
