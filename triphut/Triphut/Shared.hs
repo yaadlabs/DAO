@@ -1,6 +1,7 @@
 module Triphut.Shared (
   WrappedMintingPolicyType,
   validatorToScript,
+  policyToScript,
   mkValidatorWithSettings,
   wrapValidate,
   hasBurnedTokens,
@@ -38,6 +39,7 @@ import Plutus.V1.Ledger.Scripts (
   getMintingPolicy,
   getScriptHash,
   getValidator,
+  unMintingPolicyScript,
  )
 import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value (Value, getValue), adaSymbol, adaToken)
 import Plutus.V2.Ledger.Tx (OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash))
@@ -214,6 +216,16 @@ validatorToScript f config =
     . BSL.toStrict
     . serialise
     $ f config
+
+policyToScript :: (config -> MintingPolicy) -> config -> PlutusScript PlutusScriptV2
+policyToScript f =
+  PlutusScriptSerialised
+    . BSS.toShort
+    . BSL.toStrict
+    . serialise
+    . Validator
+    . unMintingPolicyScript
+    . f
 
 toCardanoApiScript :: Script -> Shelly.Script Shelly.PlutusScriptV2
 toCardanoApiScript =

@@ -5,20 +5,15 @@ module Triphut.Tally.Script (
   tallyValidatorHash,
 ) where
 
-import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
-import Codec.Serialise (serialise)
-import Data.ByteString.Lazy qualified as BSL
-import Data.ByteString.Short qualified as BSS
+import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
 import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Interval (before)
 import Plutus.V1.Ledger.Scripts (
   MintingPolicy,
-  Script,
-  Validator (Validator),
+  Validator,
   ValidatorHash,
   mkMintingPolicyScript,
-  unMintingPolicyScript,
  )
 import Plutus.V1.Ledger.Value (
   CurrencySymbol,
@@ -96,6 +91,7 @@ import Triphut.Shared (
   isScriptCredential,
   mintingPolicyHash,
   mkValidatorWithSettings,
+  policyToScript,
   validatorHash,
   validatorToScript,
   wrapValidate,
@@ -221,24 +217,11 @@ tallyNftPolicy cfg =
     $$(compile [||\c -> wrappedPolicyTally c||])
       `PlutusTx.applyCode` PlutusTx.liftCode cfg
 
-tallyNftPlutusScript :: TallyNftConfig -> Script
-tallyNftPlutusScript = unMintingPolicyScript . tallyNftPolicy
-
-tallyNftValidator :: TallyNftConfig -> Validator
-tallyNftValidator = Validator . tallyNftPlutusScript
-
 tallyNftMinterPolicyId :: TallyNftConfig -> CurrencySymbol
 tallyNftMinterPolicyId = mpsSymbol . mintingPolicyHash . tallyNftPolicy
 
-tallyNftScriptAsCbor :: TallyNftConfig -> BSL.ByteString
-tallyNftScriptAsCbor = serialise . tallyNftValidator
-
 tallyNftMinter :: TallyNftConfig -> PlutusScript PlutusScriptV2
-tallyNftMinter =
-  PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . tallyNftScriptAsCbor
+tallyNftMinter = policyToScript tallyNftPolicy
 
 -- | Validator
 ownValueAndValidator :: [TallyTxInInfo] -> TxOutRef -> (Value, ValidatorHash)

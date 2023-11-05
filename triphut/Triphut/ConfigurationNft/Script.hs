@@ -39,18 +39,13 @@ import Triphut.ConfigurationNft (
   NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
  )
 
-import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
-import Codec.Serialise (serialise)
-import Data.ByteString.Lazy qualified as BSL
-import Data.ByteString.Short qualified as BSS
+import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
 import Plutus.V1.Ledger.Interval (before)
 import Plutus.V1.Ledger.Scripts (
   MintingPolicy,
-  Script,
-  Validator (Validator),
+  Validator,
   ValidatorHash,
   mkMintingPolicyScript,
-  unMintingPolicyScript,
  )
 import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
 import Plutus.V1.Ledger.Value (
@@ -101,6 +96,7 @@ import Triphut.Shared (
   hasTokenInValue,
   mintingPolicyHash,
   mkValidatorWithSettings,
+  policyToScript,
   validatorHash,
   validatorToScript,
   wrapValidate,
@@ -159,24 +155,11 @@ policy cfg =
     $$(compile [||\c -> wrappedPolicy c||])
       `PlutusTx.applyCode` PlutusTx.liftCode cfg
 
-plutusScript :: NftConfig -> Script
-plutusScript = unMintingPolicyScript . policy
-
-validator :: NftConfig -> Validator
-validator = Validator . plutusScript
-
 nftMinterPolicyId :: NftConfig -> CurrencySymbol
 nftMinterPolicyId = mpsSymbol . mintingPolicyHash . policy
 
-scriptAsCbor :: NftConfig -> BSL.ByteString
-scriptAsCbor = serialise . validator
-
 nftMinter :: NftConfig -> PlutusScript PlutusScriptV2
-nftMinter =
-  PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . scriptAsCbor
+nftMinter = policyToScript policy
 
 -------------------------------------------------------------------------------
 -- Validator

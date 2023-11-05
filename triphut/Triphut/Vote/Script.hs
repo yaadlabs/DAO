@@ -20,7 +20,6 @@ import Plutus.V1.Ledger.Scripts (
   Datum,
   DatumHash,
   MintingPolicy,
-  Script,
   Validator (Validator),
   ValidatorHash,
   mkMintingPolicyScript,
@@ -224,12 +223,6 @@ policy cfg =
     $$(compile [||\c -> wrappedPolicy c||])
       `PlutusTx.applyCode` PlutusTx.liftCode cfg
 
-plutusScript :: VoteMinterConfig -> Script
-plutusScript = unMintingPolicyScript . policy
-
-validator :: VoteMinterConfig -> Validator
-validator = Validator . plutusScript
-
 voteMinterPolicyId :: VoteMinterConfig -> CurrencySymbol
 voteMinterPolicyId = mpsSymbol . plutonomyMintingPolicyHash . policy
 
@@ -242,7 +235,11 @@ scriptAsCbor =
         , Plutonomy.ooFloatOutLambda = False
         }
    in
-    serialise . Plutonomy.optimizeUPLCWith optimizerSettings . validator
+    serialise
+      . Plutonomy.optimizeUPLCWith optimizerSettings
+      . Validator
+      . unMintingPolicyScript
+      . policy
 
 voteMinter :: VoteMinterConfig -> PlutusScript PlutusScriptV2
 voteMinter =
