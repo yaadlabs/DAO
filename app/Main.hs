@@ -39,7 +39,7 @@ import Triphut.ConfigurationNft.Script (
   nftMinter,
   nftMinterPolicyId,
  )
-import Triphut.Tally (
+import Triphut.Index (
   IndexNftConfig (IndexNftConfig, incIndexValidator, incInitialUtxo, incTokenName),
   IndexValidatorConfig (
     IndexValidatorConfig,
@@ -47,6 +47,14 @@ import Triphut.Tally (
     ivcConfigNftTokenName,
     ivcNonce
   ),
+ )
+import Triphut.Index.Script (
+  indexScript,
+  indexValidatorHash,
+  tallyIndexNftMinter,
+  tallyIndexNftMinterPolicyId,
+ )
+import Triphut.Tally (
   TallyNftConfig (
     TallyNftConfig,
     tncConfigNftCurrencySymbol,
@@ -61,10 +69,6 @@ import Triphut.Tally (
   ),
  )
 import Triphut.Tally.Script (
-  indexScript,
-  indexValidatorHash,
-  tallyIndexNftMinter,
-  tallyIndexNftMinterPolicyId,
   tallyNftMinter,
   tallyNftMinterPolicyId,
   tallyScript,

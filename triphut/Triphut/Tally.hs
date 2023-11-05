@@ -1,9 +1,6 @@
 module Triphut.Tally (
-  IndexValidatorConfig (..),
-  IndexNftConfig (..),
   TallyNftConfig (..),
   TallyValidatorConfig (..),
-  IndexNftDatum (..),
   TallyTxOut (..),
   TallyTxInInfo (..),
   TallyTxInfo (..),
@@ -19,7 +16,7 @@ import Plutus.V1.Ledger.Scripts (
   ValidatorHash,
  )
 import Plutus.V1.Ledger.Time (POSIXTimeRange)
-import Plutus.V1.Ledger.Value as V
+import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value)
 import Plutus.V2.Ledger.Tx (
   OutputDatum,
   TxOutRef,
@@ -31,31 +28,6 @@ import PlutusTx (
  )
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (Integer)
-
-newtype IndexNftDatum = IndexNftDatum
-  { indIndex :: Integer
-  }
-
-data IndexNftConfig = IndexNftConfig
-  { incInitialUtxo :: TxOutRef
-  , incTokenName :: TokenName
-  , incIndexValidator :: ValidatorHash
-  }
-
-unstableMakeIsData ''IndexNftDatum
-makeLift ''IndexNftConfig
-
--------------------------------------------------------------------------------
--- Nft Index Validator
--------------------------------------------------------------------------------
-
-data IndexValidatorConfig = IndexValidatorConfig
-  { ivcConfigNftCurrencySymbol :: CurrencySymbol
-  , ivcConfigNftTokenName :: TokenName
-  , ivcNonce :: Integer -- to help with testing
-  }
-
-makeLift ''IndexValidatorConfig
 
 -------------------------------------------------------------------------------
 -- Tally Nft Minter

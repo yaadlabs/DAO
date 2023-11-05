@@ -56,6 +56,8 @@ library
     Triphut.AlwaysSucceed
     Triphut.ConfigurationNft
     Triphut.ConfigurationNft.Script
+    Triphut.Index
+    Triphut.Index.Script
     Triphut.Shared
     Triphut.Tally
     Triphut.Tally.Script
@@ -85,6 +87,7 @@ library triphut-specs
   exposed-modules:
     Spec.AlwaysSucceed.Script
     Spec.ConfigurationNft.Script
+    Spec.Index.Script
     Spec.Tally.Script
     Spec.Utils
     Spec.Utils.Unit
