@@ -102,8 +102,8 @@ import Triphut.Types (
     dcTotalVotes,
     dcTripMajorityPercent,
     dcTripRelativeMajorityPercent,
-    dcUpgradRelativeMajorityPercent,
-    dcUpgradeMajorityPercent
+    dcUpgradeMajorityPercent,
+    dcUpgradeRelativeMajorityPercent
   ),
   ProposalType (General, Trip, Upgrade),
   TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
@@ -230,7 +230,7 @@ validateTreasury
             let
               hasEnoughVotes :: Bool
               !hasEnoughVotes =
-                traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradRelativeMajorityPercent)
+                traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradeRelativeMajorityPercent)
                   && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
 
               -- Make sure the upgrade token was minted

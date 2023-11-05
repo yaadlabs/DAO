@@ -109,8 +109,8 @@ import Triphut.Types (
     dcProposalTallyEndOffset,
     dcTallyNft,
     dcTotalVotes,
-    dcUpgradRelativeMajorityPercent,
-    dcUpgradeMajorityPercent
+    dcUpgradeMajorityPercent,
+    dcUpgradeRelativeMajorityPercent
   ),
   ProposalType (Upgrade),
   TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
@@ -236,7 +236,7 @@ validateConfiguration
 
       hasEnoughVotes :: Bool
       !hasEnoughVotes =
-        traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradRelativeMajorityPercent)
+        traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradeRelativeMajorityPercent)
           && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
 
       -- Make sure the upgrade token was minted

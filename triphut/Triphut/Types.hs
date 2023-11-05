@@ -8,7 +8,7 @@ where
 import Plutus.V1.Ledger.Address (Address)
 import Plutus.V1.Ledger.Scripts (ValidatorHash)
 import Plutus.V1.Ledger.Time (POSIXTime)
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
+import Plutus.V1.Ledger.Value (CurrencySymbol)
 import PlutusTx (unstableMakeIsData)
 import PlutusTx.Prelude (Bool (False), Integer, (&&), (==))
 import PlutusTx.Prelude qualified as PlutusTx
@@ -68,29 +68,19 @@ instance PlutusTx.Eq TallyState where
         && xAgainst == yAgainst
 
 data DynamicConfig = DynamicConfig
-  { dcTallyIndexNft :: CurrencySymbol
-  , dcTallyNft :: CurrencySymbol
+  { dcTallyNft :: CurrencySymbol
   , dcTallyValidator :: ValidatorHash
-  , dcTreasuryValidator :: ValidatorHash
-  , dcConfigurationValidator :: ValidatorHash
-  , dcVoteCurrencySymbol :: CurrencySymbol
-  , dcVoteTokenName :: TokenName
-  , dcVoteValidator :: ValidatorHash
   , dcUpgradeMajorityPercent :: Integer -- times a 1000
-  , dcUpgradRelativeMajorityPercent :: Integer -- times a 1000
+  , dcUpgradeRelativeMajorityPercent :: Integer -- times a 1000
   , dcGeneralMajorityPercent :: Integer -- times a 1000
   , dcGeneralRelativeMajorityPercent :: Integer -- times a 1000
   , dcTripMajorityPercent :: Integer -- times a 1000
   , dcTripRelativeMajorityPercent :: Integer -- times a 1000
   , dcTotalVotes :: Integer
-  , dcVoteNft :: CurrencySymbol
-  , dcVoteFungibleCurrencySymbol :: CurrencySymbol
-  , dcVoteFungibleTokenName :: TokenName
   , dcProposalTallyEndOffset :: Integer -- in milliseconds
   , dcMaxGeneralDisbursement :: Integer
   , dcMaxTripDisbursement :: Integer
   , dcAgentDisbursementPercent :: Integer -- times a 1000
-  , dcFungibleVotePercent :: Integer -- times a 1000
   }
 
 unstableMakeIsData ''DynamicConfig
