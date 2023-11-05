@@ -63,6 +63,7 @@ import Triphut.Shared (
   hasTokenInValue,
   plutonomyMintingPolicyHash,
   validatorHash,
+  wrapValidate,
  )
 import Triphut.Types (TallyState (TallyState, tsProposalEndTime))
 import Triphut.Vote (
@@ -304,20 +305,8 @@ validateVote
             traceIfFalse "Not signed by owner" isSignedByOwner
               && traceIfFalse "All vote tokens are not burned" voteTokenAreAllBurned
 
-wrapValidateVote ::
-  VoteValidatorConfig ->
-  BuiltinData ->
-  BuiltinData ->
-  BuiltinData ->
-  ()
-wrapValidateVote cfg x y z =
-  check
-    ( validateVote
-        cfg
-        (unsafeFromBuiltinData x)
-        (unsafeFromBuiltinData y)
-        (unsafeFromBuiltinData z)
-    )
+wrapValidateVote :: VoteValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+wrapValidateVote = wrapValidate validateVote
 
 voteValidator :: VoteValidatorConfig -> Validator
 voteValidator cfg =

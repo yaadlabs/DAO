@@ -1,5 +1,6 @@
 module Triphut.Shared (
   WrappedMintingPolicyType,
+  wrapValidate,
   hasBurnedTokens,
   hasTokenInValue,
   getTokenNameOfNft,
@@ -47,6 +48,7 @@ import PlutusTx.Prelude (
   BuiltinString,
   Integer,
   Maybe (Just, Nothing),
+  check,
   divide,
   fromMaybe,
   isJust,
@@ -162,6 +164,24 @@ integerToByteString n
   | otherwise =
       integerToByteString (n `divide` 10)
         <> integerToByteString (n `modulo` 10)
+
+-- | Transforms a validator function `validate` to its lower level representaion
+wrapValidate ::
+  (UnsafeFromData b, UnsafeFromData c, UnsafeFromData d) =>
+  (a -> b -> c -> d -> Bool) ->
+  a ->
+  BuiltinData ->
+  BuiltinData ->
+  BuiltinData ->
+  ()
+wrapValidate validate config x y z =
+  check
+    ( validate
+        config
+        (unsafeFromBuiltinData x)
+        (unsafeFromBuiltinData y)
+        (unsafeFromBuiltinData z)
+    )
 
 toCardanoApiScript :: Script -> Shelly.Script Shelly.PlutusScriptV2
 toCardanoApiScript =

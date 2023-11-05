@@ -20,14 +20,12 @@ import PlutusTx (
   applyCode,
   compile,
   liftCode,
-  unsafeFromBuiltinData,
  )
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinData,
   Integer,
   Maybe (Just, Nothing),
-  check,
   divide,
   filter,
   mapMaybe,
@@ -54,6 +52,7 @@ import Triphut.Shared (
   isScriptCredential,
   lovelacesOf,
   validatorHash,
+  wrapValidate,
  )
 import Triphut.Treasury (
   Treasury,
@@ -288,20 +287,8 @@ onlyOneOfThisScript ins vh expectedRef = go ins
             _ -> go xs
           else go xs
 
-wrapValidateTreasury ::
-  TreasuryValidatorConfig ->
-  BuiltinData ->
-  BuiltinData ->
-  BuiltinData ->
-  ()
-wrapValidateTreasury cfg x y z =
-  check
-    ( validateTreasury
-        cfg
-        (unsafeFromBuiltinData x)
-        (unsafeFromBuiltinData y)
-        (unsafeFromBuiltinData z)
-    )
+wrapValidateTreasury :: TreasuryValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+wrapValidateTreasury = wrapValidate validateTreasury
 
 treasuryValidator :: TreasuryValidatorConfig -> Validator
 treasuryValidator cfg =

@@ -97,6 +97,7 @@ import Triphut.Shared (
   isScriptCredential,
   mintingPolicyHash,
   validatorHash,
+  wrapValidate,
  )
 import Triphut.Tally (
   TallyDynamicConfig (
@@ -443,20 +444,8 @@ validateTally
         && traceIfFalse "Tally datum is not updated" tallyDatumIsUpdated
         && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
 
-wrapValidateTally ::
-  TallyValidatorConfig ->
-  BuiltinData ->
-  BuiltinData ->
-  BuiltinData ->
-  ()
-wrapValidateTally cfg x y z =
-  check
-    ( validateTally
-        cfg
-        (unsafeFromBuiltinData x)
-        (unsafeFromBuiltinData y)
-        (unsafeFromBuiltinData z)
-    )
+wrapValidateTally :: TallyValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+wrapValidateTally = wrapValidate validateTally
 
 tallyValidator :: TallyValidatorConfig -> Validator
 tallyValidator cfg =

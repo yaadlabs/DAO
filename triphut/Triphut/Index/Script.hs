@@ -83,6 +83,7 @@ import Triphut.Shared (
   hasTokenInValue,
   mintingPolicyHash,
   validatorHash,
+  wrapValidate,
  )
 
 -- | Nft Index Validator
@@ -123,20 +124,8 @@ validateIndex
         && ivcNonce == ivcNonce -- to help with testing
 validateIndex _ _ _ _ = traceError "Wrong script purpose"
 
-wrapValidateIndex ::
-  IndexValidatorConfig ->
-  BuiltinData ->
-  BuiltinData ->
-  BuiltinData ->
-  ()
-wrapValidateIndex cfg x y z =
-  check
-    ( validateIndex
-        cfg
-        (unsafeFromBuiltinData x)
-        (unsafeFromBuiltinData y)
-        (unsafeFromBuiltinData z)
-    )
+wrapValidateIndex :: IndexValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+wrapValidateIndex = wrapValidate validateIndex
 
 indexValidator :: IndexValidatorConfig -> Validator
 indexValidator cfg =

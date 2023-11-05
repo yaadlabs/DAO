@@ -102,6 +102,7 @@ import Triphut.Shared (
   hasTokenInValue,
   mintingPolicyHash,
   validatorHash,
+  wrapValidate,
  )
 import Triphut.Types (
   DynamicConfig (
@@ -251,20 +252,8 @@ validateConfiguration
         && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
         && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 
-wrapValidateConfiguration ::
-  ConfigurationValidatorConfig ->
-  BuiltinData ->
-  BuiltinData ->
-  BuiltinData ->
-  ()
-wrapValidateConfiguration cfg x y z =
-  check
-    ( validateConfiguration
-        cfg
-        (unsafeFromBuiltinData x)
-        (unsafeFromBuiltinData y)
-        (unsafeFromBuiltinData z)
-    )
+wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+wrapValidateConfiguration = wrapValidate validateConfiguration
 
 configurationValidator :: ConfigurationValidatorConfig -> Validator
 configurationValidator cfg =
