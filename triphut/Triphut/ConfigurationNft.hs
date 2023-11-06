@@ -40,7 +40,6 @@ makeLift ''NftConfig
 data ConfigurationTxOut = ConfigurationTxOut
   { cTxOutValue :: Value
   , cTxOutDatum :: OutputDatum
-  , cTxOutReferenceScript :: BuiltinData
   }
 
 data ConfigurationTxInInfo = ConfigurationTxInInfo
