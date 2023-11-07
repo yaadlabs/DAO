@@ -1,41 +1,40 @@
 module Spec.ConfigurationNft.Script (
-    mkValidNftTx
-  , mkNftMinterTooManyTokensTx
+  mkValidNftTx,
+  mkNftMinterTooManyTokensTx,
 ) where
 
-import Triphut.Types (DynamicConfig)
-import Triphut.ConfigurationNft (ConfigurationValidatorConfig)
-import Spec.ConfigurationNft.SampleData (sampleDynamicConfig, sampleConfigValidatorConfig)
+import Plutus.Model (
+  Ada (Lovelace),
+  Run,
+  Tx,
+  UserSpend,
+  ada,
+  adaValue,
+  getHeadRef,
+  mintValue,
+  newUser,
+  spend,
+  submitTx,
+  userSpend,
+ )
 import Plutus.Model.V2 (
-  TypedValidator(TypedValidator),
+  DatumMode (InlineDatum),
   TypedPolicy,
-  DatumMode(InlineDatum),
-  toV2,
-  payToScript,
+  TypedValidator (TypedValidator),
   mkTypedPolicy,
+  payToScript,
   scriptCurrencySymbol,
   toBuiltinPolicy,
+  toV2,
  )
-import Plutus.V1.Ledger.Value (CurrencySymbol, Value, TokenName(TokenName), singleton)
+import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName (TokenName), Value, singleton)
 import PlutusTx qualified
-import Prelude (mconcat)
 import PlutusTx.Prelude (($), (.), (<>))
-import Triphut.ConfigurationNft (NftConfig(..))
-import Triphut.ConfigurationNft.Script (mkNftMinter, configurationValidator)
-import Plutus.Model 
-  ( Tx
-  , UserSpend
-  , Run
-  , Ada(Lovelace)
-  , ada
-  , newUser
-  , adaValue
-  , mintValue
-  , userSpend
-  , submitTx
-  , getHeadRef
-  , spend
-  )
+import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig, sampleDynamicConfig)
+import Triphut.ConfigurationNft (ConfigurationValidatorConfig, NftConfig (..))
+import Triphut.ConfigurationNft.Script (configurationValidator, mkNftMinter)
+import Triphut.Types (DynamicConfig)
+import Prelude (mconcat)
 
 -- Policy script and info
 configNftTypedMintingPolicy :: NftConfig -> TypedPolicy ()
@@ -78,10 +77,10 @@ validNftTx config sp =
       policy = configNftTypedMintingPolicy config
       validator = configTypedValidator
    in mconcat
-       [ mintValue policy () mintVal
-       , userSpend sp
-       , payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
-       ]
+        [ mintValue policy () mintVal
+        , userSpend sp
+        , payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
+        ]
 
 -- | Invalid transaction as we mint more than one token, test should fail
 mkNftMinterTooManyTokensTx :: Run ()
@@ -97,7 +96,7 @@ invalidNftTooManyTokensTx config sp =
       policy = configNftTypedMintingPolicy config
       validator = configTypedValidator
    in mconcat
-       [ mintValue policy () mintVal
-       , userSpend sp
-       , payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
-       ]
+        [ mintValue policy () mintVal
+        , userSpend sp
+        , payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
+        ]

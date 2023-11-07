@@ -1,15 +1,15 @@
 module Spec.SpecUtils (checkFails) where
 
-import Prelude (String)
-import Test.Tasty (TestTree)
+import Plutus.Model (
+  MockConfig,
+  Run,
+  mustFail,
+  skipLimits,
+  testNoErrors,
+ )
 import Plutus.V1.Ledger.Value (Value)
-import Plutus.Model 
-  ( MockConfig
-  , Run
-  , testNoErrors
-  , mustFail
-  , skipLimits
-  )
+import Test.Tasty (TestTree)
+import Prelude (String)
 
 checkFails :: MockConfig -> Value -> String -> Run () -> TestTree
 checkFails cfg funds msg act =
