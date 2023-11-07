@@ -28,7 +28,6 @@ import PlutusTx (
   unstableMakeIsData,
  )
 import PlutusTx.AssocMap (Map)
-import PlutusTx.Prelude (BuiltinData)
 
 data NftConfig = NftConfig
   { ncInitialUtxo :: TxOutRef

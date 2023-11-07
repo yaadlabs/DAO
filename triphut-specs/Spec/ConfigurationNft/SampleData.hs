@@ -1,3 +1,7 @@
+{- |
+Module      : Spec.ConfigurationNft.SampleData
+Description : ConfigurationNft sample data for tests
+-}
 module Spec.ConfigurationNft.SampleData (
   sampleDynamicConfig,
   sampleConfigValidatorConfig,

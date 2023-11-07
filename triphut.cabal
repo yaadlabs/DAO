@@ -48,7 +48,6 @@ common common-test-depends
    , tasty
    , tasty-hunit
    , plutus-tx
-   , plutus-tx-plugin
 
 library
   import: common-lang, common-depends, common-options, common-extensions
@@ -87,6 +86,7 @@ library triphut-specs
   exposed-modules:
     Spec.AlwaysSucceed.Script
     Spec.ConfigurationNft
+    Spec.ConfigurationNft.Context
     Spec.ConfigurationNft.SampleData
     Spec.ConfigurationNft.Script
     Spec.Index.Script
@@ -97,6 +97,7 @@ library triphut-specs
     Spec.Vote.Script
   build-depends:
     , triphut
+    , plutus-tx-plugin
 
 executable create-sc
   import: common-lang, common-depends, common-options, common-extensions

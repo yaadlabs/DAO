@@ -6,7 +6,10 @@ import Plutus.Model (
   defaultBabbage,
   testNoErrors,
  )
-import Spec.ConfigurationNft.Script (mkNftMinterTooManyTokensTx, mkValidNftTx)
+import Spec.ConfigurationNft.Context (
+  invalidConfigNftTooManyTokensMintedTest,
+  validConfigNftTest,
+ )
 import Spec.SpecUtils (checkFails)
 import Test.Tasty (TestTree, testGroup)
 
@@ -23,7 +26,9 @@ nftSpec config =
   where
     good = testNoErrors initialFunds config
     bad = checkFails config (adaValue 10_000_000)
-    positiveTest = good "Configuration mint NFT (mkNftMinter) succeeds, positive test" mkValidNftTx
+    positiveTest = good "Configuration mint NFT (mkNftMinter) succeeds, positive test" validConfigNftTest
     negativeTest =
-      bad "Configuration mint NFT (mkNftMinter) fails - more than 1 token in Tx" mkNftMinterTooManyTokensTx
+      bad
+        "Configuration mint NFT (mkNftMinter) fails - more than 1 token in Tx"
+        invalidConfigNftTooManyTokensMintedTest
     initialFunds = adaValue 10_000_000
