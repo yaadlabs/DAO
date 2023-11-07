@@ -7,6 +7,7 @@ import Plutus.Model (
   testNoErrors,
  )
 import Spec.ConfigurationNft.Context (
+  invalidConfigNftNoDatumPaidToScriptTest,
   invalidConfigNftTooManyTokensMintedTest,
   validConfigNftTest,
  )
@@ -22,6 +23,7 @@ nftSpec config =
     "Configuration NFT policy tests"
     [ positiveTest
     , negativeTest
+    , negativeTest1
     ]
   where
     good = testNoErrors initialFunds config
@@ -31,4 +33,8 @@ nftSpec config =
       bad
         "Configuration mint NFT (mkNftMinter) fails - more than 1 token in Tx"
         invalidConfigNftTooManyTokensMintedTest
+    negativeTest1 =
+      bad
+        "Configuration mint NFT (mkNftMinter) fails - no Datum paid to validator script"
+        invalidConfigNftNoDatumPaidToScriptTest
     initialFunds = adaValue 10_000_000

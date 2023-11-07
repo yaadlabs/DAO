@@ -5,6 +5,7 @@ Description : ConfigurationNft context unit tests
 module Spec.ConfigurationNft.Context (
   validConfigNftTest,
   invalidConfigNftTooManyTokensMintedTest,
+  invalidConfigNftNoDatumPaidToScriptTest,
 ) where
 
 import Plutus.Model (
@@ -26,7 +27,7 @@ import Plutus.Model.V2 (
   payToScript,
  )
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
-import PlutusTx.Prelude (($), (<>))
+import PlutusTx.Prelude (Bool (False, True), ($))
 import Spec.ConfigurationNft.SampleData (sampleDynamicConfig)
 import Spec.ConfigurationNft.Script (
   configNftCurrencySymbol,
@@ -34,25 +35,35 @@ import Spec.ConfigurationNft.Script (
   configNftTypedValidator,
  )
 import Triphut.ConfigurationNft (NftConfig (NftConfig))
-import Prelude (mconcat)
+import Prelude (mconcat, (<>))
 
 -- Test txs
 
--- | Valid transaction, test should pass
+-- | Valid test
 validConfigNftTest :: Run ()
 validConfigNftTest = mkConfigNftTest validNftTx
 
--- | Invalid transaction as we mint more than one token, test should fail
+-- | Invalid test
 invalidConfigNftTooManyTokensMintedTest :: Run ()
 invalidConfigNftTooManyTokensMintedTest = mkConfigNftTest invalidNftTooManyTokensTx
 
+-- | Invalid test
+invalidConfigNftNoDatumPaidToScriptTest :: Run ()
+invalidConfigNftNoDatumPaidToScriptTest = mkConfigNftTest invalidNftNoDatumSentToValidator
+
 -- | A valid tx, corresponding test should pass
 validNftTx :: NftConfig -> UserSpend -> Tx
-validNftTx = mkConfigNftTx validNftConfigValue
+validNftTx = mkConfigNftTx True validNftConfigValue
 
 -- | Invalid tx that mints 2 tokens instead of 1, corresponding test should fail
 invalidNftTooManyTokensTx :: NftConfig -> UserSpend -> Tx
-invalidNftTooManyTokensTx = mkConfigNftTx invalidTooManyTokensConfigValue
+invalidNftTooManyTokensTx = mkConfigNftTx True invalidTooManyTokensConfigValue
+
+{- | Invalid tx as we set the flag for paying the Datum to the
+ validator script to False, corresponding test should fail
+-}
+invalidNftNoDatumSentToValidator :: NftConfig -> UserSpend -> Tx
+invalidNftNoDatumSentToValidator = mkConfigNftTx False validNftConfigValue
 
 -- | Helper function for making tests
 mkConfigNftTest :: (NftConfig -> UserSpend -> Tx) -> Run ()
@@ -62,17 +73,18 @@ mkConfigNftTest tx = do
   let params = NftConfig (getHeadRef spend') (TokenName "triphut")
   submitTx user $ tx params spend'
 
--- | Helper function for building txs
-mkConfigNftTx :: (NftConfig -> Value) -> NftConfig -> UserSpend -> Tx
-mkConfigNftTx configValue config spend' =
+{- | Helper function for building txs
+ Set the `hasDatum` flag to False to create and invalid tx that
+ doesn't pay the datum to the validator script
+-}
+mkConfigNftTx :: Bool -> (NftConfig -> Value) -> NftConfig -> UserSpend -> Tx
+mkConfigNftTx hasDatum configValue config spend' =
   let mintVal = configValue config
       policy = configNftTypedMintingPolicy config
       validator = configNftTypedValidator
-   in mconcat
-        [ mintValue policy () mintVal
-        , userSpend spend'
-        , payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
-        ]
+      baseTx = mconcat [mintValue policy () mintVal, userSpend spend']
+      withDatum = payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
+   in if hasDatum then baseTx <> withDatum else baseTx
 
 -- | Valid value to be used in valid tx
 validNftConfigValue :: NftConfig -> Value
