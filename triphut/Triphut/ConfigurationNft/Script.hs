@@ -131,7 +131,6 @@ mkNftMinter
       hasUTxO :: Bool
       !hasUTxO = any (\i -> txInInfoOutRef i == ncInitialUtxo) txInfoInputs
 
-      -- This errors if more than one token is used as an output with this policy id
       _newOutput :: DynamicConfig
       !_newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
         [TxOut {txOutDatum}] -> convertDatum txInfoData txOutDatum

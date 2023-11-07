@@ -20,7 +20,7 @@ import Plutus.V1.Ledger.Value (CurrencySymbol)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
-import Triphut.ConfigurationNft (ConfigurationValidatorConfig, NftConfig (..))
+import Triphut.ConfigurationNft (ConfigurationValidatorConfig, NftConfig)
 import Triphut.ConfigurationNft.Script (configurationValidator, mkNftMinter)
 import Triphut.Types (DynamicConfig)
 

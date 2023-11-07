@@ -74,7 +74,7 @@ mkConfigNftTest tx = do
   submitTx user $ tx params spend'
 
 {- | Helper function for building txs
- Set the `hasDatum` flag to False to create and invalid tx that
+ Set the `hasDatum` flag to False to create an invalid tx that
  doesn't pay the datum to the validator script
 -}
 mkConfigNftTx :: Bool -> (NftConfig -> Value) -> NftConfig -> UserSpend -> Tx
