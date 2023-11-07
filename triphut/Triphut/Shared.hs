@@ -1,5 +1,6 @@
 module Triphut.Shared (
   WrappedMintingPolicyType,
+  hasTokenInValueNoErrors,
   validatorToScript,
   policyToScript,
   mkValidatorWithSettings,
@@ -93,7 +94,17 @@ hasSingleToken (Value value) symbol tokenName = case Map.lookup symbol value of
         && traceIfFalse "Should be exactly one" (c == 1)
     _ -> traceError "Wrong number of tokens with policy id"
 
-{- | Return `Maybe TokenName` if the value contains exactly one of the given token
+{- | Return True if the value contains exactly one of the given token
+  Same as `hasTokenInValue` but contains error traces (traceError)
+-}
+hasTokenInValueNoErrors :: CurrencySymbol -> Value -> Bool
+hasTokenInValueNoErrors symbol (Value value) = case Map.lookup symbol value of
+  Nothing -> False
+  Just map' -> case Map.toList map' of
+    [(_, c)] -> c == 1
+    _ -> False
+
+{- | Return `Just TokenName` if the value contains exactly one of the given token
  Returns `Maybe` in order to be used by the separate
  `hasTokenInValue` and `getTokenNameOfNft` helpers
 -}

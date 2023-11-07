@@ -86,8 +86,11 @@ library triphut-specs
   hs-source-dirs: triphut-specs
   exposed-modules:
     Spec.AlwaysSucceed.Script
+    Spec.ConfigurationNft
+    Spec.ConfigurationNft.SampleData
     Spec.ConfigurationNft.Script
     Spec.Index.Script
+    Spec.SpecUtils
     Spec.Tally.Script
     Spec.Utils
     Spec.Utils.Unit
