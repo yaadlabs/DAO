@@ -3,6 +3,7 @@ module Triphut.ConfigurationNft.Script (
   nftMinter,
   nftMinterPolicyId,
   configurationScript,
+  configurationValidator,
   configurationValidatorHash,
 ) where
 
@@ -94,6 +95,7 @@ import Triphut.Shared (
   hasSingleToken,
   hasSymbolInValue,
   hasTokenInValue,
+  hasTokenInValueNoErrors,
   mintingPolicyHash,
   mkValidatorWithSettings,
   policyToScript,
@@ -124,7 +126,7 @@ mkNftMinter
     } =
     let
       hasWitness :: Value -> Bool
-      hasWitness = hasTokenInValue thisCurrencySymbol "Configuration Witness"
+      hasWitness = hasTokenInValueNoErrors thisCurrencySymbol
 
       hasUTxO :: Bool
       !hasUTxO = any (\i -> txInInfoOutRef i == ncInitialUtxo) txInfoInputs
@@ -239,8 +241,10 @@ validateConfiguration
 configurationValidator :: ConfigurationValidatorConfig -> Validator
 configurationValidator config = mkValidatorWithSettings compiledCode True
   where
-    wrapValidateConfiguration = wrapValidate validateConfiguration
     compiledCode = $$(PlutusTx.compile [||wrapValidateConfiguration||]) `applyCode` liftCode config
+
+wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+wrapValidateConfiguration = wrapValidate validateConfiguration
 
 configurationValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 configurationValidatorHash = validatorHash . configurationValidator
