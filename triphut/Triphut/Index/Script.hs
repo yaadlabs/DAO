@@ -73,7 +73,7 @@ import Triphut.Index (
 import Triphut.Shared (
   WrappedMintingPolicyType,
   convertDatum,
-  hasSingleToken,
+  hasSingleTokenWithSymbolAndTokenName,
   hasTokenInValue,
   mintingPolicyHash,
   mkValidatorWithSettings,
@@ -159,7 +159,7 @@ mkIndexNftMinter
 
       onlyOneTokenMinted :: Bool
       !onlyOneTokenMinted =
-        hasSingleToken
+        hasSingleTokenWithSymbolAndTokenName
           txInfoMint
           thisCurrencySymbol
           incTokenName

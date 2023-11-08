@@ -85,7 +85,7 @@ import Triphut.Shared (
   countOfTokenInValue,
   getTokenNameOfNft,
   hasOneOfToken,
-  hasSingleToken,
+  hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   integerToByteString,
   isScriptCredential,
@@ -192,7 +192,7 @@ mkTallyNftMinter
 
       onlyOneTokenMinted :: Bool
       !onlyOneTokenMinted =
-        hasSingleToken
+        hasSingleTokenWithSymbolAndTokenName
           txInfoMint
           thisCurrencySymbol
           theTokenName

@@ -56,7 +56,7 @@ import Triphut.Shared (
   convertDatum,
   hasBurnedTokens,
   hasOneOfToken,
-  hasSingleToken,
+  hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
   mkValidatorWithSettings,
@@ -200,7 +200,11 @@ mkVoteMinter
         !hasWitness = hasOneOfToken thisCurrencySymbol vmdcVoteTokenName voteValue
 
         onlyMintedOne :: Bool
-        !onlyMintedOne = hasSingleToken vmTxInfoMint thisCurrencySymbol vmdcVoteTokenName
+        !onlyMintedOne =
+          hasSingleTokenWithSymbolAndTokenName
+            vmTxInfoMint
+            thisCurrencySymbol
+            vmdcVoteTokenName
 
         hasVoteNft :: Bool
         !hasVoteNft = hasTokenInValue vmdcVoteNft "Vote NFT" voteValue

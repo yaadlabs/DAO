@@ -11,7 +11,7 @@ import PlutusTx.AssocMap as Map
 import PlutusTx.Prelude (Bool (False), Integer, ($), (==))
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (assertBool, testCase)
-import Triphut.Shared (hasSingleToken)
+import Triphut.Shared (hasSingleTokenWithSymbolAndTokenName)
 
 testValue1 :: Value
 testValue1 = Value Map.empty
@@ -52,19 +52,19 @@ tokenName2 = TokenName "tok2"
 
 unitSpec :: [TestTree]
 unitSpec =
-  [ testCase "hasSingleToken: Empty Value, should fail" $
+  [ testCase "hasSingleTokenWithSymbolAndTokenName: Empty Value, should fail" $
       assertBool "Should be False" $
-        hasSingleToken testValue1 adaSymbol adaToken == False
+        hasSingleTokenWithSymbolAndTokenName testValue1 adaSymbol adaToken == False
   , testCase "hasSingletoken: One Symbol, more than 1 of token, should fail" $
       assertBool "Should be False" $
-        hasSingleToken testValue3 symbol1 tokenName1 == False
-  , testCase "hasSingleToken: Correct CurrencySymbol wrong TokenName, should fail" $
+        hasSingleTokenWithSymbolAndTokenName testValue3 symbol1 tokenName1 == False
+  , testCase "hasSingleTokenWithSymbolAndTokenName: Correct CurrencySymbol wrong TokenName, should fail" $
       assertBool "Should Fail at traceError" $
-        hasSingleToken testValue4 symbol1 tokenName2 == False
+        hasSingleTokenWithSymbolAndTokenName testValue4 symbol1 tokenName2 == False
   , testCase "hasSingletoken: One Symbol, should succeed" $
       assertBool "Should be True" $
-        hasSingleToken testValue2 symbol1 tokenName1
+        hasSingleTokenWithSymbolAndTokenName testValue2 symbol1 tokenName1
   , testCase "hasSingletoken: two Symbols, one valid, should succeed" $
       assertBool "Should be True" $
-        hasSingleToken testValue4 symbol1 tokenName1
+        hasSingleTokenWithSymbolAndTokenName testValue4 symbol1 tokenName1
   ]

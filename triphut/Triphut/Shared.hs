@@ -10,7 +10,7 @@ module Triphut.Shared (
   getTokenNameOfNft,
   countOfTokenInValue,
   convertDatum,
-  hasSingleToken,
+  hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasOneOfToken,
   integerToByteString,
@@ -84,14 +84,17 @@ isScriptCredential = \case
 hasSymbolInValue :: CurrencySymbol -> Value -> Bool
 hasSymbolInValue symbol = isJust . Map.lookup symbol . getValue
 
-{-# INLINEABLE hasSingleToken #-}
-hasSingleToken :: Value -> CurrencySymbol -> TokenName -> Bool
-hasSingleToken (Value value) symbol tokenName = case Map.lookup symbol value of
+{- | Checks that the given `Value` contains exactly one token
+    with the given `CurrenySymbol` and `TokenName`
+-}
+{-# INLINEABLE hasSingleTokenWithSymbolAndTokenName #-}
+hasSingleTokenWithSymbolAndTokenName :: Value -> CurrencySymbol -> TokenName -> Bool
+hasSingleTokenWithSymbolAndTokenName (Value value) symbol tokenName = case Map.lookup symbol value of
   Nothing -> False
   Just map' -> case Map.toList map' of
     [(tn, c)] ->
-      traceIfFalse "Wrong token name" (tn == tokenName)
-        && traceIfFalse "Should be exactly one" (c == 1)
+      traceIfFalse "Incorrect token name provided" (tn == tokenName)
+        && traceIfFalse "Should be exactly one token" (c == 1)
     _ -> traceError "Wrong number of tokens with policy id"
 
 {- | Return True if the value contains exactly one of the given token

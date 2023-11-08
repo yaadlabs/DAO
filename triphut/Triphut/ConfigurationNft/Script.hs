@@ -92,7 +92,7 @@ import Triphut.Shared (
   WrappedMintingPolicyType,
   convertDatum,
   hasOneOfToken,
-  hasSingleToken,
+  hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
   hasTokenInValueNoErrors,
@@ -136,15 +136,14 @@ mkNftMinter
         [TxOut {txOutDatum}] -> convertDatum txInfoData txOutDatum
         _ -> traceError "Impossible. No minted output."
 
-      onlyOneTokenMinted :: Bool
-      !onlyOneTokenMinted =
-        hasSingleToken
+      _onlyOneTokenMinted :: Bool
+      !_onlyOneTokenMinted =
+        hasSingleTokenWithSymbolAndTokenName
           txInfoMint
           thisCurrencySymbol
           ncTokenName
      in
       traceIfFalse "Missing significant UTxO!" hasUTxO
-        && traceIfFalse "Wrong mint amount!" onlyOneTokenMinted
 mkNftMinter _ _ _ = traceError "wrong type of script purpose!"
 
 wrappedPolicy :: NftConfig -> WrappedMintingPolicyType
