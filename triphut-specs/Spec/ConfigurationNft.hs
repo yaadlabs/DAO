@@ -9,6 +9,7 @@ import Plutus.Model (
 import Spec.ConfigurationNft.Context (
   invalidConfigNftNoDatumPaidToScriptTest,
   invalidConfigNftTooManyTokensMintedTest,
+  invalidConfigNftWrongTokenNameTest,
   validConfigNftTest,
  )
 import Spec.SpecUtils (checkFails)
@@ -25,10 +26,11 @@ nftSpec config =
     [ positiveTest
     , negativeTest
     , negativeTest1
+    , negativeTest2
     ]
   where
     good = testNoErrors initialFunds config
-    bad = checkFails config (adaValue 10_000_000)
+    bad = checkFails config initialFunds
     positiveTest = good "Configuration mint NFT (mkNftMinter) succeeds, positive test" validConfigNftTest
     negativeTest =
       bad
@@ -43,4 +45,11 @@ nftSpec config =
             <> "(Missing datum hash or datum) - no Datum paid to validator script"
         )
         invalidConfigNftNoDatumPaidToScriptTest
+    negativeTest2 =
+      bad
+        ( "Configuration mint NFT (mkNftMinter) fails with script error: "
+            <> "[Incorrect token name provided, Only one valid token minted, PT5]"
+            <> " - due to wrong token name in config"
+        )
+        invalidConfigNftWrongTokenNameTest
     initialFunds = adaValue 10_000_000

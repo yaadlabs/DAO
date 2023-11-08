@@ -6,6 +6,7 @@ module Spec.ConfigurationNft.Context (
   validConfigNftTest,
   invalidConfigNftTooManyTokensMintedTest,
   invalidConfigNftNoDatumPaidToScriptTest,
+  invalidConfigNftWrongTokenNameTest,
 ) where
 
 import Plutus.Model (
@@ -14,6 +15,7 @@ import Plutus.Model (
   Tx,
   UserSpend,
   ada,
+  adaToken,
   adaValue,
   getHeadRef,
   mintValue,
@@ -50,6 +52,10 @@ invalidConfigNftTooManyTokensMintedTest :: Run ()
 invalidConfigNftTooManyTokensMintedTest = mkConfigNftTest invalidNftTooManyTokensTx
 
 -- | Invalid test
+invalidConfigNftWrongTokenNameTest :: Run ()
+invalidConfigNftWrongTokenNameTest = mkConfigNftTest invalidNftWrongTokenNameTokensTx
+
+-- | Invalid test
 invalidConfigNftNoDatumPaidToScriptTest :: Run ()
 invalidConfigNftNoDatumPaidToScriptTest = mkConfigNftTest invalidNftNoDatumSentToValidator
 
@@ -60,6 +66,10 @@ validNftTx = mkConfigNftTx True validNftConfigValue
 -- | Invalid tx that mints 2 tokens instead of 1, corresponding test should fail
 invalidNftTooManyTokensTx :: NftConfig -> UserSpend -> PubKeyHash -> Tx
 invalidNftTooManyTokensTx = mkConfigNftTx True invalidTooManyTokensConfigValue
+
+-- | Invalid tx that has the wrong token name, corresponding test should fail
+invalidNftWrongTokenNameTokensTx :: NftConfig -> UserSpend -> PubKeyHash -> Tx
+invalidNftWrongTokenNameTokensTx = mkConfigNftTx True invalidWrongTokenNameConfigValue
 
 {- | Invalid tx as we set the flag for paying the Datum to the
  validator script to False, corresponding test should fail
@@ -72,8 +82,8 @@ mkConfigNftTest :: (NftConfig -> UserSpend -> PubKeyHash -> Tx) -> Run ()
 mkConfigNftTest tx = do
   user <- newUser $ ada (Lovelace 2_000_000)
   spend' <- spend user (adaValue 2)
-  let params = NftConfig (getHeadRef spend') (TokenName "triphut")
-  submitTx user $ tx params spend' user
+  let config = NftConfig (getHeadRef spend') (TokenName "triphut")
+  submitTx user $ tx config spend' user
 
 {- | Helper function for building txs
  Set the `hasDatum` flag to False to create an invalid tx that
@@ -81,13 +91,20 @@ mkConfigNftTest tx = do
 -}
 mkConfigNftTx :: Bool -> (NftConfig -> Value) -> NftConfig -> UserSpend -> PubKeyHash -> Tx
 mkConfigNftTx hasDatum configValue config spend' user =
-  let mintVal = configValue config
-      policy = configNftTypedMintingPolicy config
-      validator = alwaysSucceedTypedValidator
-      baseTx = mconcat [mintValue policy () mintVal, userSpend spend']
-      withDatum = payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
-      withNoDatumToUser = payToKey user (adaValue 2 <> mintVal)
-   in if hasDatum then baseTx <> withDatum else baseTx <> withNoDatumToUser
+  let
+    -- Set up the value and scripts
+    mintVal = configValue config
+    policy = configNftTypedMintingPolicy config
+    validator = alwaysSucceedTypedValidator
+
+    -- Set up the txs
+    baseTx = mconcat [mintValue policy () mintVal, userSpend spend']
+    withDatum = payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
+    withNoDatumToUser = payToKey user (adaValue 2 <> mintVal)
+   in
+    -- If hasDatum is set to False we want the withNoDatumToUser tx
+    -- in order to trigger the negative test
+    if hasDatum then baseTx <> withDatum else baseTx <> withNoDatumToUser
 
 -- | Valid value to be used in valid tx
 validNftConfigValue :: NftConfig -> Value
@@ -98,3 +115,8 @@ validNftConfigValue nftCfg@(NftConfig _ tokenName) =
 invalidTooManyTokensConfigValue :: NftConfig -> Value
 invalidTooManyTokensConfigValue nftCfg@(NftConfig _ tokenName) =
   singleton (configNftCurrencySymbol nftCfg) tokenName 2
+
+-- | Invalid value to be used in invalid tx
+invalidWrongTokenNameConfigValue :: NftConfig -> Value
+invalidWrongTokenNameConfigValue nftCfg@(NftConfig _ _) =
+  singleton (configNftCurrencySymbol nftCfg) adaToken 1

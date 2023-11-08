@@ -136,14 +136,15 @@ mkNftMinter
         [TxOut {txOutDatum}] -> convertDatum txInfoData txOutDatum
         _ -> traceError "Impossible. No valid minted output."
 
-      _onlyOneTokenMinted :: Bool
-      !_onlyOneTokenMinted =
+      onlyOneTokenMinted :: Bool
+      !onlyOneTokenMinted =
         hasSingleTokenWithSymbolAndTokenName
           txInfoMint
           thisCurrencySymbol
           ncTokenName
      in
       traceIfFalse "Missing significant UTxO!" hasUTxO
+        && traceIfFalse "Only one valid token minted" onlyOneTokenMinted
 mkNftMinter _ _ _ = traceError "wrong type of script purpose!"
 
 wrappedPolicy :: NftConfig -> WrappedMintingPolicyType
