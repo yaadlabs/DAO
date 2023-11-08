@@ -32,7 +32,10 @@ nftSpec config =
     positiveTest = good "Configuration mint NFT (mkNftMinter) succeeds, positive test" validConfigNftTest
     negativeTest =
       bad
-        "Configuration mint NFT (mkNftMinter) fails - more than 1 token in Tx"
+        ( "Configuration mint NFT (mkNftMinter) fails with script errors: "
+            <> "[Should be exactly one token, Impossible. No valid minted output.]"
+            <> " - due to more than 1 of NFT being minted in Tx"
+        )
         invalidConfigNftTooManyTokensMintedTest
     negativeTest1 =
       bad

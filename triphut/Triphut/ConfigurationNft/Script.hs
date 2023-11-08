@@ -134,7 +134,7 @@ mkNftMinter
       _newOutput :: DynamicConfig
       !_newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
         [TxOut {txOutDatum}] -> convertDatum txInfoData txOutDatum
-        _ -> traceError "Impossible. No minted output."
+        _ -> traceError "Impossible. No valid minted output."
 
       _onlyOneTokenMinted :: Bool
       !_onlyOneTokenMinted =
