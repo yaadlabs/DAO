@@ -28,11 +28,11 @@ import Plutus.Model.V2 (
  )
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
 import PlutusTx.Prelude (Bool (False, True), ($))
+import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator)
 import Spec.ConfigurationNft.SampleData (sampleDynamicConfig)
 import Spec.ConfigurationNft.Script (
   configNftCurrencySymbol,
   configNftTypedMintingPolicy,
-  configNftTypedValidator,
  )
 import Triphut.ConfigurationNft (NftConfig (NftConfig))
 import Prelude (mconcat, (<>))
@@ -81,7 +81,7 @@ mkConfigNftTx :: Bool -> (NftConfig -> Value) -> NftConfig -> UserSpend -> Tx
 mkConfigNftTx hasDatum configValue config spend' =
   let mintVal = configValue config
       policy = configNftTypedMintingPolicy config
-      validator = configNftTypedValidator
+      validator = alwaysSucceedTypedValidator
       baseTx = mconcat [mintValue policy () mintVal, userSpend spend']
       withDatum = payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
    in if hasDatum then baseTx <> withDatum else baseTx
