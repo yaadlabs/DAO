@@ -1,4 +1,5 @@
 module Triphut.ConfigurationNft (
+  ConfigurationAddress (..),
   ConfigurationValidatorConfig (..),
   ConfigurationTxInfo (..),
   ConfigurationTxInInfo (..),
@@ -8,6 +9,8 @@ module Triphut.ConfigurationNft (
   NftConfig (..),
 ) where
 
+import Plutus.V1.Ledger.Credential (Credential)
+import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Scripts (
   Datum,
   DatumHash,
@@ -28,6 +31,7 @@ import PlutusTx (
   unstableMakeIsData,
  )
 import PlutusTx.AssocMap (Map)
+import PlutusTx.Prelude (BuiltinData)
 
 data NftConfig = NftConfig
   { ncInitialUtxo :: TxOutRef
@@ -36,9 +40,16 @@ data NftConfig = NftConfig
 
 makeLift ''NftConfig
 
+data ConfigurationAddress = ConfigurationAddress
+  { cAddressCredential :: Credential
+  , cAddressStakingCredential :: BuiltinData
+  }
+
 data ConfigurationTxOut = ConfigurationTxOut
-  { cTxOutValue :: Value
+  { cTxOutAddress :: ConfigurationAddress
+  , cTxOutValue :: Value
   , cTxOutDatum :: OutputDatum
+  , cTxOutReferenceScript :: BuiltinData
   }
 
 data ConfigurationTxInInfo = ConfigurationTxInInfo
@@ -56,9 +67,16 @@ data ConfigurationScriptContext = ConfigurationScriptContext
 data ConfigurationTxInfo = ConfigurationTxInfo
   { cTxInfoInputs :: [ConfigurationTxInInfo]
   , cTxInfoReferenceInputs :: [ConfigurationTxInInfo]
+  , cTxInfoOutputs :: [ConfigurationTxOut]
+  , cTxInfoFee :: BuiltinData
   , cTxInfoMint :: Value
+  , cTxInfoDCert :: BuiltinData
+  , cTxInfoWdrl :: BuiltinData
   , cTxInfoValidRange :: POSIXTimeRange
+  , cTxInfoSignatories :: [PubKeyHash]
+  , cTxInfoRedeemers :: BuiltinData
   , cTxInfoData :: Map DatumHash Datum
+  , cTxInfoId :: BuiltinData
   }
 
 data ConfigurationValidatorConfig = ConfigurationValidatorConfig
@@ -66,6 +84,7 @@ data ConfigurationValidatorConfig = ConfigurationValidatorConfig
   , cvcConfigNftTokenName :: TokenName
   }
 
+unstableMakeIsData ''ConfigurationAddress
 unstableMakeIsData ''ConfigurationTxOut
 unstableMakeIsData ''ConfigurationTxInInfo
 makeIsDataIndexed ''ConfigurationScriptPurpose [('ConfigurationSpend, 1)]

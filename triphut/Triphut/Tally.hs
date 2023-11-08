@@ -27,7 +27,7 @@ import PlutusTx (
   unstableMakeIsData,
  )
 import PlutusTx.AssocMap (Map)
-import PlutusTx.Prelude (Integer)
+import PlutusTx.Prelude (BuiltinData, Integer)
 
 -------------------------------------------------------------------------------
 -- Tally Nft Minter
@@ -50,6 +50,7 @@ data TallyTxOut = TallyTxOut
   { tTxOutAddress :: Address
   , tTxOutValue :: Value
   , tTxOutDatum :: OutputDatum
+  , tTxOutReferenceScript :: BuiltinData
   }
 
 data TallyTxInInfo = TallyTxInInfo
@@ -68,16 +69,40 @@ data TallyTxInfo = TallyTxInfo
   { tTxInfoInputs :: [TallyTxInInfo]
   , tTxInfoReferenceInputs :: [TallyTxInInfo]
   , tTxInfoOutputs :: [TallyTxOut]
+  , tTxInfoFee :: BuiltinData
+  , tTxInfoMint :: BuiltinData
+  , tTxInfoDCert :: BuiltinData
+  , tTxInfoWdrl :: BuiltinData
   , tTxInfoValidRange :: POSIXTimeRange
+  , tTxInfoSignatories :: BuiltinData
+  , tTxInfoRedeemers :: BuiltinData
   , tTxInfoData :: Map DatumHash Datum
+  , tTxInfoId :: BuiltinData
   }
 
 data TallyDynamicConfig = TallyDynamicConfig
-  { tdcTallyNft :: CurrencySymbol
+  { tdcTallyIndexNft :: BuiltinData
+  , tdcTallyNft :: CurrencySymbol
+  , tdcTallyValidator :: BuiltinData
+  , tdcTreasuryValidator :: BuiltinData
+  , tdcConfigurationValidator :: BuiltinData
+  , tdcVoteCurrencySymbol :: CurrencySymbol
+  , tdcVoteTokenName :: BuiltinData
   , tdcVoteValidator :: ValidatorHash
+  , tdcUpgradeMajorityPercent :: BuiltinData
+  , tdcUpgradRelativeMajorityPercent :: BuiltinData
+  , tdcGeneralMajorityPercent :: BuiltinData
+  , tdcGeneralRelativeMajorityPercent :: BuiltinData
+  , tdcTripMajorityPercent :: BuiltinData
+  , tdcTripRelativeMajorityPercent :: BuiltinData
+  , tdcTotalVotes :: BuiltinData
   , tdcVoteNft :: CurrencySymbol
   , tdcVoteFungibleCurrencySymbol :: CurrencySymbol
   , tdcVoteFungibleTokenName :: TokenName
+  , tdcProposalTallyEndOffset :: BuiltinData
+  , tdcMaxGeneralDisbursement :: BuiltinData
+  , tdcMaxTripDisbursement :: BuiltinData
+  , tdcAgentDisbursementPercent :: BuiltinData
   , tdcFungibleVotePercent :: Integer
   }
 

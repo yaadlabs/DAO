@@ -70,18 +70,21 @@ unstableMakeIsData ''VoteDirection
 unstableMakeIsData ''VoteMinterAction
 unstableMakeIsData ''Vote
 
-newtype VoteMinterAddress = VoteMinterAddress
+data VoteMinterAddress = VoteMinterAddress
   { vmAddressCredential :: Credential
+  , vmAddressStakingCredential :: BuiltinData
   }
 
 data VoteMinterTxOut = VoteMinterTxOut
   { vmTxOutAddress :: VoteMinterAddress
   , vmTxOutValue :: Value
   , vmTxOutDatum :: OutputDatum
+  , vmTxOutReferenceScript :: BuiltinData
   }
 
-newtype VoteMinterTxInInfo = VoteMinterTxInInfo
-  { vmTxInInfoResolved :: VoteMinterTxOut
+data VoteMinterTxInInfo = VoteMinterTxInInfo
+  { vmTxInInfoOutRef :: BuiltinData
+  , vmTxInInfoResolved :: VoteMinterTxOut
   }
 
 newtype VoteMinterScriptPurpose = VMMinting CurrencySymbol
@@ -92,18 +95,44 @@ data VoteMinterScriptContext = VoteMinterScriptContext
   }
 
 data VoteMinterTxInfo = VoteMinterTxInfo
-  { vmTxInfoReferenceInputs :: BuiltinData
+  { vmTxInfoInputs :: BuiltinData
+  , vmTxInfoReferenceInputs :: BuiltinData
   , vmTxInfoOutputs :: BuiltinData
+  , vmTxInfoFee :: BuiltinData
   , vmTxInfoMint :: Value
+  , vmTxInfoDCert :: BuiltinData
+  , vmTxInfoWdrl :: BuiltinData
   , vmTxInfoValidRange :: BuiltinData
+  , vmTxInfoSignatories :: BuiltinData
+  , vmTxInfoRedeemers :: BuiltinData
   , vmTxInfoData :: BuiltinData
+  , vmTxInfoId :: BuiltinData
   }
 
 data VoteMinterDynamicConfig = VoteMinterDynamicConfig
-  { vmdcTallyNft :: CurrencySymbol
+  { vmdcTallyIndexNft :: BuiltinData
+  , vmdcTallyNft :: CurrencySymbol
+  , vmdcTallyValidator :: BuiltinData
+  , vmdcTreasuryValidator :: BuiltinData
+  , vmdcConfigurationValidator :: BuiltinData
+  , vmdcVoteCurrencySymbol :: BuiltinData
   , vmdcVoteTokenName :: TokenName
   , vmdcVoteValidator :: ValidatorHash
+  , vmdcUpgradeMajorityPercent :: BuiltinData
+  , vmdcUpgradRelativeMajorityPercent :: BuiltinData
+  , vmdcGeneralMajorityPercent :: BuiltinData
+  , vmdcGeneralRelativeMajorityPercent :: BuiltinData
+  , vmdcTripMajorityPercent :: BuiltinData
+  , vmdcTripRelativeMajorityPercent :: BuiltinData
+  , vmdcTotalVotes :: BuiltinData
   , vmdcVoteNft :: CurrencySymbol
+  , vmdcVoteFungibleCurrencySymbol :: BuiltinData
+  , vmdcVoteFungibleTokenName :: BuiltinData
+  , vmdcProposalTallyEndOffset :: BuiltinData
+  , vmdcMaxGeneralDisbursement :: BuiltinData
+  , vmdcMaxTripDisbursement :: BuiltinData
+  , vmdcAgentDisbursementPercent :: BuiltinData
+  , vmdcFungibleVotePercent :: BuiltinData
   }
 
 unstableMakeIsData ''VoteMinterAddress
@@ -123,27 +152,58 @@ data VoteTxOut = VoteTxOut
   { vTxOutAddress :: VoteAddress
   , vTxOutValue :: Value
   , vTxOutDatum :: OutputDatum
+  , vTxOutReferenceScript :: BuiltinData
   }
 
-newtype VoteTxInInfo = VoteTxInInfo
-  { vTxInInfoResolved :: VoteTxOut
+data VoteTxInInfo = VoteTxInInfo
+  { vTxInInfoOutRef :: TxOutRef
+  , vTxInInfoResolved :: VoteTxOut
   }
 
-newtype VoteScriptContext = VoteScriptContext
+data VoteScriptContext = VoteScriptContext
   { vScriptContextTxInfo :: VoteTxInfo
+  , vScriptContextPurpose :: BuiltinData
   }
 
 data VoteTxInfo = VoteTxInfo
   { vTxInfoInputs :: BuiltinData
   , vTxInfoReferenceInputs :: [VoteTxInInfo]
   , vTxInfoOutputs :: BuiltinData
+  , vTxInfoFee :: BuiltinData
+  , vTxInfoMint :: BuiltinData
+  , vTxInfoDCert :: BuiltinData
+  , vTxInfoWdrl :: BuiltinData
+  , vTxInfoValidRange :: BuiltinData
   , vTxInfoSignatories :: BuiltinData
+  , vTxInfoRedeemers :: BuiltinData
   , vTxInfoData :: Map DatumHash Datum
+  , vTxInfoId :: BuiltinData
   }
 
 data VoteDynamicConfig = VoteDynamicConfig
-  { vdcTallyValidator :: BuiltinData
+  { vdcTallyIndexNft :: BuiltinData
+  , vdcTallyNft :: BuiltinData
+  , vdcTallyValidator :: BuiltinData
+  , vdcTreasuryValidator :: BuiltinData
+  , vdcConfigurationValidator :: BuiltinData
   , vdcVoteCurrencySymbol :: BuiltinData
+  , vdcVoteTokenName :: BuiltinData
+  , vdcVoteValidator :: BuiltinData
+  , vdcUpgradeMajorityPercent :: BuiltinData
+  , vdcUpgradRelativeMajorityPercent :: BuiltinData
+  , vdcGeneralMajorityPercent :: BuiltinData
+  , vdcGeneralRelativeMajorityPercent :: BuiltinData
+  , vdcTripMajorityPercent :: BuiltinData
+  , vdcTripRelativeMajorityPercent :: BuiltinData
+  , vdcTotalVotes :: BuiltinData
+  , vdcVoteNft :: BuiltinData
+  , vdcVoteFungibleCurrencySymbol :: BuiltinData
+  , vdcVoteFungibleTokenName :: BuiltinData
+  , vdcProposalTallyEndOffset :: BuiltinData
+  , vdcMaxGeneralDisbursement :: BuiltinData
+  , vdcMaxTripDisbursement :: BuiltinData
+  , vdcAgentDisbursementPercent :: BuiltinData
+  , vdcFungibleVotePercent :: BuiltinData
   }
 
 data VoteAction

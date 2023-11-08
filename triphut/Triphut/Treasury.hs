@@ -9,6 +9,7 @@ module Triphut.Treasury (
 ) where
 
 import Plutus.V1.Ledger.Address (Address)
+import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Scripts (Datum, DatumHash)
 import Plutus.V1.Ledger.Time (POSIXTimeRange)
 import Plutus.V1.Ledger.Value as V
@@ -25,6 +26,7 @@ data TreasuryTxOut = TreasuryTxOut
   { tTxOutAddress :: Address
   , tTxOutValue :: Value
   , tTxOutDatum :: OutputDatum
+  , tTxOutReferenceScript :: BuiltinData
   }
 
 data TreasuryTxInInfo = TreasuryTxInInfo
@@ -43,9 +45,15 @@ data TreasuryTxInfo = TreasuryTxInfo
   { tTxInfoInputs :: [TreasuryTxInInfo]
   , tTxInfoReferenceInputs :: [TreasuryTxInInfo]
   , tTxInfoOutputs :: [TreasuryTxOut]
+  , tTxInfoFee :: BuiltinData
   , tTxInfoMint :: Value
+  , tTxInfoDCert :: BuiltinData
+  , tTxInfoWdrl :: BuiltinData
   , tTxInfoValidRange :: POSIXTimeRange
+  , tTxInfoSignatories :: [PubKeyHash]
+  , tTxInfoRedeemers :: BuiltinData
   , tTxInfoData :: Map DatumHash Datum
+  , tTxInfoId :: BuiltinData
   }
 
 type Treasury = BuiltinData
