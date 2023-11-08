@@ -13,6 +13,7 @@ import Spec.ConfigurationNft.Context (
  )
 import Spec.SpecUtils (checkFails)
 import Test.Tasty (TestTree, testGroup)
+import Prelude ((<>))
 
 spec :: TestTree
 spec = nftSpec defaultBabbage
@@ -35,6 +36,8 @@ nftSpec config =
         invalidConfigNftTooManyTokensMintedTest
     negativeTest1 =
       bad
-        "Configuration mint NFT (mkNftMinter) fails - no Datum paid to validator script"
+        ( "Configuration mint NFT (mkNftMinter) fails with script error: "
+            <> "(Missing datum hash or datum) - no Datum paid to validator script"
+        )
         invalidConfigNftNoDatumPaidToScriptTest
     initialFunds = adaValue 10_000_000
