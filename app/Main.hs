@@ -34,10 +34,10 @@ import Triphut.ConfigurationNft (
   NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
  )
 import Triphut.ConfigurationNft.Script (
+  configurationNftCurrencySymbol,
+  configurationNftMintingPolicy,
   configurationScript,
   configurationValidatorHash,
-  nftMinter,
-  nftMinterPolicyId,
  )
 import Triphut.Index (
   IndexNftConfig (IndexNftConfig, incIndexValidator, incInitialUtxo, incTokenName),
@@ -220,9 +220,9 @@ run Options {..} = do
           , ncTokenName = configurationNftTokenName
           }
 
-  writeSource configurationNftOutput $ nftMinter nftConfig
+  writeSource configurationNftOutput $ configurationNftMintingPolicy nftConfig
 
-  let theConfigurationNftPolicyId = nftMinterPolicyId nftConfig
+  let theConfigurationNftPolicyId = configurationNftCurrencySymbol nftConfig
 
   writeFile configurationNftPolicyIdOutput $ show theConfigurationNftPolicyId
 

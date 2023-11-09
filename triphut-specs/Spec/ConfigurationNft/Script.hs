@@ -21,14 +21,14 @@ import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
 import Triphut.ConfigurationNft (ConfigurationValidatorConfig, NftConfig)
-import Triphut.ConfigurationNft.Script (configurationValidator, mkNftMinter)
+import Triphut.ConfigurationNft.Script (configurationValidator, mkConfigurationNftPolicy)
 import Triphut.Types (DynamicConfig)
 
 -- Policy script and info
 configNftTypedMintingPolicy :: NftConfig -> TypedPolicy ()
 configNftTypedMintingPolicy config =
   mkTypedPolicy $
-    $$(PlutusTx.compile [||toBuiltinPolicy . mkNftMinter||])
+    $$(PlutusTx.compile [||toBuiltinPolicy . mkConfigurationNftPolicy||])
       `PlutusTx.applyCode` PlutusTx.liftCode config
 
 configNftCurrencySymbol :: NftConfig -> CurrencySymbol

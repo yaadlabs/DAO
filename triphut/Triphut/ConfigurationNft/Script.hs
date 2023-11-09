@@ -1,7 +1,14 @@
+{- |
+Module: Triphut.ConfigurationNft.Script
+Description: Triphut configuration related scripts.
+Includes:
+  - Minting policy for Triphut configuration.
+  - Validator for upgrading the configuration.
+-}
 module Triphut.ConfigurationNft.Script (
-  mkNftMinter,
-  nftMinter,
-  nftMinterPolicyId,
+  mkConfigurationNftPolicy,
+  configurationNftMintingPolicy,
+  configurationNftCurrencySymbol,
   configurationScript,
   configurationValidator,
   configurationValidatorHash,
@@ -116,8 +123,19 @@ import Triphut.Types (
   TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
 
-mkNftMinter :: NftConfig -> BuiltinData -> ScriptContext -> Bool
-mkNftMinter
+{- | Policy for minting configuration NFT.
+
+   This policy performs the following checks:
+
+    - The UTXO, referenced in the `ncInitialUtxo` field of
+      the `NftConfig` argument, is spent in the transaction.
+    - The token name matches the `ncTokenName` field of the `NftConfig` argument.
+    - Exactly one config NFT is minted with the valid token name.
+    - There is exactly one output containing the NFT.
+    - This output contains a valid 'Triphut.Types.DynamicConfig' datum.
+-}
+mkConfigurationNftPolicy :: NftConfig -> BuiltinData -> ScriptContext -> Bool
+mkConfigurationNftPolicy
   NftConfig {..}
   _
   ScriptContext
@@ -125,17 +143,23 @@ mkNftMinter
     , scriptContextPurpose = Minting thisCurrencySymbol
     } =
     let
+      -- Use with filter to find the config output containing the NFT
       hasWitness :: Value -> Bool
       hasWitness = hasTokenInValueNoErrors thisCurrencySymbol
 
-      hasUTxO :: Bool
-      !hasUTxO = any (\i -> txInInfoOutRef i == ncInitialUtxo) txInfoInputs
-
+      -- Ensure there is exactly one output that contains the configuration datum
+      -- The `convertDatum` helper will throw an error if the output datum is not found
       _newOutput :: DynamicConfig
       !_newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
         [TxOut {txOutDatum}] -> convertDatum txInfoData txOutDatum
         _ -> traceError "Impossible. No valid minted output."
 
+      -- Ensure that the reference UTXO is spent
+      hasUTxO :: Bool
+      !hasUTxO = any (\i -> txInInfoOutRef i == ncInitialUtxo) txInfoInputs
+
+      -- Ensure that only one valid token is minted
+      -- The token name must match the `ncTokenName` from `NftConfig` argument
       onlyOneTokenMinted :: Bool
       !onlyOneTokenMinted =
         hasSingleTokenWithSymbolAndTokenName
@@ -143,24 +167,31 @@ mkNftMinter
           thisCurrencySymbol
           ncTokenName
      in
-      traceIfFalse "Missing significant UTxO!" hasUTxO
-        && traceIfFalse "Only one valid token minted" onlyOneTokenMinted
-mkNftMinter _ _ _ = traceError "wrong type of script purpose!"
+      traceIfFalse "Referenced UTXO should be spent" hasUTxO
+        && traceIfFalse "Exactly one valid token should be minted" onlyOneTokenMinted
+mkConfigurationNftPolicy _ _ _ = traceError "Wrong type of script purpose!"
 
-wrappedPolicy :: NftConfig -> WrappedMintingPolicyType
-wrappedPolicy config a b = check (mkNftMinter config a (unsafeFromBuiltinData b))
+{- | The `configurationNftMintingPolicy` script built from `mkConfigurationNftPolicy`
+ Takes an `NftConfig` as its argument
+-}
+configurationNftMintingPolicy :: NftConfig -> PlutusScript PlutusScriptV2
+configurationNftMintingPolicy = policyToScript policy
 
+{- | Currency symbol for the `configurationNftMintingPolicy` script
+ Takes an `NftConfig` as its argument
+-}
+configurationNftCurrencySymbol :: NftConfig -> CurrencySymbol
+configurationNftCurrencySymbol = mpsSymbol . mintingPolicyHash . policy
+
+-- Build the policy
 policy :: NftConfig -> MintingPolicy
 policy cfg =
   mkMintingPolicyScript $
     $$(compile [||\c -> wrappedPolicy c||])
       `PlutusTx.applyCode` PlutusTx.liftCode cfg
 
-nftMinterPolicyId :: NftConfig -> CurrencySymbol
-nftMinterPolicyId = mpsSymbol . mintingPolicyHash . policy
-
-nftMinter :: NftConfig -> PlutusScript PlutusScriptV2
-nftMinter = policyToScript policy
+wrappedPolicy :: NftConfig -> WrappedMintingPolicyType
+wrappedPolicy config a b = check (mkConfigurationNftPolicy config a (unsafeFromBuiltinData b))
 
 -------------------------------------------------------------------------------
 -- Validator
