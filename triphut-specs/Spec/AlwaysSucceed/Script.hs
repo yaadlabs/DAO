@@ -5,7 +5,7 @@ module Spec.AlwaysSucceed.Script (
 import Plutus.Model.V2 (TypedValidator, mkTypedValidator, toBuiltinValidator)
 import PlutusTx (compile)
 import Triphut.AlwaysSucceed (succeedValidator)
-import Triphut.Types (DynamicConfig)
+import Triphut.Types (DynamicConfigDatum)
 
-alwaysSucceedTypedValidator :: TypedValidator DynamicConfig ()
+alwaysSucceedTypedValidator :: TypedValidator DynamicConfigDatum ()
 alwaysSucceedTypedValidator = mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator||])

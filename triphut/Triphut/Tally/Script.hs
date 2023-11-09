@@ -145,7 +145,7 @@ import Triphut.Tally (
   ),
  )
 import Triphut.Types (
-  DynamicConfig (DynamicConfig, dcTallyValidator),
+  DynamicConfigDatum (DynamicConfigDatum, dcTallyValidator),
   TallyState (TallyState, tsAgainst, tsFor, tsProposalEndTime),
  )
 import Triphut.Vote (
@@ -165,7 +165,7 @@ mkTallyNftMinter
       hasConfigurationNft :: Value -> Bool
       hasConfigurationNft = hasOneOfToken tncConfigNftCurrencySymbol tncConfigNftTokenName
 
-      DynamicConfig {..} =
+      DynamicConfigDatum {..} =
         case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Too many Config NFT values"

@@ -92,8 +92,8 @@ import Triphut.Treasury (
   ),
  )
 import Triphut.Types (
-  DynamicConfig (
-    DynamicConfig,
+  DynamicConfigDatum (
+    DynamicConfigDatum,
     dcAgentDisbursementPercent,
     dcGeneralMajorityPercent,
     dcGeneralRelativeMajorityPercent,
@@ -136,7 +136,7 @@ validateTreasury
       hasTallyNft = hasSymbolInValue dcTallyNft
 
       -- filter the reference inputs for the configuration nft
-      DynamicConfig {..} =
+      DynamicConfigDatum {..} =
         case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
           [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
           _ -> traceError "Too many NFT values"

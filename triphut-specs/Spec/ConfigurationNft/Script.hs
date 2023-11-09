@@ -22,7 +22,7 @@ import PlutusTx.Prelude (($), (.))
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
 import Triphut.ConfigurationNft (ConfigurationValidatorConfig, NftConfig)
 import Triphut.ConfigurationNft.Script (configurationValidator, mkConfigurationNftPolicy)
-import Triphut.Types (DynamicConfig)
+import Triphut.Types (DynamicConfigDatum)
 
 -- Policy script and info
 configNftTypedMintingPolicy :: NftConfig -> TypedPolicy ()
@@ -35,7 +35,7 @@ configNftCurrencySymbol :: NftConfig -> CurrencySymbol
 configNftCurrencySymbol = scriptCurrencySymbol . configNftTypedMintingPolicy
 
 -- Validator script and info
-type ConfigValidatorScript = TypedValidator DynamicConfig ()
+type ConfigValidatorScript = TypedValidator DynamicConfigDatum ()
 
 configNftTypedValidator :: ConfigValidatorScript
 configNftTypedValidator = mkTypedValidator' sampleConfigValidatorConfig

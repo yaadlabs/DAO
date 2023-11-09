@@ -10,11 +10,11 @@ module Spec.ConfigurationNft.SampleData (
 import Plutus.V1.Ledger.Value (adaSymbol, adaToken)
 import Plutus.V2.Ledger.Api (ValidatorHash (ValidatorHash))
 import Triphut.ConfigurationNft (ConfigurationValidatorConfig (..))
-import Triphut.Types (DynamicConfig (..))
+import Triphut.Types (DynamicConfigDatum (..))
 
-sampleDynamicConfig :: DynamicConfig
+sampleDynamicConfig :: DynamicConfigDatum
 sampleDynamicConfig =
-  DynamicConfig
+  DynamicConfigDatum
     { dcTallyNft = adaSymbol
     , dcTallyValidator = ValidatorHash ""
     , dcTreasuryValidator = ValidatorHash ""

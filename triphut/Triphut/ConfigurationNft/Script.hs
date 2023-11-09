@@ -111,8 +111,8 @@ import Triphut.Shared (
   wrapValidate,
  )
 import Triphut.Types (
-  DynamicConfig (
-    DynamicConfig,
+  DynamicConfigDatum (
+    DynamicConfigDatum,
     dcProposalTallyEndOffset,
     dcTallyNft,
     dcTotalVotes,
@@ -132,7 +132,7 @@ import Triphut.Types (
     - The token name matches the `ncTokenName` field of the `NftConfig` argument.
     - Exactly one config NFT is minted with the valid token name.
     - There is exactly one output containing the NFT.
-    - This output contains a valid 'Triphut.Types.DynamicConfig' datum.
+    - This output contains a valid 'Triphut.Types.DynamicConfigDatum' datum.
 -}
 mkConfigurationNftPolicy :: NftConfig -> BuiltinData -> ScriptContext -> Bool
 mkConfigurationNftPolicy
@@ -149,7 +149,7 @@ mkConfigurationNftPolicy
 
       -- Ensure there is exactly one output that contains the configuration datum
       -- The `convertDatum` helper will throw an error if the output datum is not found
-      _newOutput :: DynamicConfig
+      _newOutput :: DynamicConfigDatum
       !_newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
         [TxOut {txOutDatum}] -> convertDatum txInfoData txOutDatum
         _ -> traceError "Impossible. No valid minted output."
@@ -208,13 +208,13 @@ wrappedPolicy config a b = check (mkConfigurationNftPolicy config a (unsafeFromB
 
 validateConfiguration ::
   ConfigurationValidatorConfig ->
-  DynamicConfig ->
+  DynamicConfigDatum ->
   BuiltinData ->
   ConfigurationScriptContext ->
   Bool
 validateConfiguration
   ConfigurationValidatorConfig {..}
-  DynamicConfig {..}
+  DynamicConfigDatum {..}
   _
   ConfigurationScriptContext
     { cScriptContextTxInfo = ConfigurationTxInfo {..}

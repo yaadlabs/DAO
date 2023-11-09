@@ -1,5 +1,5 @@
 module Triphut.Types (
-  DynamicConfig (..),
+  DynamicConfigDatum (..),
   ProposalType (..),
   TallyState (..),
 )
@@ -67,7 +67,7 @@ instance PlutusTx.Eq TallyState where
         && xFor == yFor
         && xAgainst == yAgainst
 
-data DynamicConfig = DynamicConfig
+data DynamicConfigDatum = DynamicConfigDatum
   { dcTallyIndexNft :: CurrencySymbol
   , dcTallyNft :: CurrencySymbol
   , dcTallyValidator :: ValidatorHash
@@ -93,6 +93,6 @@ data DynamicConfig = DynamicConfig
   , dcFungibleVotePercent :: Integer -- times a 1000
   }
 
-unstableMakeIsData ''DynamicConfig
+unstableMakeIsData ''DynamicConfigDatum
 unstableMakeIsData ''TallyState
 unstableMakeIsData ''ProposalType
