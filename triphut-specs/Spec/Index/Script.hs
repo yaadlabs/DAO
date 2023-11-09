@@ -4,8 +4,10 @@ Description : Index scripts
 -}
 module Spec.Index.Script (
   indexConfigNftTypedMintingPolicy,
+  indexNftTypedValidator,
   indexConfigNftValue,
   indexConfigNftCurrencySymbol,
+  indexValidatorHash',
 )
 where
 
@@ -16,13 +18,14 @@ import Plutus.Model.V2 (
   scriptCurrencySymbol,
   toBuiltinPolicy,
  )
+import Plutus.V1.Ledger.Scripts (ValidatorHash)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
 import Spec.Index.SampleData (sampleIndexValidatorConfig)
 import Spec.SpecUtils (mkTypedValidator')
 import Triphut.Index (IndexNftConfig (IndexNftConfig), IndexNftDatum)
-import Triphut.Index.Script (indexValidator, mkIndexNftMinter)
+import Triphut.Index.Script (indexValidator, indexValidatorHash, mkIndexNftMinter)
 
 -- Policy script and info
 indexConfigNftTypedMintingPolicy :: IndexNftConfig -> TypedPolicy ()
@@ -43,3 +46,6 @@ type IndexValidatorScript = TypedValidator IndexNftDatum ()
 
 indexNftTypedValidator :: IndexValidatorScript
 indexNftTypedValidator = mkTypedValidator' sampleIndexValidatorConfig indexValidator
+
+indexValidatorHash' :: ValidatorHash
+indexValidatorHash' = indexValidatorHash sampleIndexValidatorConfig
