@@ -75,7 +75,7 @@ import Triphut.Shared (
   WrappedMintingPolicyType,
   convertDatum,
   hasSingleTokenWithSymbolAndTokenName,
-  hasTokenInValue,
+  hasTokenInValueNoErrors,
   mintingPolicyHash,
   mkValidatorWithSettings,
   policyToScript,
@@ -145,7 +145,7 @@ mkIndexNftMinter
     } =
     let
       hasWitness :: Value -> Bool
-      hasWitness = hasTokenInValue thisCurrencySymbol "IndexNft Minter, hasWitness"
+      hasWitness = hasTokenInValueNoErrors thisCurrencySymbol
 
       hasUTxO :: Bool
       !hasUTxO = any (\i -> txInInfoOutRef i == incInitialUtxo) txInfoInputs
