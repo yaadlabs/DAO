@@ -5,6 +5,7 @@ import Prelude (IO, ($))
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Spec.Utils qualified as Utils
 import Spec.ConfigurationNft qualified as ConfigurationNft
+import Spec.Index qualified as Index
 import Test.Tasty (defaultMain, testGroup)
 
 main :: IO ()
@@ -15,4 +16,5 @@ main = do
       "triphut"
       [ Utils.spec
       , ConfigurationNft.spec
+      , Index.spec
       ]

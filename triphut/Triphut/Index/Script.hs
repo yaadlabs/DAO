@@ -1,5 +1,6 @@
 module Triphut.Index.Script (
   indexScript,
+  indexValidator,
   indexValidatorHash,
   mkIndexNftMinter,
   tallyIndexNftMinter,
@@ -149,7 +150,7 @@ mkIndexNftMinter
       hasUTxO :: Bool
       !hasUTxO = any (\i -> txInInfoOutRef i == incInitialUtxo) txInfoInputs
 
-      (!IndexNftDatum {..}, !outputAddress) =
+      (!IndexNftDatum {..}, !outputAddress) :: (IndexNftDatum, Address) =
         case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
           [TxOut {..}] -> (convertDatum txInfoData txOutDatum, txOutAddress)
           _ -> traceError "Impossible. No minted output."

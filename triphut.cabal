@@ -89,6 +89,9 @@ library triphut-specs
     Spec.ConfigurationNft.Context
     Spec.ConfigurationNft.SampleData
     Spec.ConfigurationNft.Script
+    Spec.Index
+    Spec.Index.Context
+    Spec.Index.SampleData
     Spec.Index.Script
     Spec.SpecUtils
     Spec.Tally.Script
