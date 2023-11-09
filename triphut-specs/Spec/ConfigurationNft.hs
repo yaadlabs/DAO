@@ -1,3 +1,7 @@
+{- |
+Module      : Spec.ConfigurationNft
+Description : Tests for `configurationNftPolicy`
+-}
 module Spec.ConfigurationNft (spec) where
 
 import Plutus.Model (

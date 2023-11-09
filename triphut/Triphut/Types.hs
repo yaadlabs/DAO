@@ -1,3 +1,8 @@
+{- |
+Module: Triphut.Types
+Description: Contains the `DynamicConfigDatum` type,
+  the `TallyState` type, and the `ProposalType` type.
+-}
 module Triphut.Types (
   DynamicConfigDatum (..),
   ProposalType (..),
@@ -67,6 +72,7 @@ instance PlutusTx.Eq TallyState where
         && xFor == yFor
         && xAgainst == yAgainst
 
+-- | The configuration datum
 data DynamicConfigDatum = DynamicConfigDatum
   { dcTallyIndexNft :: CurrencySymbol
   , dcTallyNft :: CurrencySymbol

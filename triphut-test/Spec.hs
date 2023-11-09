@@ -1,3 +1,4 @@
+{- | Module for running all the tests specified in the 'Spec' modules -}
 module Main (main) where
 
 import Prelude (IO, ($))
