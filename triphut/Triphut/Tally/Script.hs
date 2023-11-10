@@ -1,7 +1,9 @@
 module Triphut.Tally.Script (
   tallyNftMinter,
   tallyNftMinterPolicyId,
+  mkTallyNftMinter,
   tallyScript,
+  tallyValidator,
   tallyValidatorHash,
 ) where
 
@@ -146,7 +148,7 @@ import Triphut.Tally (
  )
 import Triphut.Types (
   DynamicConfigDatum (DynamicConfigDatum, dcTallyValidator),
-  TallyState (TallyState, tsAgainst, tsFor, tsProposalEndTime),
+  TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposalEndTime),
  )
 import Triphut.Vote (
   Vote (Vote, vDirection, vOwner, vProposalTokenName, vReturnAda),
@@ -178,7 +180,7 @@ mkTallyNftMinter
           [x] -> x
           _ -> traceError "wrong number of outputs"
 
-      TallyState {..} = convertDatum txInfoData outputDatum
+      TallyStateDatum {..} = convertDatum txInfoData outputDatum
 
       hasIndexNft :: Value -> Bool
       hasIndexNft = hasOneOfToken tncIndexNftPolicyId tncIndexNftTokenName
@@ -203,6 +205,8 @@ mkTallyNftMinter
       outputOnTallyValidator :: Bool
       !outputOnTallyValidator = addressCredential outputAddress == ScriptCredential dcTallyValidator
      in
+       -- True
+      --  traceIfFalse "bla" refIns
       traceIfFalse "Token is not on tally validator" outputOnTallyValidator
         && traceIfFalse "Tally datum is not initialized to zero" tallyIsInitializeToZero
         && traceIfFalse "Not only one token was minted" onlyOneTokenMinted
@@ -281,13 +285,13 @@ valuePaidTo' outs addr = go mempty outs
 
 validateTally ::
   TallyValidatorConfig ->
-  TallyState ->
+  TallyStateDatum ->
   BuiltinData ->
   TallyScriptContext ->
   Bool
 validateTally
   TallyValidatorConfig {..}
-  ts@TallyState {tsFor = oldFor, tsAgainst = oldAgainst, tsProposalEndTime}
+  ts@TallyStateDatum {tsFor = oldFor, tsAgainst = oldAgainst, tsProposalEndTime}
   _
   TallyScriptContext
     { tScriptContextTxInfo = TallyTxInfo {..}
@@ -400,7 +404,7 @@ validateTally
       voteTokenAreAllBurned :: Bool
       !voteTokenAreAllBurned = not $ any (hasVoteWitness . tTxOutValue) tTxInfoOutputs
 
-      (!newValue, !newDatum) :: (Value, TallyState) =
+      (!newValue, !newDatum) :: (Value, TallyStateDatum) =
         case filter
           ( \TallyTxOut {tTxOutAddress = Address {..}} ->
               addressCredential == ScriptCredential thisValidatorHash

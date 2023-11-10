@@ -4,6 +4,7 @@ Description : Tests for `configurationNftPolicy`
 -}
 module Spec.ConfigurationNft (spec) where
 
+import Control.Monad (void)
 import Plutus.Model (
   MockConfig,
   adaValue,
@@ -16,7 +17,9 @@ import Spec.ConfigurationNft.Context (
   invalidConfigNftWrongTokenNameTest,
   validConfigNftTest,
  )
+import Spec.ConfigurationNft.Transactions (runInitConfig)
 import Spec.SpecUtils (checkFails)
+import Spec.Values (dummyConfigNftValue)
 import Test.Tasty (TestTree, testGroup)
 import Prelude ((<>))
 
@@ -28,14 +31,23 @@ nftSpec config =
   testGroup
     "Configuration NFT policy tests"
     [ positiveTest
+    , positiveTest1
     , negativeTest
     , negativeTest1
     , negativeTest2
     ]
   where
     good = testNoErrors initialFunds config
+    goodWithToken = testNoErrors (initialFunds <> dummyConfigNftValue) config
     bad = checkFails config initialFunds
-    positiveTest = good "Configuration mint NFT (mkNftMinter) succeeds, positive test" validConfigNftTest
+    positiveTest =
+      good
+        "Configuration mint NFT (mkNftMinter) succeeds, positive test"
+        validConfigNftTest
+    positiveTest1 =
+      goodWithToken
+        "Create config NFT, positive test"
+        (void runInitConfig)
     negativeTest =
       bad
         ( "Configuration mint NFT (mkNftMinter) fails with script errors: "

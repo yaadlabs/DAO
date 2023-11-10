@@ -1,12 +1,12 @@
 {- |
 Module: Triphut.Types
 Description: Contains the `DynamicConfigDatum` type,
-  the `TallyState` type, and the `ProposalType` type.
+  the `TallyStateDatum` type, and the `ProposalType` type.
 -}
 module Triphut.Types (
   DynamicConfigDatum (..),
   ProposalType (..),
-  TallyState (..),
+  TallyStateDatum (..),
 )
 where
 
@@ -47,21 +47,21 @@ instance PlutusTx.Eq ProposalType where
   Trip a b c == Trip d e f = a == d && b == e && c == f
   _ == _ = False
 
-data TallyState = TallyState
+data TallyStateDatum = TallyStateDatum
   { tsProposal :: ProposalType
   , tsProposalEndTime :: POSIXTime
   , tsFor :: Integer
   , tsAgainst :: Integer
   }
 
-instance PlutusTx.Eq TallyState where
-  TallyState
+instance PlutusTx.Eq TallyStateDatum where
+  TallyStateDatum
     { tsProposal = xProposal
     , tsProposalEndTime = xProposalEndTime
     , tsFor = xFor
     , tsAgainst = xAgainst
     }
-    == TallyState
+    == TallyStateDatum
       { tsProposal = yProposal
       , tsProposalEndTime = yProposalEndTime
       , tsFor = yFor
@@ -100,5 +100,5 @@ data DynamicConfigDatum = DynamicConfigDatum
   }
 
 unstableMakeIsData ''DynamicConfigDatum
-unstableMakeIsData ''TallyState
+unstableMakeIsData ''TallyStateDatum
 unstableMakeIsData ''ProposalType

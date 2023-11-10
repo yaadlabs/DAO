@@ -3,6 +3,7 @@ Module      : Spec.Index.Script
 Description : Index scripts
 -}
 module Spec.Index.Script (
+  IndexValidatorScript,
   indexConfigNftTypedMintingPolicy,
   indexNftTypedValidator,
   indexConfigNftValue,

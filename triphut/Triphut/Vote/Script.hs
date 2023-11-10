@@ -65,7 +65,7 @@ import Triphut.Shared (
   validatorToScript,
   wrapValidate,
  )
-import Triphut.Types (TallyState (TallyState, tsProposalEndTime))
+import Triphut.Types (TallyStateDatum (TallyStateDatum, tsProposalEndTime))
 import Triphut.Vote (
   Vote (Vote, vOwner, vReturnAda),
   VoteAction (Cancel, Count),
@@ -186,7 +186,7 @@ mkVoteMinter
         hasTallyNft :: Value -> Bool
         hasTallyNft = hasSymbolInValue vmdcTallyNft
 
-        TallyState {..} =
+        TallyStateDatum {..} =
           case filter
             (hasTallyNft . txOutValue . txInInfoResolved)
             (unsafeFromBuiltinData vmTxInfoReferenceInputs) of

@@ -89,14 +89,20 @@ library triphut-specs
     Spec.ConfigurationNft.Context
     Spec.ConfigurationNft.SampleData
     Spec.ConfigurationNft.Script
+    Spec.ConfigurationNft.Transactions
     Spec.Index
     Spec.Index.Context
     Spec.Index.SampleData
     Spec.Index.Script
+    Spec.Index.Transactions
     Spec.SpecUtils
+    Spec.Tally
+    Spec.Tally.Context
     Spec.Tally.Script
+    Spec.Tally.SampleData
     Spec.Utils
     Spec.Utils.Unit
+    Spec.Values
     Spec.Vote.Script
   build-depends:
     , triphut

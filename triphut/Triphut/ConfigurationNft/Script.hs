@@ -120,7 +120,7 @@ import Triphut.Types (
     dcUpgradeRelativeMajorityPercent
   ),
   ProposalType (Upgrade),
-  TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
+  TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
 
 {- | Policy for minting configuration NFT.
@@ -230,7 +230,7 @@ validateConfiguration
       hasTallyNft :: Value -> Bool
       hasTallyNft = hasSymbolInValue dcTallyNft
 
-      TallyState {tsProposal = proposal, ..} =
+      TallyStateDatum {tsProposal = proposal, ..} =
         case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
           [] -> traceError "Missing tally NFT"
           [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] ->

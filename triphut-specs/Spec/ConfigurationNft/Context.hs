@@ -27,7 +27,7 @@ import Plutus.Model (
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
   payToKey,
-  payToScript,
+  payToRef,
  )
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
@@ -99,7 +99,7 @@ mkConfigNftTx hasDatum configValue config spend' user =
 
     -- Set up the txs
     baseTx = mconcat [mintValue policy () mintVal, userSpend spend']
-    withDatum = payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
+    withDatum = payToRef validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
     withNoDatumToUser = payToKey user (adaValue 2 <> mintVal)
    in
     -- If hasDatum is set to False we want the withNoDatumToUser tx

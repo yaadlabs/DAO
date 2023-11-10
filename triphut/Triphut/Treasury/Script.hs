@@ -108,7 +108,7 @@ import Triphut.Types (
     dcUpgradeRelativeMajorityPercent
   ),
   ProposalType (General, Trip, Upgrade),
-  TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
+  TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
 
 validateTreasury ::
@@ -141,7 +141,7 @@ validateTreasury
           [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
           _ -> traceError "Too many NFT values"
 
-      TallyState {..} =
+      TallyStateDatum {..} =
         case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
           [] -> traceError "Missing tally NFT"
           [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum

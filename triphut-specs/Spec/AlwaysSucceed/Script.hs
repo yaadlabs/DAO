@@ -1,4 +1,5 @@
 module Spec.AlwaysSucceed.Script (
+  AlwaysSucceedScript,
   alwaysSucceedTypedValidator,
 ) where
 
@@ -7,5 +8,8 @@ import PlutusTx (compile)
 import Triphut.AlwaysSucceed (succeedValidator)
 import Triphut.Types (DynamicConfigDatum)
 
+type AlwaysSucceedScript = TypedValidator DynamicConfigDatum ()
+
 alwaysSucceedTypedValidator :: TypedValidator DynamicConfigDatum ()
-alwaysSucceedTypedValidator = mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator||])
+alwaysSucceedTypedValidator =
+  mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator||])

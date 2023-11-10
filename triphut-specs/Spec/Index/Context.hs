@@ -10,7 +10,6 @@ import Plutus.Model (
   Tx,
   UserSpend,
   ada,
-  adaToken,
   adaValue,
   getHeadRef,
   mintValue,
@@ -25,7 +24,7 @@ import Plutus.Model.V2 (
   payToScript,
  )
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName (TokenName), Value, singleton)
+import Plutus.V1.Ledger.Value (Value, singleton)
 import PlutusTx.Prelude (Bool (True), ($))
 import Spec.Index.SampleData (validSampleIndexNftDatum)
 import Spec.Index.Script (
@@ -34,6 +33,7 @@ import Spec.Index.Script (
   indexNftTypedValidator,
   indexValidatorHash',
  )
+import Spec.Values (dummyIndexConfigNftTokenName)
 import Triphut.Index (IndexNftConfig (IndexNftConfig))
 import Prelude (mconcat, (<>))
 
@@ -46,7 +46,7 @@ mkIndexConfigNftTest :: (IndexNftConfig -> UserSpend -> PubKeyHash -> Tx) -> Run
 mkIndexConfigNftTest tx = do
   user <- newUser $ ada (Lovelace 2_000_000)
   spend' <- spend user (adaValue 2)
-  let config = IndexNftConfig (getHeadRef spend') (TokenName "triphut") indexValidatorHash'
+  let config = IndexNftConfig (getHeadRef spend') dummyIndexConfigNftTokenName indexValidatorHash'
   submitTx user $ tx config spend' user
 
 -- | A valid tx, corresponding test should pass
@@ -76,5 +76,5 @@ mkIndexConfigNftTx hasDatum configValue config spend' user =
 
 -- | Valid value to be used in valid tx
 validIndexConfigNftValue :: IndexNftConfig -> Value
-validIndexConfigNftValue nftCfg@(IndexNftConfig _ tokenName indexValidatorHash) =
+validIndexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
   singleton (indexConfigNftCurrencySymbol nftCfg) tokenName 1
