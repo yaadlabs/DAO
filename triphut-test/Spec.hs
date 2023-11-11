@@ -17,6 +17,6 @@ main = do
       "triphut"
       [ Utils.spec
       , ConfigurationNft.spec
-      , Index.spec
-      , Tally.spec
+      , Index.spec,
+        Tally.spec
       ]

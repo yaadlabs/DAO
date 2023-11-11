@@ -205,8 +205,6 @@ mkTallyNftMinter
       outputOnTallyValidator :: Bool
       !outputOnTallyValidator = addressCredential outputAddress == ScriptCredential dcTallyValidator
      in
-       -- True
-      --  traceIfFalse "bla" refIns
       traceIfFalse "Token is not on tally validator" outputOnTallyValidator
         && traceIfFalse "Tally datum is not initialized to zero" tallyIsInitializeToZero
         && traceIfFalse "Not only one token was minted" onlyOneTokenMinted

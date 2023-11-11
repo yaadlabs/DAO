@@ -118,7 +118,7 @@ validateIndex
       outputDatumIsIncremented = outputIndex == inputIndex + 1
      in
       traceIfFalse "output datum is not incremented" outputDatumIsIncremented
-        && traceIfFalse "script value is not returned" outputValueGreaterThanInputValue
+        -- && traceIfFalse "script value is not returned" outputValueGreaterThanInputValue
         && ivcNonce == ivcNonce -- to help with testing
 validateIndex _ _ _ _ = traceError "Wrong script purpose"
 

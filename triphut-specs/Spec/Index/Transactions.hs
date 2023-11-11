@@ -21,7 +21,7 @@ import Prelude ((<>))
 runInitIndex :: Run ()
 runInitIndex = do
   admin <- getMainUser
-  let configVal = dummyIndexConfigNftValue <> minAda
-  spend' <- spend admin configVal
-  let payTx = payToScript indexNftTypedValidator (InlineDatum validSampleIndexNftDatum) configVal
+  let indexConfigValue = dummyIndexConfigNftValue <> minAda
+  spend' <- spend admin indexConfigValue
+  let payTx = payToScript indexNftTypedValidator (InlineDatum validSampleIndexNftDatum) indexConfigValue
   submitTx admin $ userSpend spend' <> payTx

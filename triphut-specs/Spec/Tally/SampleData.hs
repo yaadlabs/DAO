@@ -31,8 +31,8 @@ sampleTallyStateDatum =
   TallyStateDatum
     { tsProposal = sampleUpgradeProposalType
     , tsProposalEndTime = sampleEndTime
-    , tsFor = 3
-    , tsAgainst = 2
+    , tsFor = 0
+    , tsAgainst = 0
     }
 
 sampleUpgradeProposalType :: ProposalType

@@ -5,11 +5,9 @@ Description : Index policy context unit tests
 module Spec.Index.Context (validIndexConfigNftTest) where
 
 import Plutus.Model (
-  Ada (Lovelace),
   Run,
   Tx,
   UserSpend,
-  ada,
   adaValue,
   getHeadRef,
   mintValue,
@@ -33,6 +31,7 @@ import Spec.Index.Script (
   indexNftTypedValidator,
   indexValidatorHash',
  )
+import Spec.SpecUtils (minAda)
 import Spec.Values (dummyIndexConfigNftTokenName)
 import Triphut.Index (IndexNftConfig (IndexNftConfig))
 import Prelude (mconcat, (<>))
@@ -44,7 +43,7 @@ validIndexConfigNftTest = mkIndexConfigNftTest validIndexNftTx
 -- | Helper function for making tests
 mkIndexConfigNftTest :: (IndexNftConfig -> UserSpend -> PubKeyHash -> Tx) -> Run ()
 mkIndexConfigNftTest tx = do
-  user <- newUser $ ada (Lovelace 2_000_000)
+  user <- newUser minAda
   spend' <- spend user (adaValue 2)
   let config = IndexNftConfig (getHeadRef spend') dummyIndexConfigNftTokenName indexValidatorHash'
   submitTx user $ tx config spend' user
