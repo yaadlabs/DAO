@@ -31,11 +31,11 @@ import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
 import PlutusTx.Prelude (Bool (False, True), ($))
 import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator)
-import Spec.ConfigurationNft.SampleData (sampleDynamicConfig)
 import Spec.ConfigurationNft.Script (
   configNftCurrencySymbol,
   configNftTypedMintingPolicy,
  )
+import Spec.SampleData (sampleDynamicConfig)
 import Spec.SpecUtils (minAda)
 import Triphut.ConfigurationNft (NftConfig (NftConfig))
 import Prelude (mconcat, (<>))

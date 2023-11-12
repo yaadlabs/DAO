@@ -17,20 +17,18 @@ import Plutus.Model (
  )
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
-  TxBox,
   payToScript,
   refInputInline,
   spendScript,
-  txBoxValue,
  )
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
-import Plutus.V2.Ledger.Tx (TxOut, TxOutRef)
-import PlutusTx.Prelude (Bool, ($))
-import Spec.AlwaysSucceed.Script (AlwaysSucceedScript, alwaysSucceedTypedValidator)
+import PlutusTx.Prelude (($))
 import Spec.ConfigurationNft.Transactions (runInitConfig)
-import Spec.Index.Script (IndexValidatorScript, indexNftTypedValidator)
+import Spec.ConfigurationNft.Utils (findConfig)
+import Spec.Index.Script (indexNftTypedValidator)
 import Spec.Index.Transactions (runInitIndex)
-import Spec.SpecUtils (findUniqueUtxo, minAda)
+import Spec.Index.Utils (findIndex)
+import Spec.SpecUtils (minAda)
 import Spec.Tally.SampleData (sampleTallyStateDatum)
 import Spec.Tally.Script (
   tallyConfigNftCurrencySymbol,
@@ -45,9 +43,7 @@ import Spec.Values (
   dummyIndexConfigNftValue,
  )
 import Triphut.Index (IndexNftDatum (IndexNftDatum))
-import Triphut.Shared (hasOneOfToken)
 import Triphut.Tally (TallyNftConfig (TallyNftConfig))
-import Triphut.Types (DynamicConfigDatum)
 import Prelude (mconcat, (+), (<>))
 
 validTallyConfigNftTest :: Run ()
@@ -84,34 +80,34 @@ validTallyConfigNftTest = do
     baseTx =
       mconcat
         [ mintValue tallyPolicy () tallyConfigValue
-        , userSpend spend1
+        , -- \^ Mint the tally NFT
+          spendScript indexNftTypedValidator indexOutRef () indexDatum
+        , -- \^ Spend the input at the index validator with the old datum,
+          -- adds the index to the inputs
+          refInputInline configOutRef
+        , -- \^ Add the config to the reference inputs
+          userSpend spend1
         , userSpend spend2
-        , spendScript indexNftTypedValidator indexOutRef () indexDatum
-        , refInputInline configOutRef
+        -- \^ Spend these to balance the tx
         ]
 
+    -- Pay the tally datum, and token,
+    -- to the tally validator
     payToTallyValidator =
       payToScript
         tallyNftTypedValidator
         (InlineDatum sampleTallyStateDatum)
         (adaValue 2 <> tallyConfigValue)
 
+    -- Pay the updated index datum with the incremented
+    -- index field, and token, to the index validator
     payToIndexValidator =
       payToScript
         indexNftTypedValidator
         (InlineDatum $ updateIndexDatum indexDatum)
         (adaValue 2 <> dummyIndexConfigNftValue)
 
-  submitTx user $ baseTx <> payToTallyValidator <> payToIndexValidator
+    -- Combine the txs
+    allTxs = mconcat [baseTx, payToTallyValidator, payToIndexValidator]
 
-findConfig :: Run (TxOutRef, TxOut, DynamicConfigDatum)
-findConfig = findUniqueUtxo alwaysSucceedTypedValidator check
-  where
-    check :: TxBox AlwaysSucceedScript -> Bool
-    check box = hasOneOfToken dummyConfigNftSymbol dummyConfigNftTokenName (txBoxValue box)
-
-findIndex :: Run (TxOutRef, TxOut, IndexNftDatum)
-findIndex = findUniqueUtxo indexNftTypedValidator check
-  where
-    check :: TxBox IndexValidatorScript -> Bool
-    check box = hasOneOfToken dummyIndexConfigNftSymbol dummyIndexConfigNftTokenName (txBoxValue box)
+  submitTx user allTxs

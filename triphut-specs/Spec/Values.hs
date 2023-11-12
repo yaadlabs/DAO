@@ -5,6 +5,9 @@ module Spec.Values (
   dummyIndexConfigNftSymbol,
   dummyIndexConfigNftTokenName,
   dummyIndexConfigNftValue,
+  dummyVoteConfigNftValue,
+  dummyVoteConfigNftSymbol,
+  dummyVoteConfigNftTokenName,
 ) where
 
 import Plutus.V1.Ledger.Bytes (getLedgerBytes)
@@ -35,3 +38,15 @@ dummyIndexConfigNftSymbol =
 
 dummyIndexConfigNftTokenName :: TokenName
 dummyIndexConfigNftTokenName = TokenName "triphut_index"
+
+-- | Dummy vote configuration
+dummyVoteConfigNftValue :: Value
+dummyVoteConfigNftValue = singleton dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName 1
+
+dummyVoteConfigNftTokenName :: TokenName
+dummyVoteConfigNftTokenName = TokenName "voter_config"
+
+dummyVoteConfigNftSymbol :: CurrencySymbol
+dummyVoteConfigNftSymbol =
+  CurrencySymbol $
+    getLedgerBytes "22222222222222222222222222222222222222222222222222222222"

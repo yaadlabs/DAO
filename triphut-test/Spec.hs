@@ -7,6 +7,7 @@ import Spec.Utils qualified as Utils
 import Spec.ConfigurationNft qualified as ConfigurationNft
 import Spec.Index qualified as Index
 import Spec.Tally qualified as Tally
+import Spec.Vote qualified as Vote
 import Test.Tasty (defaultMain, testGroup)
 
 main :: IO ()
@@ -17,6 +18,7 @@ main = do
       "triphut"
       [ Utils.spec
       , ConfigurationNft.spec
-      , Index.spec,
-        Tally.spec
+      , Index.spec
+      , Tally.spec
+      , Vote.spec
       ]

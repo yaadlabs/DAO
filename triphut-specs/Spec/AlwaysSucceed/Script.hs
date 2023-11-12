@@ -1,15 +1,26 @@
 module Spec.AlwaysSucceed.Script (
-  AlwaysSucceedScript,
+  AlwaysSucceedScriptDynamicConfig,
+  AlwaysSucceedScriptVoteDynamicConfig,
   alwaysSucceedTypedValidator,
+  alwaysSucceedTypedValidator1,
 ) where
 
 import Plutus.Model.V2 (TypedValidator, mkTypedValidator, toBuiltinValidator)
 import PlutusTx (compile)
-import Triphut.AlwaysSucceed (succeedValidator)
+import Triphut.AlwaysSucceed (succeedValidator, succeedValidator1)
 import Triphut.Types (DynamicConfigDatum)
+import Triphut.Vote (VoteMinterDynamicConfigDatum)
 
-type AlwaysSucceedScript = TypedValidator DynamicConfigDatum ()
+-- Dynamic config reference script
+type AlwaysSucceedScriptDynamicConfig = TypedValidator DynamicConfigDatum ()
 
-alwaysSucceedTypedValidator :: TypedValidator DynamicConfigDatum ()
+alwaysSucceedTypedValidator :: AlwaysSucceedScriptDynamicConfig
 alwaysSucceedTypedValidator =
   mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator||])
+
+-- Vote dynamic config reference script
+type AlwaysSucceedScriptVoteDynamicConfig = TypedValidator VoteMinterDynamicConfigDatum ()
+
+alwaysSucceedTypedValidator1 :: AlwaysSucceedScriptVoteDynamicConfig
+alwaysSucceedTypedValidator1 =
+  mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator1||])

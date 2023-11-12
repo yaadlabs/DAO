@@ -5,6 +5,7 @@ module Spec.SpecUtils (
   getFirstRefScript,
   minAda,
   findUniqueUtxo,
+  findConfigUtxo,
 ) where
 
 import Control.Monad (void)
@@ -38,12 +39,14 @@ import Plutus.Model.V2 (
   txBoxDatum,
   txBoxOut,
   txBoxRef,
+  txBoxValue,
  )
 import Plutus.V1.Ledger.Scripts (Validator)
-import Plutus.V1.Ledger.Value (Value)
+import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value)
 import Plutus.V2.Ledger.Tx (TxOut, TxOutRef)
 import PlutusTx.Prelude (Bool, Maybe (Just, Nothing), fst, head, ($), (.), (>>=))
 import Test.Tasty (TestTree)
+import Triphut.Shared (hasOneOfToken)
 import Prelude (String, error, mconcat, pure, show, (<$>), (<>))
 
 checkFails :: MockConfig -> Value -> String -> Run () -> TestTree
@@ -70,6 +73,17 @@ getFirstRefScript script =
 
 minAda :: Value
 minAda = ada $ Lovelace 2_000_000
+
+findConfigUtxo ::
+  (HasDatum script, HasAddress script) =>
+  script ->
+  CurrencySymbol ->
+  TokenName ->
+  Run (TxOutRef, TxOut, DatumType script)
+findConfigUtxo validatorScript symbol tokenName = findUniqueUtxo validatorScript check
+  where
+    check :: TxBox script -> Bool
+    check box = hasOneOfToken symbol tokenName (txBoxValue box)
 
 findUniqueUtxo ::
   (HasCallStack, HasDatum script, HasAddress script) =>

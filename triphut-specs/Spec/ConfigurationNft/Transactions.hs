@@ -13,7 +13,7 @@ import Plutus.Model.V2 (
  )
 import PlutusTx.Prelude (($))
 import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator)
-import Spec.ConfigurationNft.SampleData (sampleDynamicConfig)
+import Spec.SampleData (sampleDynamicConfig)
 import Spec.SpecUtils (initScriptRef, minAda)
 import Spec.Values (dummyConfigNftValue)
 import Prelude ((<>))
