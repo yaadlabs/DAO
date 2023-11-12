@@ -9,15 +9,8 @@ import PlutusTx (toBuiltinData)
 import PlutusTx.Prelude (Integer)
 import Spec.Tally.Script (tallyValidatorHash')
 import Spec.Vote.Script (voteValidatorHash')
-import Triphut.ConfigurationNft (ConfigurationValidatorConfig (..))
 import Triphut.Types (DynamicConfigDatum (..))
-import Triphut.Vote (
-  VoteDatum (..),
-  VoteDirection (For),
-  VoteMinterConfig (VoteMinterConfig),
-  VoteMinterDynamicConfigDatum (..),
-  VoteValidatorConfig (VoteValidatorConfig),
- )
+import Triphut.Vote (VoteMinterDynamicConfigDatum (..))
 
 -- DynamicConfigDatum samples
 sampleDynamicConfig :: DynamicConfigDatum

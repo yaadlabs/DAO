@@ -44,7 +44,7 @@ dummyVoteConfigNftValue :: Value
 dummyVoteConfigNftValue = singleton dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName 1
 
 dummyVoteConfigNftTokenName :: TokenName
-dummyVoteConfigNftTokenName = TokenName "voter_config"
+dummyVoteConfigNftTokenName = TokenName "vote"
 
 dummyVoteConfigNftSymbol :: CurrencySymbol
 dummyVoteConfigNftSymbol =
