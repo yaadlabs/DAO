@@ -1,3 +1,10 @@
+{- |
+Module: Triphut.Tally.Script
+Description: Triphut tally related scripts.
+Includes:
+  - Tally minting policy script.
+  - Tally validator script.
+-}
 module Triphut.Tally.Script (
   tallyNftMinter,
   tallyNftMinterPolicyId,
@@ -155,6 +162,25 @@ import Triphut.Vote (
   VoteDirection (For),
  )
 
+{- | Policy for minting the Tally NFT.
+
+   This policy performs the following checks:
+
+    - There is exactly one 'DynamicConfigDatum' in the reference inputs,
+      marked by the config NFT
+      (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'TallyNftConfig' argument)
+    - There is exactly one Index UTXO spent (contained in the 'txInfoInputs')
+    - This index UTXO contains a valid 'IndexNftDatum'
+      (The 'Triphut.Index.Script.validateIndex' validator ensures the datum's index is incremented by one)
+    - Exactly one valid Tally NFT is minted with the valid token name.
+    - The token name matches the 'indIndex' field of the 'IndexNftDatum'
+    - There is exactly one output containing the tally NFT.
+    - This output contains a valid 'Triphut.Types.TallyStateDatum' datum.
+    - The initial votes for fields of the 'Triphut.Types.TallyStateDatum' are both set to zero.
+    - The tally output is at the tally validator
+      (Corresponding to the tally script provided by the 'dcTallyValidator'
+       field of the 'Triphut.Types.DynamicConfigDatum')
+-}
 mkTallyNftMinter :: TallyNftConfig -> BuiltinData -> ScriptContext -> Bool
 mkTallyNftMinter
   TallyNftConfig {..}
@@ -164,51 +190,65 @@ mkTallyNftMinter
     , scriptContextPurpose = Minting thisCurrencySymbol
     } =
     let
+      -- Helper for filtering for config UTXO in the reference inputs
       hasConfigurationNft :: Value -> Bool
       hasConfigurationNft = hasOneOfToken tncConfigNftCurrencySymbol tncConfigNftTokenName
 
-      DynamicConfigDatum {..} =
+      -- Get the configuration from the reference inputs
+      DynamicConfigDatum {dcTallyValidator} =
         case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
-          _ -> traceError "Too many Config NFT values"
+          _ -> traceError "Should be exactly one valid config in the reference inputs"
 
-      hasTallyNft :: Value -> Bool
-      hasTallyNft = hasOneOfToken thisCurrencySymbol theTokenName
-
-      TxOut {txOutDatum = outputDatum, txOutAddress = outputAddress} =
-        case filter (hasTallyNft . txOutValue) txInfoOutputs of
-          [x] -> x
-          _ -> traceError "wrong number of outputs"
-
-      TallyStateDatum {..} = convertDatum txInfoData outputDatum
-
+      -- Helper for filtering for index UTXO in the inputs
       hasIndexNft :: Value -> Bool
       hasIndexNft = hasOneOfToken tncIndexNftPolicyId tncIndexNftTokenName
 
-      IndexNftDatum {..} = case filter (hasIndexNft . txOutValue . txInInfoResolved) txInfoInputs of
+      -- Get the index datum from the inputs
+      IndexNftDatum {indIndex} = case filter (hasIndexNft . txOutValue . txInInfoResolved) txInfoInputs of
         [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
-        _ -> traceError "Too many Index NFT values"
+        _ -> traceError "Should be exactly one valid Index NFT output"
 
+      -- Helper for filtering for tally UTXO in the outputs
+      hasTallyNft :: Value -> Bool
+      hasTallyNft = hasOneOfToken thisCurrencySymbol theTokenName
+
+      -- Get the tally state datum at the output marked by the tally NFT
+      TxOut {txOutDatum = outputDatum, txOutAddress = outputAddress} =
+        case filter (hasTallyNft . txOutValue) txInfoOutputs of
+          [tallyTxOut] -> tallyTxOut
+          _ -> traceError "Should be exactly one valid Tally NFT output"
+
+      -- Unwrap the 'OutputDatum' to get the 'TallyStateDatum'
+      -- Will fail with error if no datum found
+      tallyStateDatum :: TallyStateDatum
+      tallyStateDatum = convertDatum txInfoData outputDatum
+
+      -- The initial votes for and against must both be set to zero
+      tallyIsInitializeToZero :: Bool
+      !tallyIsInitializeToZero = tsFor tallyStateDatum == 0 && tsAgainst tallyStateDatum == 0
+
+      -- The NFT must be at the address of the tally validator
+      outputOnTallyValidator :: Bool
+      !outputOnTallyValidator = addressCredential outputAddress == ScriptCredential dcTallyValidator
+
+      -- The token name be set to the index value,
+      -- contained in the 'IndexNftDatum' ("0" initially)
       theTokenName :: TokenName
       !theTokenName = TokenName $ integerToByteString indIndex
 
+      -- Ensure exactly one valid tally token is minted
       onlyOneTokenMinted :: Bool
       !onlyOneTokenMinted =
         hasSingleTokenWithSymbolAndTokenName
           txInfoMint
           thisCurrencySymbol
           theTokenName
-
-      tallyIsInitializeToZero :: Bool
-      !tallyIsInitializeToZero = tsFor == 0 && tsAgainst == 0
-
-      outputOnTallyValidator :: Bool
-      !outputOnTallyValidator = addressCredential outputAddress == ScriptCredential dcTallyValidator
      in
-      traceIfFalse "Token is not on tally validator" outputOnTallyValidator
+      traceIfFalse "Tally NFT must be sent to the Tally validator" outputOnTallyValidator
         && traceIfFalse "Tally datum is not initialized to zero" tallyIsInitializeToZero
-        && traceIfFalse "Not only one token was minted" onlyOneTokenMinted
-mkTallyNftMinter _ _ _ = traceError "wrong type of script purpose!"
+        && traceIfFalse "Should be exactly one valid token minted" onlyOneTokenMinted
+mkTallyNftMinter _ _ _ = traceError "Wrong type of script purpose!"
 
 wrappedPolicyTally :: TallyNftConfig -> WrappedMintingPolicyType
 wrappedPolicyTally config a b = check (mkTallyNftMinter config a (unsafeFromBuiltinData b))

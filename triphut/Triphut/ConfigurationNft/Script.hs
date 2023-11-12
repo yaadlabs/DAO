@@ -152,7 +152,7 @@ mkConfigurationNftPolicy
       _newOutput :: DynamicConfigDatum
       !_newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
         [TxOut {txOutDatum}] -> convertDatum txInfoData txOutDatum
-        _ -> traceError "Impossible. No valid minted output."
+        _ -> traceError "Should be exactly one valid minted output."
 
       -- Ensure that the reference UTXO is spent
       hasUTxO :: Bool

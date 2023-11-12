@@ -1,3 +1,8 @@
+{- |
+Module: Triphut.Tally.Treasury
+Description: Triphut treasury related scripts.
+Includes: Treasury validator script.
+-}
 module Triphut.Treasury.Script (
   TreasuryValidatorConfig (..),
   treasuryScript,

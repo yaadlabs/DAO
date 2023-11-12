@@ -1,3 +1,10 @@
+{- |
+Module: Triphut.Index.Script
+Description: Triphut index related scripts.
+Includes:
+  - Index minting policy script.
+  - Index validator script.
+-}
 module Triphut.Index.Script (
   indexScript,
   indexValidator,
@@ -134,7 +141,21 @@ indexValidatorHash = validatorHash . indexValidator
 indexScript :: IndexValidatorConfig -> PlutusScript PlutusScriptV2
 indexScript = validatorToScript indexValidator
 
--- | Nft Index Policy
+{- | Policy for minting index NFT.
+
+   This policy performs the following checks:
+
+    - The UTXO, referenced in the `incInitialUtxo` field of
+      the `IndexNftConfig` argument, is spent in the transaction.
+    - The token name matches the `incTokenName` field of the `NftConfig` argument.
+    - Exactly one valid config NFT is minted with the valid token name.
+    - There is exactly one output containing the NFT.
+    - This output contains a valid 'Triphut.Index.IndexNftDatum' datum.
+    - This 'index' field of this datum is set to zero.
+    - The index output is at the index validator
+      (Corresponding to the index script provided by the 'incIndexValidator'
+       field of the 'IndexNftConfig' parameter)
+-}
 mkIndexNftMinter :: IndexNftConfig -> BuiltinData -> ScriptContext -> Bool
 mkIndexNftMinter
   IndexNftConfig {..}
@@ -144,35 +165,41 @@ mkIndexNftMinter
     , scriptContextPurpose = Minting thisCurrencySymbol
     } =
     let
-      hasWitness :: Value -> Bool
-      hasWitness = hasTokenInValueNoErrors thisCurrencySymbol
-
+      -- Ensure that the reference UTXO is spent
       hasUTxO :: Bool
       !hasUTxO = any (\i -> txInInfoOutRef i == incInitialUtxo) txInfoInputs
 
-      (!IndexNftDatum {..}, !outputAddress) :: (IndexNftDatum, Address) =
+      -- Helper for filtering for index UTXO in the outputs
+      hasWitness :: Value -> Bool
+      hasWitness = hasTokenInValueNoErrors thisCurrencySymbol
+
+      -- Get the index datum at the output marked by the index NFT
+      (!IndexNftDatum {indIndex}, !outputAddress) :: (IndexNftDatum, Address) =
         case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
           [TxOut {..}] -> (convertDatum txInfoData txOutDatum, txOutAddress)
-          _ -> traceError "Impossible. No minted output."
+          _ -> traceError "Should be exactly one valid minted output."
 
+      -- Ensure that the initial index in the IndexNftDatum is set to zero
       initialIndexIsZero :: Bool
       !initialIndexIsZero = indIndex == 0
 
+      -- The NFT must be at the address of the index validator
+      outputIsValidator :: Bool
+      outputIsValidator = addressCredential outputAddress == ScriptCredential incIndexValidator
+
+      -- Ensure exactly one valid index token is minted
       onlyOneTokenMinted :: Bool
       !onlyOneTokenMinted =
         hasSingleTokenWithSymbolAndTokenName
           txInfoMint
           thisCurrencySymbol
           incTokenName
-
-      outputIsValidator :: Bool
-      outputIsValidator = addressCredential outputAddress == ScriptCredential incIndexValidator
      in
-      traceIfFalse "Missing significant UTxO!" hasUTxO
-        && traceIfFalse "Wrong mint amount!" onlyOneTokenMinted
-        && traceIfFalse "Initial Index is not zero" initialIndexIsZero
-        && traceIfFalse "Output is not index validator" outputIsValidator
-mkIndexNftMinter _ _ _ = traceError "wrong type of script purpose!"
+      traceIfFalse "Reference UTXO should be spent" hasUTxO
+        && traceIfFalse "Exactly one valid token should be minted" onlyOneTokenMinted
+        && traceIfFalse "Initial index should be set to zero" initialIndexIsZero
+        && traceIfFalse "Index NFT must be sent to the Index validator" outputIsValidator
+mkIndexNftMinter _ _ _ = traceError "Wrong type of script purpose!"
 
 wrappedPolicy :: IndexNftConfig -> WrappedMintingPolicyType
 wrappedPolicy config a b = check (mkIndexNftMinter config a (unsafeFromBuiltinData b))
