@@ -108,7 +108,7 @@ findConfig :: Run (TxOutRef, TxOut, DynamicConfigDatum)
 findConfig = findUniqueUtxo alwaysSucceedTypedValidator check
   where
     check :: TxBox AlwaysSucceedScript -> Bool
-    check box = hasOneOfToken dummyConfigNftSymbol "config" (txBoxValue box)
+    check box = hasOneOfToken dummyConfigNftSymbol dummyConfigNftTokenName (txBoxValue box)
 
 findIndex :: Run (TxOutRef, TxOut, IndexNftDatum)
 findIndex = findUniqueUtxo indexNftTypedValidator check

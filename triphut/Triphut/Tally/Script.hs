@@ -158,7 +158,7 @@ import Triphut.Types (
   TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposalEndTime),
  )
 import Triphut.Vote (
-  Vote (Vote, vDirection, vOwner, vProposalTokenName, vReturnAda),
+  VoteDatum (VoteDatum, vDirection, vOwner, vProposalTokenName, vReturnAda),
   VoteDirection (For),
  )
 
@@ -232,7 +232,7 @@ mkTallyNftMinter
       outputOnTallyValidator :: Bool
       !outputOnTallyValidator = addressCredential outputAddress == ScriptCredential dcTallyValidator
 
-      -- The token name be set to the index value,
+      -- The token name must be set to the index value,
       -- contained in the 'IndexNftDatum' ("0" initially)
       theTokenName :: TokenName
       !theTokenName = TokenName $ integerToByteString indIndex
@@ -246,7 +246,7 @@ mkTallyNftMinter
           theTokenName
      in
       traceIfFalse "Tally NFT must be sent to the Tally validator" outputOnTallyValidator
-        && traceIfFalse "Tally datum is not initialized to zero" tallyIsInitializeToZero
+        && traceIfFalse "Tally datum vote counts are not initialized to zero" tallyIsInitializeToZero
         && traceIfFalse "Should be exactly one valid token minted" onlyOneTokenMinted
 mkTallyNftMinter _ _ _ = traceError "Wrong type of script purpose!"
 
@@ -373,7 +373,7 @@ validateTally
           case (hasVoteToken tTxOutValue, hasVoteWitness tTxOutValue) of
             (Just voteNft, True) ->
               let
-                Vote {..} = convertDatum tTxInfoData tTxOutDatum
+                VoteDatum {..} = convertDatum tTxInfoData tTxOutDatum
 
                 -- Count all the dcVoteFungibleCurrencySymbol
                 -- with dcVoteFungibleTokenName tokens on the vote utxo

@@ -1,5 +1,5 @@
 module Triphut.Vote (
-  Vote (..),
+  VoteDatum (..),
   VoteDirection (..),
   VoteMinterConfig (..),
   VoteValidatorConfig (..),
@@ -12,8 +12,8 @@ module Triphut.Vote (
   VoteMinterTxOut (..),
   VoteMinterTxInfo (..),
   VoteMinterTxInInfo (..),
-  VoteMinterDynamicConfig (..),
-  VoteMinterAction (..),
+  VoteMinterDynamicConfigDatum (..),
+  VoteMinterActionRedeemer (..),
   VoteMinterScriptContext (..),
   VoteMinterScriptPurpose (..),
   VoteAddress (..),
@@ -57,18 +57,18 @@ instance PlutusTx.Eq VoteDirection where
   Against == Against = True
   _ == _ = False
 
-data Vote = Vote
+data VoteDatum = VoteDatum
   { vProposalTokenName :: TokenName
   , vDirection :: VoteDirection
   , vOwner :: Address
   , vReturnAda :: Integer
   }
 
-data VoteMinterAction = Mint | Burn
+data VoteMinterActionRedeemer = Mint | Burn
 
 unstableMakeIsData ''VoteDirection
-unstableMakeIsData ''VoteMinterAction
-unstableMakeIsData ''Vote
+unstableMakeIsData ''VoteMinterActionRedeemer
+unstableMakeIsData ''VoteDatum
 
 data VoteMinterAddress = VoteMinterAddress
   { vmAddressCredential :: Credential
@@ -109,7 +109,7 @@ data VoteMinterTxInfo = VoteMinterTxInfo
   , vmTxInfoId :: BuiltinData
   }
 
-data VoteMinterDynamicConfig = VoteMinterDynamicConfig
+data VoteMinterDynamicConfigDatum = VoteMinterDynamicConfigDatum
   { vmdcTallyIndexNft :: BuiltinData
   , vmdcTallyNft :: CurrencySymbol
   , vmdcTallyValidator :: BuiltinData
@@ -141,7 +141,7 @@ unstableMakeIsData ''VoteMinterTxInInfo
 unstableMakeIsData ''VoteMinterScriptPurpose
 unstableMakeIsData ''VoteMinterScriptContext
 unstableMakeIsData ''VoteMinterTxInfo
-unstableMakeIsData ''VoteMinterDynamicConfig
+unstableMakeIsData ''VoteMinterDynamicConfigDatum
 
 data VoteAddress = VoteAddress
   { vAddressCredential :: Credential

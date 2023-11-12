@@ -1,9 +1,17 @@
+{- |
+Module: Triphut.Vote.Treasury
+Description: Triphut vote related scripts.
+Includes:
+  - Vote minting policy script.
+  - Vote validator script.
+-}
 module Triphut.Vote.Script (
   voteMinter,
   voteMinterPolicyId,
   mkVoteMinter,
   wrappedPolicy,
   voteScript,
+  voteValidator,
   voteValidatorHash,
 ) where
 
@@ -67,23 +75,23 @@ import Triphut.Shared (
  )
 import Triphut.Types (TallyStateDatum (TallyStateDatum, tsProposalEndTime))
 import Triphut.Vote (
-  Vote (Vote, vOwner, vReturnAda),
   VoteAction (Cancel, Count),
   VoteAddress (vAddressCredential),
+  VoteDatum (VoteDatum, vOwner, vReturnAda),
   VoteDynamicConfig (
     VoteDynamicConfig,
     vdcTallyValidator,
     vdcVoteCurrencySymbol
   ),
-  VoteMinterAction (Burn, Mint),
+  VoteMinterActionRedeemer (Burn, Mint),
   VoteMinterAddress (vmAddressCredential),
   VoteMinterConfig (
     VoteMinterConfig,
     vmcConfigNftCurrencySymbol,
     vmcConfigNftTokenName
   ),
-  VoteMinterDynamicConfig (
-    VoteMinterDynamicConfig,
+  VoteMinterDynamicConfigDatum (
+    VoteMinterDynamicConfigDatum,
     vmdcTallyNft,
     vmdcVoteNft,
     vmdcVoteTokenName,
@@ -145,7 +153,7 @@ import Triphut.Vote (
 {- | The vote minter has a reference to the proposal so the end time can be validated
    Ensures that there is an NFT for voting present
 -}
-mkVoteMinter :: VoteMinterConfig -> VoteMinterAction -> VoteMinterScriptContext -> Bool
+mkVoteMinter :: VoteMinterConfig -> VoteMinterActionRedeemer -> VoteMinterScriptContext -> Bool
 mkVoteMinter
   VoteMinterConfig {..}
   action
@@ -167,7 +175,7 @@ mkVoteMinter
         theData :: Map DatumHash Datum
         theData = unsafeFromBuiltinData vmTxInfoData
 
-        VoteMinterDynamicConfig {..} =
+        VoteMinterDynamicConfigDatum {..} =
           case filter
             (hasConfigurationNft . vmTxOutValue . vmTxInInfoResolved)
             (unsafeFromBuiltinData vmTxInfoReferenceInputs) of
@@ -175,7 +183,7 @@ mkVoteMinter
             _ -> traceError "Too many NFT values"
 
         -- Get output on the vote validator. Should just be one.
-        (Vote {..}, !voteValue) =
+        (VoteDatum {..}, !voteValue) =
           case filter
             ((== ScriptCredential vmdcVoteValidator) . vmAddressCredential . vmTxOutAddress)
             (unsafeFromBuiltinData vmTxInfoOutputs) of
@@ -257,13 +265,13 @@ voteMinter =
 -- Needs to work in bulk
 validateVote ::
   VoteValidatorConfig ->
-  Vote ->
+  VoteDatum ->
   VoteAction ->
   VoteScriptContext ->
   Bool
 validateVote
   VoteValidatorConfig {..}
-  Vote {..}
+  VoteDatum {..}
   action
   VoteScriptContext
     { vScriptContextTxInfo = VoteTxInfo {..}
