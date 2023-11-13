@@ -3,7 +3,7 @@ module Spec.SampleData (
   sampleVoteDynamicConfig,
 ) where
 
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, adaSymbol, adaToken)
+import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName(TokenName), adaSymbol, adaToken)
 import Plutus.V2.Ledger.Api (ValidatorHash (ValidatorHash))
 import PlutusTx (toBuiltinData)
 import PlutusTx.Prelude (Integer)
@@ -51,7 +51,7 @@ sampleVoteDynamicConfig =
     , vmdcTreasuryValidator = toBuiltinData (ValidatorHash "")
     , vmdcConfigurationValidator = toBuiltinData (ValidatorHash "")
     , vmdcVoteCurrencySymbol = toBuiltinData (adaSymbol :: CurrencySymbol)
-    , vmdcVoteTokenName = adaToken
+    , vmdcVoteTokenName = TokenName "vote"
     , vmdcVoteValidator = voteValidatorHash'
     , vmdcUpgradeMajorityPercent = toBuiltinData (1 :: Integer)
     , vmdcUpgradRelativeMajorityPercent = toBuiltinData (1 :: Integer)
