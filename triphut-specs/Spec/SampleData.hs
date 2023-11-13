@@ -3,12 +3,13 @@ module Spec.SampleData (
   sampleVoteDynamicConfig,
 ) where
 
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName(TokenName), adaSymbol, adaToken)
+import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName (TokenName), adaSymbol, adaToken)
 import Plutus.V2.Ledger.Api (ValidatorHash (ValidatorHash))
 import PlutusTx (toBuiltinData)
 import PlutusTx.Prelude (Integer)
 import Spec.Tally.Script (tallyValidatorHash')
-import Spec.Vote.Script (voteValidatorHash')
+import Spec.Vote.SampleData (sampleVoteMinterConfig)
+import Spec.Vote.Script (voteCurrencySymbol, voteValidatorHash')
 import Triphut.Types (DynamicConfigDatum (..))
 import Triphut.Vote (VoteMinterDynamicConfigDatum (..))
 
@@ -60,7 +61,7 @@ sampleVoteDynamicConfig =
     , vmdcTripMajorityPercent = toBuiltinData (1 :: Integer)
     , vmdcTripRelativeMajorityPercent = toBuiltinData (1 :: Integer)
     , vmdcTotalVotes = toBuiltinData (1 :: Integer)
-    , vmdcVoteNft = adaSymbol
+    , vmdcVoteNft = voteCurrencySymbol sampleVoteMinterConfig
     , vmdcVoteFungibleCurrencySymbol = toBuiltinData (adaSymbol :: CurrencySymbol)
     , vmdcVoteFungibleTokenName = toBuiltinData (adaToken :: TokenName)
     , vmdcProposalTallyEndOffset = toBuiltinData (1 :: Integer)
