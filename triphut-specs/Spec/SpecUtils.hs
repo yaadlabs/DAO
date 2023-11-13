@@ -6,6 +6,7 @@ module Spec.SpecUtils (
   minAda,
   findUniqueUtxo,
   findConfigUtxo,
+  oneSecond,
 ) where
 
 import Control.Monad (void)
@@ -42,6 +43,7 @@ import Plutus.Model.V2 (
   txBoxValue,
  )
 import Plutus.V1.Ledger.Scripts (Validator)
+import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
 import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value)
 import Plutus.V2.Ledger.Tx (TxOut, TxOutRef)
 import PlutusTx.Prelude (Bool, Maybe (Just, Nothing), fst, head, ($), (.), (>>=))
@@ -110,3 +112,6 @@ findUniqueUtxo' validator selector = do
   case res of
     [(oref, o, datum)] -> pure $ Just (oref, o, datum)
     _ -> pure Nothing
+
+oneSecond :: POSIXTime
+oneSecond = POSIXTime 1_000

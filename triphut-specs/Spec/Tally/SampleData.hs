@@ -39,4 +39,4 @@ sampleUpgradeProposalType :: ProposalType
 sampleUpgradeProposalType = Upgrade adaSymbol
 
 sampleEndTime :: POSIXTime
-sampleEndTime = POSIXTime 0
+sampleEndTime = POSIXTime 3594201188000

@@ -7,65 +7,53 @@ module Spec.Vote.Context (validVoteConfigNftTest) where
 import Control.Monad (void)
 import Plutus.Model (
   Run,
-  TypedPolicy,
   adaValue,
+  currentTime,
   mintValue,
   newUser,
   spend,
   submitTx,
   userSpend,
+  validateIn,
  )
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
   payToScript,
   refInputInline,
-  spendScript,
  )
+import Plutus.V1.Ledger.Interval (to)
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
-import PlutusTx.Prelude (($))
-import Spec.ConfigurationNft.Transactions (runInitConfig)
-import Spec.ConfigurationNft.Utils (findConfig)
-import Spec.Index.Script (indexNftTypedValidator)
-import Spec.Index.Transactions (runInitIndex)
-import Spec.Index.Utils (findIndex)
-import Spec.SpecUtils (minAda)
+import Spec.SpecUtils (minAda, oneSecond)
+import Spec.Tally.Transactions (runInitTally)
+import Spec.Tally.Utils (findTally)
 import Spec.Values (
-  dummyConfigNftSymbol,
-  dummyConfigNftTokenName,
-  dummyIndexConfigNftSymbol,
-  dummyIndexConfigNftTokenName,
-  dummyIndexConfigNftValue,
   dummyVoteConfigNftSymbol,
   dummyVoteConfigNftTokenName,
  )
 import Spec.Vote.SampleData (sampleVoteDatum)
 import Spec.Vote.Script (
   VoteMintingPolicy,
-  VoteValidatorScript,
   voteCurrencySymbol,
-  voteMintingPolicy,
   voteTypedMintingPolicy,
   voteTypedValidator,
-  voteValidatorHash',
  )
 import Spec.Vote.Transactions (runInitVoteConfig)
 import Spec.Vote.Utils (findVote)
-import Triphut.Index (IndexNftDatum (IndexNftDatum))
-import Triphut.Vote (VoteMinterActionRedeemer (Burn, Mint), VoteMinterConfig (VoteMinterConfig))
-import Prelude (mconcat, pure, (+), (<>))
+import Triphut.Vote (VoteMinterActionRedeemer (Mint), VoteMinterConfig (VoteMinterConfig))
+import Prelude (mconcat, (*), (+), (<>))
 
 validVoteConfigNftTest :: Run ()
 validVoteConfigNftTest = do
   void runInitVoteConfig
-  (voteOutRef, _, voteDatum) <- findVote
+  void runInitTally
+  (voteOutRef, _, _voteDatum) <- findVote
+  (tallyOutRef, _, _tallyDatum) <- findTally
 
   user <- newUser minAda
   spend1 <- spend user (adaValue 2)
+  theTimeNow <- currentTime
 
   let config = VoteMinterConfig dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName
-
-      voteBurnValue :: Value
-      voteBurnValue = singleton (voteCurrencySymbol config) (TokenName "vote") (-1)
 
       voteValue :: Value
       voteValue = singleton (voteCurrencySymbol config) (TokenName "vote") 1
@@ -76,8 +64,9 @@ validVoteConfigNftTest = do
       -- Set up the txs
       baseTx =
         mconcat
-          [ mintValue votePolicy Mint voteValue -- Burn voteBurnValue
+          [ mintValue votePolicy Mint voteValue
           , refInputInline voteOutRef
+          , refInputInline tallyOutRef
           , userSpend spend1
           ]
 
@@ -89,4 +78,6 @@ validVoteConfigNftTest = do
           (InlineDatum sampleVoteDatum)
           (adaValue 2 <> voteValue)
 
-  submitTx user $ baseTx <> payToVoteValidator
+  finalTx <- validateIn (to (theTimeNow + 20 * oneSecond)) (baseTx <> payToVoteValidator)
+
+  submitTx user finalTx

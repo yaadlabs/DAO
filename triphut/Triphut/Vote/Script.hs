@@ -33,6 +33,7 @@ import Plutus.V1.Ledger.Scripts (
   mkMintingPolicyScript,
   unMintingPolicyScript,
  )
+import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
 import Plutus.V1.Ledger.Value (
   CurrencySymbol,
   Value,
@@ -73,7 +74,7 @@ import Triphut.Shared (
   validatorToScript,
   wrapValidate,
  )
-import Triphut.Types (TallyStateDatum (TallyStateDatum, tsProposalEndTime))
+import Triphut.Types (TallyStateDatum (TallyStateDatum, tsFor, tsProposalEndTime))
 import Triphut.Vote (
   VoteAction (Cancel, Count),
   VoteAddress (vAddressCredential),
@@ -194,7 +195,7 @@ mkVoteMinter
         hasTallyNft :: Value -> Bool
         hasTallyNft = hasSymbolInValue vmdcTallyNft
 
-        TallyStateDatum {..} =
+        TallyStateDatum {tsProposalEndTime} =
           case filter
             (hasTallyNft . txOutValue . txInInfoResolved)
             (unsafeFromBuiltinData vmTxInfoReferenceInputs) of

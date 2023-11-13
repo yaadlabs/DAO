@@ -8,6 +8,7 @@ import Plutus.V2.Ledger.Api (ValidatorHash (ValidatorHash))
 import PlutusTx (toBuiltinData)
 import PlutusTx.Prelude (Integer)
 import Spec.Tally.Script (tallyValidatorHash')
+import Spec.Values (dummyTallySymbol)
 import Spec.Vote.SampleData (sampleVoteMinterConfig)
 import Spec.Vote.Script (voteCurrencySymbol, voteValidatorHash')
 import Triphut.Types (DynamicConfigDatum (..))
@@ -47,7 +48,7 @@ sampleVoteDynamicConfig :: VoteMinterDynamicConfigDatum
 sampleVoteDynamicConfig =
   VoteMinterDynamicConfigDatum
     { vmdcTallyIndexNft = toBuiltinData (adaSymbol :: CurrencySymbol)
-    , vmdcTallyNft = adaSymbol
+    , vmdcTallyNft = dummyTallySymbol
     , vmdcTallyValidator = toBuiltinData (tallyValidatorHash')
     , vmdcTreasuryValidator = toBuiltinData (ValidatorHash "")
     , vmdcConfigurationValidator = toBuiltinData (ValidatorHash "")

@@ -104,6 +104,8 @@ library triphut-specs
     Spec.Tally.Context
     Spec.Tally.Script
     Spec.Tally.SampleData
+    Spec.Tally.Transactions
+    Spec.Tally.Utils
     Spec.Utils
     Spec.Utils.Unit
     Spec.Values
