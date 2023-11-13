@@ -51,7 +51,7 @@ import Spec.Vote.Script (
 import Spec.Vote.Transactions (runInitVoteConfig)
 import Spec.Vote.Utils (findVote)
 import Triphut.Index (IndexNftDatum (IndexNftDatum))
-import Triphut.Vote (VoteMinterActionRedeemer (Burn), VoteMinterConfig (VoteMinterConfig))
+import Triphut.Vote (VoteMinterActionRedeemer (Burn, Mint), VoteMinterConfig (VoteMinterConfig))
 import Prelude (mconcat, pure, (+), (<>))
 
 validVoteConfigNftTest :: Run ()
@@ -64,8 +64,11 @@ validVoteConfigNftTest = do
 
   let config = VoteMinterConfig dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName
 
+      voteBurnValue :: Value
+      voteBurnValue = singleton (voteCurrencySymbol config) (TokenName "vote") (-1)
+
       voteValue :: Value
-      voteValue = singleton (voteCurrencySymbol config) (TokenName "vote") (-1)
+      voteValue = singleton (voteCurrencySymbol config) (TokenName "vote") 1
 
       votePolicy :: VoteMintingPolicy
       votePolicy = voteTypedMintingPolicy config
@@ -73,7 +76,7 @@ validVoteConfigNftTest = do
       -- Set up the txs
       baseTx =
         mconcat
-          [ mintValue votePolicy Burn voteValue
+          [ mintValue votePolicy Mint voteValue -- Burn voteBurnValue
           , refInputInline voteOutRef
           , userSpend spend1
           ]
