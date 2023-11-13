@@ -33,7 +33,6 @@ import Plutus.V1.Ledger.Scripts (
   mkMintingPolicyScript,
   unMintingPolicyScript,
  )
-import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
 import Plutus.V1.Ledger.Value (
   CurrencySymbol,
   Value,
@@ -74,7 +73,7 @@ import Triphut.Shared (
   validatorToScript,
   wrapValidate,
  )
-import Triphut.Types (TallyStateDatum (TallyStateDatum, tsFor, tsProposalEndTime))
+import Triphut.Types (TallyStateDatum (TallyStateDatum, tsProposalEndTime))
 import Triphut.Vote (
   VoteAction (Cancel, Count),
   VoteAddress (vAddressCredential),
@@ -151,8 +150,33 @@ import Triphut.Vote (
   ),
  )
 
-{- | The vote minter has a reference to the proposal so the end time can be validated
-   Ensures that there is an NFT for voting present
+{- | Policy for minting or burning the vote NFT.
+
+   == Minting Vote Token
+
+      When the 'Triphut.Vote.VoteMinterActionRedeemer' redeemer
+      is set to 'Mint', this policy performs the following checks:
+
+        - There is exactly one 'Triphut.Vote.VoteMinterDynamicConfigDatum' in the reference inputs,
+          marked by the config NFT
+          (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'VoteMinterConfig' argument)
+        - There is exactly one 'Triphut.Types.TallyStateDatum' in the reference inputs,
+          marked by the Tally NFT
+        - Exactly one valid Vote NFT is minted with the valid token name.
+        - The token name matches the 'vmdcVoteTokenName' field of the 'VoteMinterDynamicConfigDatum'
+        - There is exactly one output containing the vote NFT.
+        - This output contains a valid 'Triphut.Vote.VoteDatum' datum.
+        - The proposal is still active.
+          Checked by ensuring the proposal end time provided by
+          the 'TallyStateDatum' isafter the validity range of the transaction
+        - The total ada is greater than the return ada specificed by the 'vReturnAda' field of the 'VoteDatum'
+
+   == Burning Vote Token
+
+      When the 'Triphut.Vote.VoteMinterActionRedeemer' redeemer
+      is set to 'Burn', this policy performs the following checks:
+
+        - That one vote token is burned
 -}
 mkVoteMinter :: VoteMinterConfig -> VoteMinterActionRedeemer -> VoteMinterScriptContext -> Bool
 mkVoteMinter
@@ -164,50 +188,58 @@ mkVoteMinter
     } = case action of
     Burn ->
       let
+        -- Check the transaction burns a valid token
         burnsTokens :: Bool
         !burnsTokens = hasBurnedTokens thisCurrencySymbol vmTxInfoMint "Vote Minter Burn"
        in
-        traceIfFalse "Not burning tokens" burnsTokens
+        traceIfFalse "Need to burn a vote token" burnsTokens
     Mint ->
       let
+        -- Helper for filtering for config UTXO in the reference inputs
         hasConfigurationNft :: Value -> Bool
         hasConfigurationNft = hasOneOfToken vmcConfigNftCurrencySymbol vmcConfigNftTokenName
 
+        -- The datums
         theData :: Map DatumHash Datum
         theData = unsafeFromBuiltinData vmTxInfoData
 
+        -- Get the configuration from the reference inputs
         VoteMinterDynamicConfigDatum {..} =
           case filter
             (hasConfigurationNft . vmTxOutValue . vmTxInInfoResolved)
             (unsafeFromBuiltinData vmTxInfoReferenceInputs) of
             [VoteMinterTxInInfo {vmTxInInfoResolved = VoteMinterTxOut {..}}] -> convertDatum theData vmTxOutDatum
-            _ -> traceError "Too many NFT values"
+            _ -> traceError "Should be exactly one valid config in the reference inputs"
 
-        -- Get output on the vote validator. Should just be one.
+        -- Get output at the vote validator, should just be one.
         (VoteDatum {..}, !voteValue) =
           case filter
             ((== ScriptCredential vmdcVoteValidator) . vmAddressCredential . vmTxOutAddress)
             (unsafeFromBuiltinData vmTxInfoOutputs) of
             [VoteMinterTxOut {..}] -> (convertDatum theData vmTxOutDatum, vmTxOutValue)
-            _ -> traceError "Wrong number of proposal references"
+            _ -> traceError "Should be exactly one vote datum (proposal reference) at the output"
 
-        -- Find the reference input with the Tally nft currency symbol
+        -- Helper for filtering for tally UTXO in the outputs
         hasTallyNft :: Value -> Bool
         hasTallyNft = hasSymbolInValue vmdcTallyNft
 
+        -- Get the tally state datum at the output marked by the tally NFT
         TallyStateDatum {tsProposalEndTime} =
           case filter
             (hasTallyNft . txOutValue . txInInfoResolved)
             (unsafeFromBuiltinData vmTxInfoReferenceInputs) of
             [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum theData txOutDatum
-            _ -> traceError "Wrong number of tally references"
+            _ -> traceError "Should be exactly one tally state datum in the reference inputs"
 
+        -- Ensure the proposal end time is after the transaction's validity range
         proposalIsActive :: Bool
         !proposalIsActive = tsProposalEndTime `after` unsafeFromBuiltinData vmTxInfoValidRange
 
+        -- Ensure the vote value contains exactly one valid witness token
         hasWitness :: Bool
         !hasWitness = hasOneOfToken thisCurrencySymbol vmdcVoteTokenName voteValue
 
+        -- Ensure exactly one valid vote token is minted
         onlyMintedOne :: Bool
         !onlyMintedOne =
           hasSingleTokenWithSymbolAndTokenName
@@ -218,14 +250,15 @@ mkVoteMinter
         hasVoteNft :: Bool
         !hasVoteNft = hasTokenInValue vmdcVoteNft "Vote NFT" voteValue
 
+        -- Ensure the return ADA is less than the ada contained in the vote value
         totalAdaIsGreaterThanReturnAda :: Bool
         !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > vReturnAda
        in
         traceIfFalse "Proposal has expired" proposalIsActive
           && traceIfFalse "Vote Nft is missing" hasVoteNft
           && traceIfFalse "Missing witness on output" hasWitness
-          && traceIfFalse "Wrong number of witnesses minted" onlyMintedOne
-          && traceIfFalse "Total ada not high enough" totalAdaIsGreaterThanReturnAda
+          && traceIfFalse "Should be exactly one valid token minted" onlyMintedOne
+          && traceIfFalse "Total ada is not high enough" totalAdaIsGreaterThanReturnAda
 
 wrappedPolicy :: VoteMinterConfig -> WrappedMintingPolicyType
 wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) (unsafeFromBuiltinData b))
