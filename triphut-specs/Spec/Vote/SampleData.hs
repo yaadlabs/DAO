@@ -24,7 +24,7 @@ sampleVoteDatum =
     { vProposalTokenName = adaToken
     , vDirection = For
     , vOwner = sampleVoterAddress
-    , vReturnAda = 2
+    , vReturnAda = 1
     }
 
 sampleVoteValidatorConfig :: VoteValidatorConfig
