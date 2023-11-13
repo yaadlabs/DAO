@@ -75,7 +75,7 @@ import Triphut.Shared (
  )
 import Triphut.Types (TallyStateDatum (TallyStateDatum, tsProposalEndTime))
 import Triphut.Vote (
-  VoteAction (Cancel, Count),
+  VoteActionRedeemer (Cancel, Count),
   VoteAddress (vAddressCredential),
   VoteDatum (VoteDatum, vOwner, vReturnAda),
   VoteDynamicConfig (
@@ -294,13 +294,38 @@ voteMinter =
     . BSL.toStrict
     . scriptAsCbor
 
--- | Validator
+{- | Validator for votes.
 
--- Needs to work in bulk
+   == Common checks
+
+     The validator always ensures:
+
+       - There is exactly one 'Triphut.Vote.VoteDynamicConfigDatum' in the reference inputs,
+          marked by the config NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
+          provided by the 'VoteValidatorConfig' argument)
+
+   == Count vote
+
+      When the 'Triphut.Vote.VoteActionRedeemer' redeemer
+      is set to 'Count', this validator performs the following checks:
+
+        - That the tally validator is present in the inputs, the tally validator is specified
+          by the 'vdcTallyValidator' field of the 'VoteDynamicConfigDatum'
+
+   == Cancel vote
+
+      When the 'Triphut.Vote.VoteActionRedeemer' redeemer
+      is set to 'Cancel', this validator performs the following checks:
+
+        - The transaction is signed by the vote owner, specified by the 'vOwner' field
+          of the 'Triphut.Vote.VoteDatum'.
+        - All the vote tokens are burned, checking that there are no vote tokens in the transaction outputs,
+          with the corresponding 'CurrencySymbol' specified by the 'vdcVoteCurrencySymbol' in the 'VoteDynamicConfigDatum'
+-}
 validateVote ::
   VoteValidatorConfig ->
   VoteDatum ->
-  VoteAction ->
+  VoteActionRedeemer ->
   VoteScriptContext ->
   Bool
 validateVote
@@ -311,9 +336,11 @@ validateVote
     { vScriptContextTxInfo = VoteTxInfo {..}
     } =
     let
+      -- Helper for filtering for config UTXO in the reference inputs
       hasConfigurationNft :: Value -> Bool
       hasConfigurationNft = hasOneOfToken vvcConfigNftCurrencySymbol vvcConfigNftTokenName
 
+      -- Get the configuration from the reference inputs
       VoteDynamicConfig {..} =
         case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
           [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
@@ -321,6 +348,7 @@ validateVote
      in
       case action of
         Count ->
+          -- Ensure the vote validator is contained in the inputs
           traceIfFalse
             "Missing Tally Validator input"
             ( any
@@ -333,21 +361,25 @@ validateVote
             )
         Cancel ->
           let
+            -- Ensure that the tx is signed by the vote owner,
+            -- specified in the 'vOwner' field of the 'VoteDatum'
             isSignedByOwner :: Bool
             !isSignedByOwner =
               any
                 ((== addressCredential vOwner) . PubKeyCredential)
                 (unsafeFromBuiltinData vTxInfoSignatories :: [PubKeyHash])
 
+            -- Helper for filtering for UTXOs containing a vote token
             hasVoteToken :: Value -> Bool
             hasVoteToken = hasSymbolInValue (unsafeFromBuiltinData vdcVoteCurrencySymbol)
 
+            -- Ensure there are no vote tokens in the outputs
             voteTokenAreAllBurned :: Bool
             !voteTokenAreAllBurned =
               not $ any (hasVoteToken . vTxOutValue) (unsafeFromBuiltinData vTxInfoOutputs :: [VoteTxOut])
            in
-            traceIfFalse "Not signed by owner" isSignedByOwner
-              && traceIfFalse "All vote tokens are not burned" voteTokenAreAllBurned
+            traceIfFalse "Transaction should be signed by the vote owner" isSignedByOwner
+              && traceIfFalse "All vote tokens should be burned" voteTokenAreAllBurned
 
 voteValidator :: VoteValidatorConfig -> Validator
 voteValidator config = mkValidatorWithSettings compiledCode False

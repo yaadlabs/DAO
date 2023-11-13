@@ -116,6 +116,66 @@ import Triphut.Types (
   TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
 
+{- | Validator for treasury.
+
+   == Common checks
+
+     The validator always ensures:
+
+
+      - There is exactly one of this script contained in the transaction's inputs.
+        This check is carried out using the 'Triphut.Treasury.Script.ownValueAndValidator' helper.
+
+   == Trip proposal
+
+      When the 'tsProposal' field of 'Triphut.Types.TallyStateDatum'
+      is set to 'Trip', this validator performs the following checks:
+
+        - The proposal has enough votes. The vote counts equal or exceed the values specified in
+          the 'dcTripRelativeMajorityPercent' and 'dcTripMajorityPercent' fields of the
+          'Triphut.Types.DynamicConfigDatum'.
+
+        - The amount disbursed does not exceed the amount specified in the 'dcMaxTripDisbursement'
+          field of the 'Triphut.Types.DynamicConfigDatum'.
+
+        - The correct amount is paid to the traveler's address, specified by the
+          corresponding 'Trip' field in the 'ProposalType'.
+
+        - The correct amount is paid to the travel agent's address, specified by the
+          corresponding 'Trip' field in the 'ProposalType'.
+
+   == General proposal
+
+      When the 'tsProposal' field of 'Triphut.Types.TallyStateDatum'
+      is set to 'General', this validator performs the following checks:
+
+        - The proposal has enough votes. The vote counts equal or exceed the values specified in
+          the 'dcGeneralRelativeMajorityPercent' and 'dcGeneralMajorityPercent' fields of the
+          'Triphut.Types.DynamicConfigDatum'.
+
+        - The amount disbursed does not exceed the amount specified in the 'dcMaxGeneralDisbursement'
+          field of the 'Triphut.Types.DynamicConfigDatum'.
+
+        - The correct amount is paid to the general payment address, specified by the
+          corresponding 'General' field in the 'ProposalType'.
+
+   == Upgrade proposal
+
+      When the 'tsProposal' field of 'Triphut.Types.TallyStateDatum'
+      is set to 'Upgrade', this validator performs the following checks:
+
+        - The proposal has enough votes. The vote counts equal or exceed the values specified in
+          the 'dcUpgradeRelativeMajorityPercent' and 'dcUpgradeMajorityPercent' fields of the
+          'Triphut.Types.DynamicConfigDatum'.
+
+        - That the proposal end time has passed. We do this by checking that the sum of the 'tsProposalEndtime'
+          field of the 'Triphut.Types.TallyStateDatum' and the 'dcProposalTallyEndOffset' of the
+          'Triphut.Types.DynamicConfigDatum' against the validity range of the transaction.
+          Ensuring the sum of these values is less than the range.
+
+        - That exactly one 'upgradeMinter' token was minted. The CurrencySymbol for this token
+          is provided as the field of the 'Upgrade' constructor of the Proposal type.
+-}
 validateTreasury ::
   TreasuryValidatorConfig ->
   Treasury ->
@@ -131,27 +191,31 @@ validateTreasury
     , tScriptContextPurpose = TreasurySpend thisTxRef
     } =
     let
-      -- check that there is only one of this script
+      -- Check that there is only one of this script in the inputs
       (!inputValue, !thisValidator) :: (Value, ValidatorHash) = ownValueAndValidator tTxInfoInputs thisTxRef
 
+      -- Helper for filtering for config UTXO
       hasConfigurationNft :: Value -> Bool
       hasConfigurationNft = hasOneOfToken tvcConfigNftCurrencySymbol tvcConfigNftTokenName
 
-      hasTallyNft :: Value -> Bool
-      hasTallyNft = hasSymbolInValue dcTallyNft
-
-      -- filter the reference inputs for the configuration nft
+      -- Get the DynamicConfigDatum from the reference inputs, should be exactly one
       DynamicConfigDatum {..} =
         case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
           [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
-          _ -> traceError "Too many NFT values"
+          _ -> traceError "Should be exactly one config in the reference inputs"
 
+      -- Helper for filtering for tally UTXO
+      hasTallyNft :: Value -> Bool
+      hasTallyNft = hasSymbolInValue dcTallyNft
+
+      -- Get the TallyStateDatum from the reference inputs, should be exactly one
       TallyStateDatum {..} =
         case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
           [] -> traceError "Missing tally NFT"
           [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
-          _ -> traceError "Too many NFT values"
+          _ -> traceError "Too many tally NFT values"
 
+      -- Calculate the values needed for the corresponding checks
       totalVotes :: Integer
       !totalVotes = tsFor + tsAgainst
 
@@ -188,7 +252,7 @@ validateTreasury
               outputValue :: Value
               !outputValue = case getContinuingOutputs' thisValidator tTxInfoOutputs of
                 [TreasuryTxOut {..}] -> tTxOutValue
-                _ -> traceError "expected exactly one continuing output"
+                _ -> traceError "Should be exactly one continuing treasury output"
 
               outputValueIsLargeEnough :: Bool
               !outputValueIsLargeEnough = outputValue `geq` (inputValue - disbursedAmount)

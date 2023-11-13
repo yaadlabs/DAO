@@ -106,8 +106,8 @@ import Triphut.Shared (
   wrapValidate,
  )
 import Triphut.Tally (
-  TallyDynamicConfig (
-    TallyDynamicConfig,
+  TallyDynamicConfigDatum (
+    TallyDynamicConfigDatum,
     tdcFungibleVotePercent,
     tdcTallyNft,
     tdcVoteFungibleCurrencySymbol,
@@ -321,6 +321,27 @@ valuePaidTo' outs addr = go mempty outs
       | addr == tTxOutAddress = go (acc <> tTxOutValue) xs
       | otherwise = go acc xs
 
+{- | Validator for tallying.
+
+  This validator performs the following checks:
+
+    - There is exactly one 'Triphut.Tally.TallyDynamicConfigDatum' in the reference inputs,
+      marked by the tally NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
+      provided by the 'TallyValidatorConfig' argument)
+
+    - That the tally NFT remains at the validadtor (the 'newValueIsAtleastAsBigAsOldValue' check)
+
+    - There is exactly one 'Triphut.Tally.TallyStateDatum' in the outputs.
+
+    - This 'Triphut.Tally.TallyStateDatum' in the outpus has been updated accordingly.
+      We check this by ensuring the the new votes have been added to the 'tsFor' and 'tsAgainst'
+      vote count fields of the new tally datum at the output.
+
+    - That the proposal period has passed. We do this by checking the 'tsProposalEndTime' field of
+      the 'TallyStateDatum' against the transaction validity range, ensuring the proposal end time has passed.
+
+    - That all vote tokens are burned (there are no vote tokens in the outputs).
+-}
 validateTally ::
   TallyValidatorConfig ->
   TallyStateDatum ->
@@ -336,13 +357,15 @@ validateTally
     , tScriptContextPurpose = TallySpend thisOutRef
     } =
     let
+      -- Helper for filtering for config UTXO in the reference inputs
       hasConfigurationNft :: Value -> Bool
       hasConfigurationNft = hasOneOfToken tvcConfigNftCurrencySymbol tvcConfigNftTokenName
 
-      TallyDynamicConfig {..} =
+      -- Get the 'TallyDynamicConfig' from the reference inputs
+      TallyDynamicConfigDatum {..} =
         case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
           [TallyTxInInfo {tTxInInfoResolved = TallyTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
-          _ -> traceError "Too many NFT values"
+          _ -> traceError "Should be exactly one tally NFT in the reference inputs"
 
       (!oldValue, !thisValidatorHash) :: (Value, ValidatorHash) = ownValueAndValidator tTxInfoInputs thisOutRef
 
@@ -363,6 +386,7 @@ validateTally
       thisTallyTokenName :: TokenName
       !thisTallyTokenName = getTokenNameOfNft tdcTallyNft oldValue "Tally Nft"
 
+      -- Helper for loop that counts the votes
       stepVotes ::
         TallyTxInInfo ->
         (Integer, Integer, Map Address Value) ->
@@ -429,7 +453,7 @@ validateTally
       (!forCount, !againstCount, !payoutMap) :: (Integer, Integer, Map Address Value) =
         foldr stepVotes (0, 0, M.empty) tTxInfoInputs
 
-      -- return the vote tokens to the owner
+      -- Helper for ensuring the vote NFT and ada are returned to the owner
       addressedIsPaid :: [TallyTxOut] -> (Address, Value) -> Bool
       addressedIsPaid outputs (addr, value) = valuePaidTo' outputs addr `geq` value
 
@@ -451,10 +475,11 @@ validateTally
           [TallyTxOut {..}] -> (tTxOutValue, convertDatum tTxInfoData tTxOutDatum)
           _ -> traceError "Wrong number of continuing outputs"
 
+      -- Ensure the tally NFT remains at the validator
       newValueIsAtleastAsBigAsOldValue :: Bool
       !newValueIsAtleastAsBigAsOldValue = newValue `geq` oldValue
 
-      -- Tally datum is updated
+      -- Ensure the tally datum is updated
       tallyDatumIsUpdated :: Bool
       !tallyDatumIsUpdated =
         newDatum

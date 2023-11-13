@@ -91,7 +91,14 @@ import Triphut.Shared (
   wrapValidate,
  )
 
--- | Nft Index Validator
+{- | Validator for index.
+
+   This validator performs the following checks:
+
+    - The 'index' field of the 'Triphut.Index.IndexNftDatum' is incremented when we
+      create a new proposal (a new 'TallyStateDatum' is created and paid to the tally validator)
+    - The index NFT stays at the validator
+-}
 validateIndex ::
   IndexValidatorConfig ->
   IndexNftDatum ->

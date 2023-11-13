@@ -5,7 +5,7 @@ module Triphut.Tally (
   TallyTxInInfo (..),
   TallyTxInfo (..),
   TallyScriptContext (..),
-  TallyDynamicConfig (..),
+  TallyDynamicConfigDatum (..),
   TallyScriptPurpose (..),
 ) where
 
@@ -80,7 +80,7 @@ data TallyTxInfo = TallyTxInfo
   , tTxInfoId :: BuiltinData
   }
 
-data TallyDynamicConfig = TallyDynamicConfig
+data TallyDynamicConfigDatum = TallyDynamicConfigDatum
   { tdcTallyIndexNft :: BuiltinData
   , tdcTallyNft :: CurrencySymbol
   , tdcTallyValidator :: BuiltinData
@@ -106,7 +106,7 @@ data TallyDynamicConfig = TallyDynamicConfig
   , tdcFungibleVotePercent :: Integer
   }
 
-unstableMakeIsData ''TallyDynamicConfig
+unstableMakeIsData ''TallyDynamicConfigDatum
 
 data TallyValidatorConfig = TallyValidatorConfig
   { tvcConfigNftCurrencySymbol :: CurrencySymbol

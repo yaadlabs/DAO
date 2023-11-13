@@ -4,7 +4,7 @@ module Triphut.Vote (
   VoteMinterConfig (..),
   VoteValidatorConfig (..),
   VoteDynamicConfig (..),
-  VoteAction (..),
+  VoteActionRedeemer (..),
   VoteScriptContext (..),
   VoteTxOut (..),
   VoteTxInInfo (..),
@@ -206,7 +206,7 @@ data VoteDynamicConfig = VoteDynamicConfig
   , vdcFungibleVotePercent :: BuiltinData
   }
 
-data VoteAction
+data VoteActionRedeemer
   = Count
   | Cancel
 
@@ -220,6 +220,6 @@ unstableMakeIsData ''VoteTxOut
 unstableMakeIsData ''VoteTxInInfo
 unstableMakeIsData ''VoteScriptContext
 unstableMakeIsData ''VoteTxInfo
-unstableMakeIsData ''VoteAction
+unstableMakeIsData ''VoteActionRedeemer
 unstableMakeIsData ''VoteDynamicConfig
 makeLift ''VoteValidatorConfig
