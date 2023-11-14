@@ -3,7 +3,7 @@ Module      : Spec.ConfigurationNft.Script
 Description : ConfigurationNft scripts
 -}
 module Spec.ConfigurationNft.Script (
-  configNftTypedValidator,
+  upgradeConfigNftTypedValidator,
   configNftTypedMintingPolicy,
   configNftCurrencySymbol,
 ) where
@@ -35,7 +35,7 @@ configNftCurrencySymbol :: NftConfig -> CurrencySymbol
 configNftCurrencySymbol = scriptCurrencySymbol . configNftTypedMintingPolicy
 
 -- Validator script and info
-type ConfigValidatorScript = TypedValidator DynamicConfigDatum ()
+type ConfigUpgradeValidatorScript = TypedValidator DynamicConfigDatum ()
 
-configNftTypedValidator :: ConfigValidatorScript
-configNftTypedValidator = mkTypedValidator' sampleConfigValidatorConfig configurationValidator
+upgradeConfigNftTypedValidator :: ConfigUpgradeValidatorScript
+upgradeConfigNftTypedValidator = mkTypedValidator' sampleConfigValidatorConfig configurationValidator

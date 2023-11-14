@@ -97,7 +97,11 @@ mkConfigNftTx hasDatum configValue config spend' user =
 
     -- Set up the txs
     baseTx = mconcat [mintValue configPolicy () configValue', userSpend spend']
-    withDatum = payToRef alwaysSucceedTypedValidator (InlineDatum sampleDynamicConfig) (adaValue 2 <> configValue')
+    withDatum =
+      payToRef
+        alwaysSucceedTypedValidator
+        (InlineDatum sampleDynamicConfig)
+        (adaValue 2 <> configValue')
     withNoDatumToUser = payToKey user (adaValue 2 <> configValue')
    in
     -- If hasDatum is set to False we want the withNoDatumToUser tx

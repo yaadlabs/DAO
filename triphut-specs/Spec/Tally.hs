@@ -40,7 +40,7 @@ nftSpec config =
   where
     good = testNoErrors initialFunds config
     bad = checkFails config initialFunds
-    positiveTest = good "Valid test, should pass" validTallyConfigNftTest
+    positiveTest = good "Valid tally validator test, should pass" validTallyConfigNftTest
     negativeTest1 =
       bad
         ( "Wrong token name, should fail with: "

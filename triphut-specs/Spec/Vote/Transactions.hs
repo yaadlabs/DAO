@@ -1,4 +1,7 @@
-module Spec.Vote.Transactions (runInitVoteConfig) where
+module Spec.Vote.Transactions (
+  runInitVoteConfig,
+  runInitVote,
+) where
 
 import Plutus.Model (
   Run,
@@ -10,12 +13,15 @@ import Plutus.Model (
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
   payToRef,
+  payToScript,
  )
 import PlutusTx.Prelude (($))
 import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator1)
 import Spec.SampleData (sampleVoteDynamicConfig)
-import Spec.SpecUtils (initScriptRef, minAda)
-import Spec.Values (dummyVoteConfigNftValue)
+import Spec.SpecUtils (initScriptRef, minAda, runInitPayToScript)
+import Spec.Values (dummyVoteConfigNftValue, dummyVoteValue)
+import Spec.Vote.SampleData (sampleVoteDatum)
+import Spec.Vote.Script (voteTypedValidator)
 import Prelude ((<>))
 
 runInitVoteConfig :: Run ()
@@ -29,3 +35,10 @@ runInitVoteConfig = do
 
 initAlwaysSucceedScriptRef :: Run ()
 initAlwaysSucceedScriptRef = initScriptRef alwaysSucceedTypedValidator1
+
+runInitVote :: Run ()
+runInitVote =
+  runInitPayToScript
+    voteTypedValidator
+    sampleVoteDatum
+    dummyVoteValue

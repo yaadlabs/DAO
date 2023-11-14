@@ -1,4 +1,5 @@
 module Spec.SpecUtils (
+  runInitPayToScript,
   checkFails,
   mkTypedValidator',
   initScriptRef,
@@ -19,14 +20,17 @@ import Plutus.Model (
   ada,
   getMainUser,
   mustFail,
+  payToScript,
   sendTx,
   signTx,
   skipLimits,
   spend,
+  submitTx,
   testNoErrors,
   userSpend,
  )
 import Plutus.Model.V2 (
+  DatumMode (InlineDatum),
   DatumType,
   HasAddress,
   HasDatum,
@@ -68,6 +72,19 @@ initScriptRef script = do
           , loadRefScript script minAda
           ]
   void $ signTx admin tx >>= sendTx
+
+runInitPayToScript ::
+  (HasDatum script, HasAddress script) =>
+  script ->
+  DatumType script ->
+  Value ->
+  Run ()
+runInitPayToScript validatorScript datum token = do
+  admin <- getMainUser
+  let value = token <> minAda
+  spend' <- spend admin value
+  let payTx = payToScript validatorScript (InlineDatum datum) value
+  submitTx admin $ userSpend spend' <> payTx
 
 getFirstRefScript :: IsValidator script => script -> Run TxOutRef
 getFirstRefScript script =

@@ -36,7 +36,7 @@ nftSpec config =
   where
     good = testNoErrors initialFunds config
     bad = checkFails config initialFunds
-    positiveTest = good "valid test" validVoteConfigNftTest
+    positiveTest = good "Valid vote policy test" validVoteConfigNftTest
     negativeTest1 =
       bad
         ( "More than one token minted, should fail with: "

@@ -108,9 +108,13 @@ library triphut-specs
     Spec.Tally.Utils
     Spec.Utils
     Spec.Utils.Unit
+    Spec.Upgrade
+    Spec.Upgrade.Context
     Spec.Values
     Spec.Vote
+    Spec.VoteValidator
     Spec.Vote.Context
+    Spec.Vote.ContextValidator
     Spec.Vote.SampleData
     Spec.Vote.Script
     Spec.Vote.Transactions
