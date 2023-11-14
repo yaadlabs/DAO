@@ -1,17 +1,19 @@
 {- |
 Module: Triphut.Index.Script
-Description: Triphut index related scripts.
-Includes:
+Description: Triphut index related scripts. It includes:
   - Index minting policy script.
   - Index validator script.
 -}
 module Triphut.Index.Script (
-  indexScript,
-  indexValidator,
-  indexValidatorHash,
+  -- * Minting policy
   mkIndexNftMinter,
   tallyIndexNftMinter,
   tallyIndexNftMinterPolicyId,
+
+  -- * Validator
+  indexScript,
+  indexValidator,
+  indexValidatorHash,
 ) where
 
 import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)

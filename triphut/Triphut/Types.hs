@@ -1,12 +1,14 @@
 {- |
 Module: Triphut.Types
-Description: Contains the `DynamicConfigDatum` type,
-  the `TallyStateDatum` type, and the `ProposalType` type.
+Description: Contains the `DynamicConfigDatum` type, the `TallyStateDatum` type, and the `ProposalType` type.
 -}
 module Triphut.Types (
+  -- * Datums
   DynamicConfigDatum (..),
-  ProposalType (..),
   TallyStateDatum (..),
+
+  -- * Main proposal type
+  ProposalType (..),
 )
 where
 
@@ -47,6 +49,7 @@ instance PlutusTx.Eq ProposalType where
   Trip a b c == Trip d e f = a == d && b == e && c == f
   _ == _ = False
 
+-- | Tally state datum
 data TallyStateDatum = TallyStateDatum
   { tsProposal :: ProposalType
   , tsProposalEndTime :: POSIXTime
@@ -72,7 +75,7 @@ instance PlutusTx.Eq TallyStateDatum where
         && xFor == yFor
         && xAgainst == yAgainst
 
--- | The configuration datum
+-- | DynamicConfig Datum holds the main info needed for the contracts.
 data DynamicConfigDatum = DynamicConfigDatum
   { dcTallyIndexNft :: CurrencySymbol
   , dcTallyNft :: CurrencySymbol

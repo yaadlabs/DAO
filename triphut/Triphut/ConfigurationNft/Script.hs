@@ -1,14 +1,16 @@
 {- |
 Module: Triphut.ConfigurationNft.Script
-Description: Triphut configuration related scripts.
-Includes:
+Description: Triphut configuration related scripts. It includes:
   - Minting policy for Triphut configuration.
   - Validator for upgrading the configuration.
 -}
 module Triphut.ConfigurationNft.Script (
+  -- * Minting policy
   mkConfigurationNftPolicy,
   configurationNftMintingPolicy,
   configurationNftCurrencySymbol,
+
+  -- * Validator
   configurationScript,
   configurationValidator,
   configurationValidatorHash,

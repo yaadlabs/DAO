@@ -1,14 +1,16 @@
 {- |
 Module: Triphut.Tally.Script
-Description: Triphut tally related scripts.
-Includes:
+Description: Triphut tally related scripts. It includes:
   - Tally minting policy script.
   - Tally validator script.
 -}
 module Triphut.Tally.Script (
+  -- * Minting policy
   tallyNftMinter,
   tallyNftMinterPolicyId,
   mkTallyNftMinter,
+
+  -- * Validator
   tallyScript,
   tallyValidator,
   tallyValidatorHash,

@@ -1,11 +1,20 @@
+{- |
+Module: Triphut.Tally
+Description: Contains all the tally specific types.
+-}
 module Triphut.Tally (
+  -- * Datums
+  TallyDynamicConfigDatum (..),
+
+  -- * Script arguments, containing relevant CurrenySymbol and TokenName
   TallyNftConfig (..),
   TallyValidatorConfig (..),
+
+  -- * Script context related types
   TallyTxOut (..),
   TallyTxInInfo (..),
   TallyTxInfo (..),
   TallyScriptContext (..),
-  TallyDynamicConfigDatum (..),
   TallyScriptPurpose (..),
 ) where
 
@@ -29,10 +38,7 @@ import PlutusTx (
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (BuiltinData, Integer)
 
--------------------------------------------------------------------------------
--- Tally Nft Minter
--------------------------------------------------------------------------------
-
+-- | Tally policy configuration
 data TallyNftConfig = TallyNftConfig
   { tncIndexNftPolicyId :: CurrencySymbol
   , tncIndexNftTokenName :: TokenName
@@ -41,10 +47,6 @@ data TallyNftConfig = TallyNftConfig
   }
 
 makeLift ''TallyNftConfig
-
--------------------------------------------------------------------------------
--- Tally Validator
--------------------------------------------------------------------------------
 
 data TallyTxOut = TallyTxOut
   { tTxOutAddress :: Address
@@ -80,6 +82,7 @@ data TallyTxInfo = TallyTxInfo
   , tTxInfoId :: BuiltinData
   }
 
+-- | Tally config datum, representation mirrors the main 'Triphut.Types.DynamicConfigDatum'
 data TallyDynamicConfigDatum = TallyDynamicConfigDatum
   { tdcTallyIndexNft :: BuiltinData
   , tdcTallyNft :: CurrencySymbol

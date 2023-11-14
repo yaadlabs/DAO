@@ -1,4 +1,9 @@
+{- |
+Module: Triphut.Treasury
+Description: Contains all the treasury specific types.
+-}
 module Triphut.Treasury (
+  -- Script context related types
   TreasuryValidatorConfig (..),
   TreasuryTxInfo (..),
   TreasuryTxInInfo (..),

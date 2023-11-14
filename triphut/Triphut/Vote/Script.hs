@@ -1,15 +1,17 @@
 {- |
-Module: Triphut.Vote.Treasury
-Description: Triphut vote related scripts.
-Includes:
+Module: Triphut.Vote.Script
+Description: Triphut vote related scripts. It includes:
   - Vote minting policy script.
   - Vote validator script.
 -}
 module Triphut.Vote.Script (
+  -- * Minting policy
   voteMinter,
   voteMinterPolicyId,
   mkVoteMinter,
   wrappedPolicy,
+
+  -- * Validator
   voteScript,
   voteValidator,
   voteValidatorHash,
@@ -78,8 +80,8 @@ import Triphut.Vote (
   VoteActionRedeemer (Cancel, Count),
   VoteAddress (vAddressCredential),
   VoteDatum (VoteDatum, vOwner, vReturnAda),
-  VoteDynamicConfig (
-    VoteDynamicConfig,
+  VoteDynamicConfigDatum (
+    VoteDynamicConfigDatum,
     vdcTallyValidator,
     vdcVoteCurrencySymbol
   ),
@@ -163,7 +165,7 @@ import Triphut.Vote (
         - There is exactly one 'Triphut.Types.TallyStateDatum' in the reference inputs,
           marked by the Tally NFT
         - Exactly one valid Vote NFT is minted with the valid token name.
-        - The token name matches the 'vmdcVoteTokenName' field of the 'VoteMinterDynamicConfigDatum'
+        - The token name matches the 'vmdcVoteTokenName' field of the 'VoteMinterDynamicConfigDatum'.
         - There is exactly one output containing the vote NFT.
         - This output contains a valid 'Triphut.Vote.VoteDatum' datum.
         - The proposal is still active.
@@ -250,7 +252,7 @@ mkVoteMinter
         hasVoteNft :: Bool
         !hasVoteNft = hasTokenInValue vmdcVoteNft "Vote NFT" voteValue
 
-        -- Ensure the return ADA is less than the ada contained in the vote value
+        -- Ensure the return ADA is less than the ada provided by the user, contained in the vote value
         totalAdaIsGreaterThanReturnAda :: Bool
         !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > vReturnAda
        in
@@ -341,7 +343,7 @@ validateVote
       hasConfigurationNft = hasOneOfToken vvcConfigNftCurrencySymbol vvcConfigNftTokenName
 
       -- Get the configuration from the reference inputs
-      VoteDynamicConfig {..} =
+      VoteDynamicConfigDatum {..} =
         case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
           [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
           _ -> traceError "Too many NFT values"

@@ -1,6 +1,13 @@
+{- |
+Module: Triphut.ConfigurationNft
+Description: Contains all the configuration specific types.
+-}
 module Triphut.ConfigurationNft (
-  ConfigurationAddress (..),
+  -- * Script argument,containing relevant CurrenySymbol and TokenName
   ConfigurationValidatorConfig (..),
+
+  -- * Script context related types
+  ConfigurationAddress (..),
   ConfigurationTxInfo (..),
   ConfigurationTxInInfo (..),
   ConfigurationTxOut (..),
