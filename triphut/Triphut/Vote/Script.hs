@@ -170,7 +170,7 @@ import Triphut.Vote (
         - This output contains a valid 'Triphut.Vote.VoteDatum' datum.
         - The proposal is still active.
           Checked by ensuring the proposal end time provided by
-          the 'TallyStateDatum' isafter the validity range of the transaction
+          the 'TallyStateDatum' is after the validity range of the transaction
         - The total ada is greater than the return ada specificed by the 'vReturnAda' field of the 'VoteDatum'
 
    == Burning Vote Token

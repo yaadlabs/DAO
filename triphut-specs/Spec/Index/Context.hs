@@ -2,7 +2,11 @@
 Module      : Spec.Index.Context
 Description : Index policy context unit tests
 -}
-module Spec.Index.Context (validIndexConfigNftTest) where
+module Spec.Index.Context (
+  validIndexConfigNftTest,
+  invalidMoreThanOneTokenMintedIndexConfigNftTest,
+  invalidNoDatumSentToValidadtorIndexConfigNftTest,
+) where
 
 import Plutus.Model (
   Run,
@@ -23,7 +27,7 @@ import Plutus.Model.V2 (
  )
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Value (Value, singleton)
-import PlutusTx.Prelude (Bool (True), ($))
+import PlutusTx.Prelude (Bool (False, True), ($))
 import Spec.Index.SampleData (validSampleIndexNftDatum)
 import Spec.Index.Script (
   indexConfigNftCurrencySymbol,
@@ -40,6 +44,26 @@ import Prelude (mconcat, (<>))
 validIndexConfigNftTest :: Run ()
 validIndexConfigNftTest = mkIndexConfigNftTest validIndexNftTx
 
+invalidMoreThanOneTokenMintedIndexConfigNftTest :: Run ()
+invalidMoreThanOneTokenMintedIndexConfigNftTest = mkIndexConfigNftTest invalidMoreThanOneTokenMintedIndexNftTx
+
+invalidNoDatumSentToValidadtorIndexConfigNftTest :: Run ()
+invalidNoDatumSentToValidadtorIndexConfigNftTest =
+  mkIndexConfigNftTest invalidNftNoDatumSentToValidatorTx
+
+-- | A valid tx, corresponding test should pass
+validIndexNftTx :: IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
+validIndexNftTx = mkIndexConfigNftTx True validIndexConfigNftValue
+
+invalidMoreThanOneTokenMintedIndexNftTx :: IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
+invalidMoreThanOneTokenMintedIndexNftTx =
+  mkIndexConfigNftTx
+    True
+    invalidMoreThanOneTokenMintedIndexConfigNftValue
+
+invalidNftNoDatumSentToValidatorTx :: IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
+invalidNftNoDatumSentToValidatorTx = mkIndexConfigNftTx False validIndexConfigNftValue
+
 -- | Helper function for making tests
 mkIndexConfigNftTest :: (IndexNftConfig -> UserSpend -> PubKeyHash -> Tx) -> Run ()
 mkIndexConfigNftTest tx = do
@@ -47,10 +71,6 @@ mkIndexConfigNftTest tx = do
   spend' <- spend user (adaValue 2)
   let config = IndexNftConfig (getHeadRef spend') dummyIndexConfigNftTokenName indexValidatorHash'
   submitTx user $ tx config spend' user
-
--- | A valid tx, corresponding test should pass
-validIndexNftTx :: IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
-validIndexNftTx = mkIndexConfigNftTx True validIndexConfigNftValue
 
 {- | Helper function for building txs
  Set the `hasDatum` flag to False to create an invalid tx that
@@ -77,3 +97,7 @@ mkIndexConfigNftTx hasDatum configValue config spend' user =
 validIndexConfigNftValue :: IndexNftConfig -> Value
 validIndexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
   singleton (indexConfigNftCurrencySymbol nftCfg) tokenName 1
+
+invalidMoreThanOneTokenMintedIndexConfigNftValue :: IndexNftConfig -> Value
+invalidMoreThanOneTokenMintedIndexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
+  singleton (indexConfigNftCurrencySymbol nftCfg) tokenName 2

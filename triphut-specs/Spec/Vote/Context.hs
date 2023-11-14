@@ -2,7 +2,12 @@
 Module      : Spec.Vote.Context
 Description : Vote policy context unit tests
 -}
-module Spec.Vote.Context (validVoteConfigNftTest) where
+module Spec.Vote.Context (
+  validVoteConfigNftTest,
+  invalidMoreThanOneTokenVoteConfigNftTest,
+  invalidNoConfigInRefInputsVoteConfigNftTest,
+  invalidProposalEndTimeNotAfterValidityRangeVoteConfigNftTest,
+) where
 
 import Control.Monad (void)
 import Plutus.Model (
@@ -40,12 +45,53 @@ import Spec.Vote.Script (
 import Spec.Vote.Transactions (runInitVoteConfig)
 import Spec.Vote.Utils (findVote)
 import Triphut.Vote (VoteMinterActionRedeemer (Mint), VoteMinterConfig (VoteMinterConfig))
-import Prelude (mconcat, (*), (+), (<>))
+import Prelude (mconcat, mempty, (*), (+), (<>))
 
 validVoteConfigNftTest :: Run ()
-validVoteConfigNftTest = do
+validVoteConfigNftTest =
+  mkVoteConfigNftTest
+    validVoteConfigValue
+    ConfigInRefInputs
+    SpecifyRange
+
+invalidMoreThanOneTokenVoteConfigNftTest :: Run ()
+invalidMoreThanOneTokenVoteConfigNftTest =
+  mkVoteConfigNftTest
+    invalidMoreThanOneVoteConfigValue
+    ConfigInRefInputs
+    SpecifyRange
+
+invalidNoConfigInRefInputsVoteConfigNftTest :: Run ()
+invalidNoConfigInRefInputsVoteConfigNftTest =
+  mkVoteConfigNftTest
+    validVoteConfigValue
+    NoConfigInRefInputs
+    SpecifyRange
+
+invalidProposalEndTimeNotAfterValidityRangeVoteConfigNftTest :: Run ()
+invalidProposalEndTimeNotAfterValidityRangeVoteConfigNftTest =
+  mkVoteConfigNftTest
+    validVoteConfigValue
+    ConfigInRefInputs
+    NoSpecificRange
+
+data VoteConfigRef
+  = ConfigInRefInputs
+  | NoConfigInRefInputs
+
+data ValidityRange
+  = SpecifyRange
+  | NoSpecificRange
+
+mkVoteConfigNftTest ::
+  (VoteMinterConfig -> Value) ->
+  VoteConfigRef ->
+  ValidityRange ->
+  Run ()
+mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
   void runInitVoteConfig
   void runInitTally
+
   (voteOutRef, _, _voteDatum) <- findVote
   (tallyOutRef, _, _tallyDatum) <- findTally
 
@@ -56,7 +102,7 @@ validVoteConfigNftTest = do
   let config = VoteMinterConfig dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName
 
       voteValue :: Value
-      voteValue = singleton (voteCurrencySymbol config) (TokenName "vote") 1
+      voteValue = voteConfigValue config
 
       votePolicy :: VoteMintingPolicy
       votePolicy = voteTypedMintingPolicy config
@@ -65,10 +111,13 @@ validVoteConfigNftTest = do
       baseTx =
         mconcat
           [ mintValue votePolicy Mint voteValue
-          , refInputInline voteOutRef
           , refInputInline tallyOutRef
           , userSpend spend1
           ]
+
+      withVoteConfig = case voteConfigRef of
+        ConfigInRefInputs -> refInputInline voteOutRef
+        NoConfigInRefInputs -> mempty
 
       -- Pay the vote datum, and token,
       -- to the vote validator
@@ -78,6 +127,18 @@ validVoteConfigNftTest = do
           (InlineDatum sampleVoteDatum)
           (adaValue 2 <> voteValue)
 
-  finalTx <- validateIn (to (theTimeNow + 20 * oneSecond)) (baseTx <> payToVoteValidator)
+      combinedTxs = mconcat [baseTx, payToVoteValidator, withVoteConfig]
 
-  submitTx user finalTx
+  finalTx <- validateIn (to (theTimeNow + 20 * oneSecond)) combinedTxs
+
+  case validityRange of
+    SpecifyRange -> submitTx user finalTx
+    NoSpecificRange -> submitTx user combinedTxs -- Should (will) fail
+
+-- Valid token value, correct symbol and exactly one minted
+validVoteConfigValue :: VoteMinterConfig -> Value
+validVoteConfigValue config = singleton (voteCurrencySymbol config) (TokenName "vote") 1
+
+-- Valid token value, correct symbol and exactly one minted
+invalidMoreThanOneVoteConfigValue :: VoteMinterConfig -> Value
+invalidMoreThanOneVoteConfigValue config = singleton (voteCurrencySymbol config) (TokenName "vote") 2

@@ -2,7 +2,14 @@
 Module      : Spec.Tally.Context
 Description : Tally policy context unit tests
 -}
-module Spec.Tally.Context (validTallyConfigNftTest) where
+module Spec.Tally.Context (
+  validTallyConfigNftTest,
+  invalidWrongTokenNameTallyConfigNftTest,
+  invalidMoreThanOneTokenMintedTallyConfigNftTest,
+  invalidIndexNotIncrementedConfigNftTest,
+  invalidNoConfigInRefInputsConfigNftTest,
+  invalidDoesNotSpendIndexConfigNftTest,
+) where
 
 import Control.Monad (void)
 import Plutus.Model (
@@ -44,10 +51,75 @@ import Spec.Values (
  )
 import Triphut.Index (IndexNftDatum (IndexNftDatum))
 import Triphut.Tally (TallyNftConfig (TallyNftConfig))
-import Prelude (mconcat, (+), (<>))
+import Prelude (mconcat, mempty, (+), (<>))
 
 validTallyConfigNftTest :: Run ()
-validTallyConfigNftTest = do
+validTallyConfigNftTest =
+  mkTallyConfigTest
+    validTallyConfigValue
+    ValidIncrement
+    ConfigInRefInputs
+    SpendInput
+
+invalidWrongTokenNameTallyConfigNftTest :: Run ()
+invalidWrongTokenNameTallyConfigNftTest =
+  mkTallyConfigTest
+    invalidWrongTokenNameTallyConfigValue
+    ValidIncrement
+    ConfigInRefInputs
+    SpendInput
+
+invalidMoreThanOneTokenMintedTallyConfigNftTest :: Run ()
+invalidMoreThanOneTokenMintedTallyConfigNftTest =
+  mkTallyConfigTest
+    invalidMoreThanOneTokenMintedTallyConfigValue
+    ValidIncrement
+    ConfigInRefInputs
+    SpendInput
+
+invalidIndexNotIncrementedConfigNftTest :: Run ()
+invalidIndexNotIncrementedConfigNftTest =
+  mkTallyConfigTest
+    validTallyConfigValue
+    DoNotIncrement
+    ConfigInRefInputs
+    SpendInput
+
+invalidNoConfigInRefInputsConfigNftTest :: Run ()
+invalidNoConfigInRefInputsConfigNftTest =
+  mkTallyConfigTest
+    validTallyConfigValue
+    ValidIncrement
+    NoConfigInRefInputs
+    SpendInput
+
+invalidDoesNotSpendIndexConfigNftTest :: Run ()
+invalidDoesNotSpendIndexConfigNftTest =
+  mkTallyConfigTest
+    validTallyConfigValue
+    ValidIncrement
+    NoConfigInRefInputs
+    DoNotSpendInput
+
+data IncrementIndex
+  = ValidIncrement
+  | DoNotIncrement
+
+data ConfigRef
+  = ConfigInRefInputs
+  | NoConfigInRefInputs
+
+data SpendIndexInput
+  = SpendInput
+  | DoNotSpendInput
+
+mkTallyConfigTest ::
+  (TallyNftConfig -> Value) ->
+  IncrementIndex ->
+  ConfigRef ->
+  SpendIndexInput ->
+  Run ()
+mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
   void runInitConfig
   void runInitIndex
 
@@ -67,29 +139,37 @@ validTallyConfigNftTest = do
 
   let
     -- Set up the value and scripts
-    tallyConfigValue :: Value
-    tallyConfigValue = singleton (tallyConfigNftCurrencySymbol config) (TokenName "0") 1
+    tallyValue :: Value
+    tallyValue = tallyConfigValue config
 
     tallyPolicy :: TypedPolicy ()
     tallyPolicy = tallyConfigNftTypedMintingPolicy config
 
+    -- Valid output index datum should have index field incremented by one
     updateIndexDatum :: IndexNftDatum -> IndexNftDatum
-    updateIndexDatum (IndexNftDatum index) = IndexNftDatum $ index + 1
+    updateIndexDatum oldDatum@(IndexNftDatum index) = case incrementIndex of
+      ValidIncrement -> IndexNftDatum $ index + 1
+      DoNotIncrement -> oldDatum
 
     -- Set up the txs
     baseTx =
       mconcat
-        [ mintValue tallyPolicy () tallyConfigValue
+        [ mintValue tallyPolicy () tallyValue
         , -- \^ Mint the tally NFT
-          spendScript indexNftTypedValidator indexOutRef () indexDatum
-        , -- \^ Spend the input at the index validator with the old datum,
-          -- adds the index to the inputs
-          refInputInline configOutRef
-        , -- \^ Add the config to the reference inputs
           userSpend spend1
         , userSpend spend2
         -- \^ Spend these to balance the tx
         ]
+
+    -- Valid tx has the config in the reference inputs
+    withReferenceConfig = case configRef of
+      ConfigInRefInputs -> refInputInline configOutRef
+      NoConfigInRefInputs -> mempty
+
+    -- Valid tx spends the input at the index validator with the old datum,
+    withIndexInput = case spendIndex of
+      SpendInput -> spendScript indexNftTypedValidator indexOutRef () indexDatum
+      DoNotSpendInput -> mempty
 
     -- Pay the tally datum, and token,
     -- to the tally validator
@@ -97,7 +177,7 @@ validTallyConfigNftTest = do
       payToScript
         tallyNftTypedValidator
         (InlineDatum sampleTallyStateDatum)
-        (adaValue 2 <> tallyConfigValue)
+        (adaValue 2 <> tallyValue)
 
     -- Pay the updated index datum with the incremented
     -- index field, and token, to the index validator
@@ -108,6 +188,25 @@ validTallyConfigNftTest = do
         (adaValue 2 <> dummyIndexConfigNftValue)
 
     -- Combine the txs
-    allTxs = mconcat [baseTx, payToTallyValidator, payToIndexValidator]
+    allTxs =
+      mconcat
+        [ baseTx
+        , withReferenceConfig
+        , withIndexInput
+        , payToTallyValidator
+        , payToIndexValidator
+        ]
 
   submitTx user allTxs
+
+-- Valid token value, exactly one minted, correct symbol and token name set to index field of index datum
+validTallyConfigValue :: TallyNftConfig -> Value
+validTallyConfigValue config = singleton (tallyConfigNftCurrencySymbol config) (TokenName "0") 1
+
+invalidWrongTokenNameTallyConfigValue :: TallyNftConfig -> Value
+invalidWrongTokenNameTallyConfigValue config =
+  singleton (tallyConfigNftCurrencySymbol config) (TokenName "some_wrong_name") 1
+
+invalidMoreThanOneTokenMintedTallyConfigValue :: TallyNftConfig -> Value
+invalidMoreThanOneTokenMintedTallyConfigValue config =
+  singleton (tallyConfigNftCurrencySymbol config) (TokenName "some_wrong_name") 2
