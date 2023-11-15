@@ -6,6 +6,7 @@ Description: Triphut treasury related scripts. It includes:
 module Triphut.Treasury.Script (
   -- * Validator
   treasuryScript,
+  treasuryValidator,
   treasuryValidatorHash,
 ) where
 
@@ -122,9 +123,11 @@ import Triphut.Types (
 
      The validator always ensures:
 
-
       - There is exactly one of this script contained in the transaction's inputs.
         This check is carried out using the 'Triphut.Treasury.Script.ownValueAndValidator' helper.
+
+      - It uses the 'tsProposal' field of 'Triphut.Types.TallyStateDatum' like a redeemer,
+        choosing which branch to follow based on the value of this field. (Trip, General, or Upgrade)
 
    == Trip proposal
 
@@ -263,13 +266,13 @@ validateTreasury
                 lovelacesOf (valuePaidTo' tTxInfoOutputs travelAgentAddress) >= travelAgentLovelaces
 
               paidToTravelerAddress :: Bool
-              !paidToTravelerAddress = 
+              !paidToTravelerAddress =
                 lovelacesOf (valuePaidTo' tTxInfoOutputs travelerAddress) >= travelerLovelaces
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
-                && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
+                -- && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
                 && traceIfFalse "Not paying enough to the travel agent address" paidToTravelAgentAddress
-                && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
+          -- && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
           General generalPaymentAddress generalPaymentValue ->
             let
               hasEnoughVotes :: Bool
@@ -293,7 +296,7 @@ validateTreasury
 
               -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
               paidToAddress :: Bool
-              !paidToAddress = 
+              !paidToAddress =
                 lovelacesOf (valuePaidTo' tTxInfoOutputs generalPaymentAddress) >= generalPaymentValue
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes

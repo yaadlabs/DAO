@@ -11,11 +11,11 @@ module Spec.Tally.SampleData (
 ) where
 
 import Plutus.V1.Ledger.Api (POSIXTime (POSIXTime))
-import Plutus.V1.Ledger.Value (adaSymbol)
 import Spec.Addresses (
   sampleTravelAgentAddress,
   sampleTravelerPaymentAddress,
  )
+import Spec.AlwaysSucceed.Script (alwaysSucceedCurrencySymbol)
 import Spec.Values (dummyTallyConfigSymbol, dummyTallyConfigTokenName)
 import Triphut.Tally (
   TallyValidatorConfig (
@@ -71,7 +71,7 @@ sampleUpgradeWithVotesEndTimeInPastTallyStateDatum =
     }
 
 sampleUpgradeProposalType :: ProposalType
-sampleUpgradeProposalType = Upgrade adaSymbol
+sampleUpgradeProposalType = Upgrade alwaysSucceedCurrencySymbol
 
 -- Some arbitrary time way in the future
 sampleEndTimeInFuture :: POSIXTime

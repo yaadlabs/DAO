@@ -30,10 +30,10 @@ import Plutus.Model.V2 (
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
 import PlutusTx.Prelude (Bool (False, True), ($))
-import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator)
 import Spec.ConfigurationNft.Script (
   configNftCurrencySymbol,
   configNftTypedMintingPolicy,
+  upgradeConfigNftTypedValidator,
  )
 import Spec.SampleData (sampleDynamicConfig)
 import Spec.SpecUtils (minAda)
@@ -99,7 +99,7 @@ mkConfigNftTx hasDatum configValue config spend' user =
     baseTx = mconcat [mintValue configPolicy () configValue', userSpend spend']
     withDatum =
       payToRef
-        alwaysSucceedTypedValidator
+        upgradeConfigNftTypedValidator
         (InlineDatum sampleDynamicConfig)
         (adaValue 2 <> configValue')
     withNoDatumToUser = payToKey user (adaValue 2 <> configValue')

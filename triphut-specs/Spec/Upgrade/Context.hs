@@ -4,6 +4,7 @@ import Plutus.Model (
   Run,
   adaValue,
   currentTime,
+  mintValue,
   newUser,
   refInputInline,
   spend,
@@ -14,9 +15,15 @@ import Plutus.Model (
  )
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
+  payToKey,
   payToScript,
  )
 import Plutus.V1.Ledger.Interval (from)
+import Plutus.V1.Ledger.Value (Value, adaToken, singleton)
+import Spec.AlwaysSucceed.Script (
+  alwaysSucceedCurrencySymbol,
+  alwaysSucceedTypedMintingPolicy,
+ )
 import Spec.ConfigurationNft.Script (upgradeConfigNftTypedValidator)
 import Spec.ConfigurationNft.Transactions (runInitConfig)
 import Spec.ConfigurationNft.Utils (findConfig)
@@ -44,21 +51,35 @@ mkUpgradeTest = do
 
   theTimeNow <- currentTime
 
-  let baseTx =
-        mconcat
-          [ spendScript upgradeConfigNftTypedValidator configOutRef () configDatum
-          , refInputInline tallyOutRef
-          , userSpend spend1
-          , userSpend spend2
-          ]
+  let
+    upgradeToken :: Value
+    upgradeToken = singleton alwaysSucceedCurrencySymbol adaToken 1
 
-      payToConfigValidator =
-        payToScript
-          upgradeConfigNftTypedValidator
-          (InlineDatum configDatum)
-          (adaValue 2 <> dummyConfigNftValue)
+    baseTx =
+      mconcat
+        [ spendScript upgradeConfigNftTypedValidator configOutRef () configDatum
+        , mintValue alwaysSucceedTypedMintingPolicy () upgradeToken
+        , refInputInline tallyOutRef
+        , userSpend spend1
+        , userSpend spend2
+        ]
 
-      combinedTxs = baseTx <> payToConfigValidator
+    payToConfigValidator =
+      payToScript
+        upgradeConfigNftTypedValidator
+        (InlineDatum configDatum)
+        (adaValue 2 <> dummyConfigNftValue)
+
+    -- Pay it to the user, just for balancing the tx for now
+    -- Not sure what is meant to happen with this token after minting it here
+    payUpgradeTokenToUser = payToKey user upgradeToken
+
+    combinedTxs =
+      mconcat
+        [ baseTx
+        , payToConfigValidator
+        , payUpgradeTokenToUser
+        ]
 
   finalTx <- validateIn (from theTimeNow) combinedTxs
 

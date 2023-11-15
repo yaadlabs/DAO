@@ -1,25 +1,28 @@
 module Spec.AlwaysSucceed.Script (
-  AlwaysSucceedScriptDynamicConfig,
   AlwaysSucceedScriptVoteDynamicConfig,
   AlwaysSucceedScriptTallyDynamicConfig,
-  alwaysSucceedTypedValidator,
   alwaysSucceedTypedValidator1,
   alwaysSucceedTypedValidator2,
+  alwaysSucceedTypedMintingPolicy,
+  alwaysSucceedCurrencySymbol,
 ) where
 
-import Plutus.Model.V2 (TypedValidator, mkTypedValidator, toBuiltinValidator)
+import Plutus.Model.V2 (
+  TypedPolicy,
+  TypedValidator,
+  mkTypedPolicy,
+  mkTypedValidator,
+  scriptCurrencySymbol,
+  toBuiltinPolicy,
+  toBuiltinValidator,
+ )
+import Plutus.V1.Ledger.Value (CurrencySymbol)
+import Plutus.V2.Ledger.Contexts (ScriptContext)
 import PlutusTx (compile)
-import Triphut.AlwaysSucceed (succeedValidator, succeedValidator1)
+import PlutusTx.Prelude (Bool (True), BuiltinData)
+import Triphut.AlwaysSucceed (succeedValidator1)
 import Triphut.Tally (TallyDynamicConfigDatum)
-import Triphut.Types (DynamicConfigDatum)
 import Triphut.Vote (VoteMinterDynamicConfigDatum)
-
--- Dynamic config reference script
-type AlwaysSucceedScriptDynamicConfig = TypedValidator DynamicConfigDatum ()
-
-alwaysSucceedTypedValidator :: AlwaysSucceedScriptDynamicConfig
-alwaysSucceedTypedValidator =
-  mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator||])
 
 -- Vote dynamic config reference script
 type AlwaysSucceedScriptVoteDynamicConfig = TypedValidator VoteMinterDynamicConfigDatum ()
@@ -34,3 +37,16 @@ type AlwaysSucceedScriptTallyDynamicConfig = TypedValidator TallyDynamicConfigDa
 alwaysSucceedTypedValidator2 :: AlwaysSucceedScriptTallyDynamicConfig
 alwaysSucceedTypedValidator2 =
   mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator1||])
+
+-- For upgrade minter testing
+type AlwaysSucceedUpgradeMinter = TypedPolicy ()
+
+alwaysSucceedTypedMintingPolicy :: AlwaysSucceedUpgradeMinter
+alwaysSucceedTypedMintingPolicy =
+  mkTypedPolicy $$(PlutusTx.compile [||toBuiltinPolicy succeedPolicy||])
+
+succeedPolicy :: BuiltinData -> ScriptContext -> Bool
+succeedPolicy _ _ = True
+
+alwaysSucceedCurrencySymbol :: CurrencySymbol
+alwaysSucceedCurrencySymbol = scriptCurrencySymbol alwaysSucceedTypedMintingPolicy
