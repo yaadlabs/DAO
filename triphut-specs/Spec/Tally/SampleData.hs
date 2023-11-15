@@ -4,11 +4,13 @@ Description : Tally sample data for tests
 -}
 module Spec.Tally.SampleData (
   sampleTallyValidatorConfig,
-  sampleTallyStateDatum,
+  sampleWithEndTimeInFutureTallyStateDatum,
+  sampleWithEndTimeInPastTallyStateDatum,
 ) where
 
 import Plutus.V1.Ledger.Api (POSIXTime (POSIXTime))
-import Plutus.V1.Ledger.Value (adaSymbol, adaToken)
+import Plutus.V1.Ledger.Value (adaSymbol)
+import Spec.Values (dummyTallyConfigSymbol, dummyTallyConfigTokenName)
 import Triphut.Tally (
   TallyValidatorConfig (
     TallyValidatorConfig,
@@ -22,15 +24,24 @@ import Triphut.Types (ProposalType (Upgrade), TallyStateDatum (..))
 sampleTallyValidatorConfig :: TallyValidatorConfig
 sampleTallyValidatorConfig =
   TallyValidatorConfig
-    { tvcConfigNftCurrencySymbol = adaSymbol
-    , tvcConfigNftTokenName = adaToken
+    { tvcConfigNftCurrencySymbol = dummyTallyConfigSymbol
+    , tvcConfigNftTokenName = dummyTallyConfigTokenName
     }
 
-sampleTallyStateDatum :: TallyStateDatum
-sampleTallyStateDatum =
+sampleWithEndTimeInPastTallyStateDatum :: TallyStateDatum
+sampleWithEndTimeInPastTallyStateDatum =
   TallyStateDatum
     { tsProposal = sampleUpgradeProposalType
-    , tsProposalEndTime = sampleEndTime
+    , tsProposalEndTime = sampleEndTimeInPast
+    , tsFor = 0
+    , tsAgainst = 0
+    }
+
+sampleWithEndTimeInFutureTallyStateDatum :: TallyStateDatum
+sampleWithEndTimeInFutureTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = sampleUpgradeProposalType
+    , tsProposalEndTime = sampleEndTimeInFuture
     , tsFor = 0
     , tsAgainst = 0
     }
@@ -38,5 +49,9 @@ sampleTallyStateDatum =
 sampleUpgradeProposalType :: ProposalType
 sampleUpgradeProposalType = Upgrade adaSymbol
 
-sampleEndTime :: POSIXTime
-sampleEndTime = POSIXTime 3594201188000
+-- Some arbitrary time way in the future
+sampleEndTimeInFuture :: POSIXTime
+sampleEndTimeInFuture = POSIXTime 3594201188000
+
+sampleEndTimeInPast :: POSIXTime
+sampleEndTimeInPast = 0

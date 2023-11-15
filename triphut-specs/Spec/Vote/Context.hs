@@ -29,7 +29,7 @@ import Plutus.Model.V2 (
 import Plutus.V1.Ledger.Interval (to)
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
 import Spec.SpecUtils (minAda, oneSecond)
-import Spec.Tally.Transactions (runInitTally)
+import Spec.Tally.Transactions (runInitTallyWithEndTimeInFuture)
 import Spec.Tally.Utils (findTally)
 import Spec.Values (
   dummyVoteConfigNftSymbol,
@@ -90,7 +90,7 @@ mkVoteConfigNftTest ::
   Run ()
 mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
   void runInitVoteConfig
-  void runInitTally
+  void runInitTallyWithEndTimeInFuture
 
   (voteConfigOutRef, _, _voteDatum) <- findVoteConfig
   (tallyOutRef, _, _tallyDatum) <- findTally

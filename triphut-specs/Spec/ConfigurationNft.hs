@@ -64,7 +64,7 @@ nftSpec config =
     negativeTest2 =
       bad
         ( "Configuration mint NFT (mkNftMinter) fails with script error: "
-            <> "[Incorrect token name provided, Only one valid token minted, PT5]"
+            <> "[Incorrect token name provided, Only one valid token minted]"
             <> " - due to wrong token name in config"
         )
         invalidConfigNftWrongTokenNameTest

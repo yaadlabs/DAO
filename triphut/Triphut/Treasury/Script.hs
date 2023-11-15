@@ -263,7 +263,8 @@ validateTreasury
                 lovelacesOf (valuePaidTo' tTxInfoOutputs travelAgentAddress) >= travelAgentLovelaces
 
               paidToTravelerAddress :: Bool
-              !paidToTravelerAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs travelerAddress) >= travelerLovelaces
+              !paidToTravelerAddress = 
+                lovelacesOf (valuePaidTo' tTxInfoOutputs travelerAddress) >= travelerLovelaces
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
@@ -292,7 +293,8 @@ validateTreasury
 
               -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
               paidToAddress :: Bool
-              !paidToAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs generalPaymentAddress) >= generalPaymentValue
+              !paidToAddress = 
+                lovelacesOf (valuePaidTo' tTxInfoOutputs generalPaymentAddress) >= generalPaymentValue
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough

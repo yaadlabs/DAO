@@ -10,7 +10,7 @@ import Plutus.Model (
   defaultBabbage,
   testNoErrors,
  )
-import Spec.SpecUtils (checkFails)
+import Spec.SpecUtils (checkFails, amountOfAda)
 import Spec.Upgrade.Context (
   validUpgradeTest,
  )
@@ -32,4 +32,6 @@ nftSpec config =
     bad = checkFails config initialFunds
     positiveTest = good "Valid upgrade proposal test, should pass" validUpgradeTest
 
-    initialFunds = adaValue 10_000_000 <> dummyConfigNftValue <> dummyTallyValue
+    initialFunds = amountOfAda 20_000_000 <> dummyConfigNftValue <> dummyTallyValue
+
+

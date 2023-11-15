@@ -28,7 +28,7 @@ sampleVoteDatum =
     }
 
 sampleVoteValidatorConfig :: VoteValidatorConfig
-sampleVoteValidatorConfig = VoteValidatorConfig adaSymbol adaToken
+sampleVoteValidatorConfig = VoteValidatorConfig dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName
 
 sampleVoteMinterConfig :: VoteMinterConfig
 sampleVoteMinterConfig = VoteMinterConfig dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName

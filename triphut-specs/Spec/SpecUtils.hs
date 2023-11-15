@@ -1,16 +1,18 @@
 module Spec.SpecUtils (
   runInitPayToScript,
+  runInitReferenceScript,
   checkFails,
   mkTypedValidator',
   initScriptRef,
   getFirstRefScript,
   minAda,
+  amountOfAda,
   findUniqueUtxo,
   findConfigUtxo,
   oneSecond,
 ) where
 
-import Control.Monad (void)
+import Control.Monad (unless, void)
 import GHC.Stack (HasCallStack)
 import Plutus.Model (
   Ada (Lovelace),
@@ -20,6 +22,7 @@ import Plutus.Model (
   ada,
   getMainUser,
   mustFail,
+  payToRef,
   payToScript,
   sendTx,
   signTx,
@@ -50,10 +53,10 @@ import Plutus.V1.Ledger.Scripts (Validator)
 import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
 import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value)
 import Plutus.V2.Ledger.Tx (TxOut, TxOutRef)
-import PlutusTx.Prelude (Bool, Maybe (Just, Nothing), fst, head, ($), (.), (>>=))
+import PlutusTx.Prelude (Bool, Integer, Maybe (Just, Nothing), fst, head, ($), (.), (>>=))
 import Test.Tasty (TestTree)
 import Triphut.Shared (hasOneOfToken)
-import Prelude (String, error, mconcat, pure, show, (<$>), (<>))
+import Prelude (Eq, String, error, mconcat, pure, show, (<$>), (<>), (==))
 
 checkFails :: MockConfig -> Value -> String -> Run () -> TestTree
 checkFails cfg funds msg act =
@@ -73,18 +76,41 @@ initScriptRef script = do
           ]
   void $ signTx admin tx >>= sendTx
 
+data ScriptType = Reference | Script
+  deriving stock (Eq)
+
+runInitScript ::
+  IsValidator script =>
+  script ->
+  ScriptType ->
+  DatumType script ->
+  Value ->
+  Run ()
+runInitScript validatorScript scriptType datum token = do
+  unless (scriptType == Script) (initScriptRef validatorScript)
+  admin <- getMainUser
+  let value = token <> minAda
+  spend' <- spend admin value
+  let payTx = case scriptType of
+        Reference -> payToRef validatorScript (InlineDatum datum) value
+        Script -> payToScript validatorScript (InlineDatum datum) value
+  submitTx admin $ userSpend spend' <> payTx
+
 runInitPayToScript ::
-  (HasDatum script, HasAddress script) =>
+  IsValidator script =>
   script ->
   DatumType script ->
   Value ->
   Run ()
-runInitPayToScript validatorScript datum token = do
-  admin <- getMainUser
-  let value = token <> minAda
-  spend' <- spend admin value
-  let payTx = payToScript validatorScript (InlineDatum datum) value
-  submitTx admin $ userSpend spend' <> payTx
+runInitPayToScript script = runInitScript script Script
+
+runInitReferenceScript ::
+  IsValidator script =>
+  script ->
+  DatumType script ->
+  Value ->
+  Run ()
+runInitReferenceScript script = runInitScript script Reference
 
 getFirstRefScript :: IsValidator script => script -> Run TxOutRef
 getFirstRefScript script =
@@ -92,6 +118,9 @@ getFirstRefScript script =
 
 minAda :: Value
 minAda = ada $ Lovelace 2_000_000
+
+amountOfAda :: Integer -> Value
+amountOfAda amount = ada $ Lovelace amount
 
 findConfigUtxo ::
   (HasDatum script, HasAddress script) =>

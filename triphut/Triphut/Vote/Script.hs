@@ -322,7 +322,7 @@ voteMinter =
         - The transaction is signed by the vote owner, specified by the 'vOwner' field
           of the 'Triphut.Vote.VoteDatum'.
         - All the vote tokens are burned, checking that there are no vote tokens in the transaction outputs,
-          with the corresponding 'CurrencySymbol' specified by the 'vdcVoteCurrencySymbol' 
+          with the corresponding 'CurrencySymbol' specified by the 'vdcVoteCurrencySymbol'
           in the 'VoteDynamicConfigDatum'
 -}
 validateVote ::

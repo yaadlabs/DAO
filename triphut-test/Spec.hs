@@ -17,12 +17,12 @@ main = do
   setLocaleEncoding utf8
   defaultMain $
     testGroup
-      "triphut"
-      [ -- Utils.spec
+      "Triphut"
+      [--  Utils.spec
       -- , ConfigurationNft.spec
       -- , Index.spec
       -- , Tally.spec
       -- , Vote.spec
-        --Upgrade.spec
-        VoteValidator.spec
+       -- Upgrade.spec
+       VoteValidator.spec
       ]
