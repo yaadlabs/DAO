@@ -76,6 +76,9 @@ mkVoteValidatorTest = do
 
       combinedTxs = baseTx <> payToTallyValidator <> payToVoteValidator
 
+  -- We want to ensure the `tsProposalEndTime` is before the valid range
+  -- Hence using the `from` function here and setting `tsProposalEndTime` to zero
+  -- in the sample tally datum
   finalTx <- validateIn (from theTimeNow) combinedTxs
 
   submitTx user $ finalTx

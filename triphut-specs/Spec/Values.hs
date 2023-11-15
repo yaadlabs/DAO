@@ -20,6 +20,9 @@ module Spec.Values (
   dummyVoteFungibleSymbol,
   dummyVoteFungibleToken,
   dummyVoteFungibleValue,
+  dummyTreasurySymbol,
+  dummyTreasuryTokenName,
+  dummyTreasuryValue,
 ) where
 
 import Plutus.V1.Ledger.Bytes (getLedgerBytes)
@@ -109,3 +112,15 @@ dummyVoteFungibleSymbol :: CurrencySymbol
 dummyVoteFungibleSymbol =
   CurrencySymbol $
     getLedgerBytes "66666666666666666666666666666666666666666666666666666666"
+
+-- | Dummy treasury
+dummyTreasuryValue :: Value
+dummyTreasuryValue = singleton dummyTreasurySymbol dummyTreasuryTokenName 1
+
+dummyTreasuryTokenName :: TokenName
+dummyTreasuryTokenName = TokenName "treasury"
+
+dummyTreasurySymbol :: CurrencySymbol
+dummyTreasurySymbol =
+  CurrencySymbol $
+    getLedgerBytes "77777777777777777777777777777777777777777777777777777777"

@@ -36,7 +36,7 @@ import Spec.Index.Script (indexNftTypedValidator)
 import Spec.Index.Transactions (runInitIndex)
 import Spec.Index.Utils (findIndex)
 import Spec.SpecUtils (minAda)
-import Spec.Tally.SampleData (sampleWithEndTimeInFutureTallyStateDatum)
+import Spec.Tally.SampleData (sampleUpgradeWithEndTimeInFutureTallyStateDatum)
 import Spec.Tally.Script (
   tallyConfigNftCurrencySymbol,
   tallyConfigNftTypedMintingPolicy,
@@ -176,7 +176,7 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
     payToTallyValidator =
       payToScript
         tallyNftTypedValidator
-        (InlineDatum sampleWithEndTimeInFutureTallyStateDatum)
+        (InlineDatum sampleUpgradeWithEndTimeInFutureTallyStateDatum)
         (adaValue 2 <> tallyValue)
 
     -- Pay the updated index datum with the incremented

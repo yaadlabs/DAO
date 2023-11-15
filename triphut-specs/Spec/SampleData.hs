@@ -20,7 +20,7 @@ import Triphut.Vote (VoteMinterDynamicConfigDatum (..))
 sampleDynamicConfig :: DynamicConfigDatum
 sampleDynamicConfig =
   DynamicConfigDatum
-    { dcTallyNft = adaSymbol
+    { dcTallyNft = dummyTallySymbol
     , dcTallyValidator = tallyValidatorHash'
     , dcTreasuryValidator = ValidatorHash ""
     , dcConfigurationValidator = ValidatorHash ""

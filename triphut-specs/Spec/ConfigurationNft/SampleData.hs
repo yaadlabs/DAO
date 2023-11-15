@@ -6,12 +6,12 @@ module Spec.ConfigurationNft.SampleData (
   sampleConfigValidatorConfig,
 ) where
 
-import Plutus.V1.Ledger.Value (adaSymbol, adaToken)
+import Spec.Values (dummyConfigNftSymbol, dummyConfigNftTokenName)
 import Triphut.ConfigurationNft (ConfigurationValidatorConfig (..))
 
 sampleConfigValidatorConfig :: ConfigurationValidatorConfig
 sampleConfigValidatorConfig =
   ConfigurationValidatorConfig
-    { cvcConfigNftCurrencySymbol = adaSymbol
-    , cvcConfigNftTokenName = adaToken
+    { cvcConfigNftCurrencySymbol = dummyConfigNftSymbol
+    , cvcConfigNftTokenName = dummyConfigNftTokenName
     }
