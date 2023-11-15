@@ -3,6 +3,8 @@ module Spec.Tally.Transactions (
   runInitTallyWithEndTimeInFuture,
   runInitTripTallyWithEndTimeInFuture,
   runInitUpgradeTallyWithEndTimeInPast,
+  runInitUpgradeWithVotesWithEndTimeInFutureTallyStateDatum,
+  runInitGeneralTallyWithEndTimeInFuture,
   runInitTallyConfig,
 ) where
 
@@ -11,14 +13,23 @@ import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator2)
 import Spec.SampleData (sampleTallyDynamicConfig)
 import Spec.SpecUtils (minAda, runInitPayToScript, runInitReferenceScript)
 import Spec.Tally.SampleData (
+  sampleGeneralWithEndTimeInFutureTallyStateDatum,
   sampleTripWithEndTimeInFutureTallyStateDatum,
   sampleUpgradeWithEndTimeInFutureTallyStateDatum,
   sampleUpgradeWithEndTimeInPastTallyStateDatum,
+  sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum,
   sampleUpgradeWithVotesEndTimeInPastTallyStateDatum,
  )
 import Spec.Tally.Script (tallyNftTypedValidator)
 import Spec.Values (dummyTallyConfigValue, dummyTallyValue)
 import Prelude ((<>))
+
+runInitGeneralTallyWithEndTimeInFuture :: Run ()
+runInitGeneralTallyWithEndTimeInFuture =
+  runInitPayToScript
+    tallyNftTypedValidator
+    sampleGeneralWithEndTimeInFutureTallyStateDatum
+    dummyTallyValue
 
 runInitTripTallyWithEndTimeInFuture :: Run ()
 runInitTripTallyWithEndTimeInFuture =
@@ -32,6 +43,13 @@ runInitUpgradeTallyWithEndTimeInPast =
   runInitPayToScript
     tallyNftTypedValidator
     sampleUpgradeWithVotesEndTimeInPastTallyStateDatum
+    dummyTallyValue
+
+runInitUpgradeWithVotesWithEndTimeInFutureTallyStateDatum :: Run ()
+runInitUpgradeWithVotesWithEndTimeInFutureTallyStateDatum =
+  runInitPayToScript
+    tallyNftTypedValidator
+    sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum
     dummyTallyValue
 
 runInitTallyWithEndTimeInPast :: Run ()

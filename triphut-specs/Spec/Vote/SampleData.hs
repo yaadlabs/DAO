@@ -8,8 +8,8 @@ module Spec.Vote.SampleData (
   sampleVoteDatum,
 ) where
 
-import Plutus.V1.Ledger.Value (adaSymbol, adaToken)
-import Spec.Addresses (sampleVoterAddress)
+import Plutus.V1.Ledger.Value (adaToken)
+import Spec.Addresses (dummyVoterAddress)
 import Spec.Values (dummyVoteConfigNftSymbol, dummyVoteConfigNftTokenName)
 import Triphut.Vote (
   VoteDatum (..),
@@ -23,7 +23,7 @@ sampleVoteDatum =
   VoteDatum
     { vProposalTokenName = adaToken
     , vDirection = For
-    , vOwner = sampleVoterAddress
+    , vOwner = dummyVoterAddress
     , vReturnAda = 1
     }
 

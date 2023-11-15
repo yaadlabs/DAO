@@ -12,7 +12,9 @@ import Plutus.Model (
  )
 import Spec.SpecUtils (amountOfAda, checkFails)
 import Spec.Treasury.Context (
-  validTreasuryTest,
+  validGeneralTreasuryTest,
+  validTripTreasuryTest,
+  validUpgradeTreasuryTest,
  )
 import Spec.Values (dummyConfigNftValue, dummyTallyValue, dummyTreasuryValue)
 import Test.Tasty (TestTree, testGroup)
@@ -25,12 +27,25 @@ nftSpec :: MockConfig -> TestTree
 nftSpec config =
   testGroup
     "Treasury validator tests"
-    [ positiveTest
+    [ positiveTripTest
+    , positiveUpgradeTest
+    , positiveGeneralTest
     ]
   where
     good = testNoErrors initialFunds config
     bad = checkFails config initialFunds
-    positiveTest = good "Valid treasury test, should pass" validTreasuryTest
+    positiveTripTest =
+      good
+        "Valid treasury test - trip proposal, should pass"
+        validTripTreasuryTest
+    positiveUpgradeTest =
+      good
+        "Valid treasury test - upgrade proposal, should pass"
+        validUpgradeTreasuryTest
+    positiveGeneralTest =
+      good
+        "Valid treasury test - general proposal, should pass"
+        validGeneralTreasuryTest
 
     initialFunds =
       mconcat

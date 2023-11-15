@@ -8,12 +8,15 @@ module Spec.Tally.SampleData (
   sampleUpgradeWithEndTimeInPastTallyStateDatum,
   sampleTripWithEndTimeInFutureTallyStateDatum,
   sampleUpgradeWithVotesEndTimeInPastTallyStateDatum,
+  sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum,
+  sampleGeneralWithEndTimeInFutureTallyStateDatum,
 ) where
 
 import Plutus.V1.Ledger.Api (POSIXTime (POSIXTime))
 import Spec.Addresses (
-  sampleTravelAgentAddress,
-  sampleTravelerPaymentAddress,
+  dummyGeneralPaymentAddress,
+  dummyTravelAgentAddress,
+  dummyTravelerPaymentAddress,
  )
 import Spec.AlwaysSucceed.Script (alwaysSucceedCurrencySymbol)
 import Spec.Values (dummyTallyConfigSymbol, dummyTallyConfigTokenName)
@@ -24,7 +27,7 @@ import Triphut.Tally (
     tvcConfigNftTokenName
   ),
  )
-import Triphut.Types (ProposalType (Trip, Upgrade), TallyStateDatum (..))
+import Triphut.Types (ProposalType (General, Trip, Upgrade), TallyStateDatum (..))
 
 -- | Sample tally config
 sampleTallyValidatorConfig :: TallyValidatorConfig
@@ -52,10 +55,19 @@ sampleUpgradeWithEndTimeInFutureTallyStateDatum =
     , tsAgainst = 0
     }
 
+sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum :: TallyStateDatum
+sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = sampleUpgradeProposalType
+    , tsProposalEndTime = sampleEndTimeInFuture
+    , tsFor = 8
+    , tsAgainst = 4
+    }
+
 sampleTripWithEndTimeInFutureTallyStateDatum :: TallyStateDatum
 sampleTripWithEndTimeInFutureTallyStateDatum =
   TallyStateDatum
-    { tsProposal = Trip sampleTravelAgentAddress sampleTravelerPaymentAddress 2
+    { tsProposal = Trip dummyTravelAgentAddress dummyTravelerPaymentAddress 2
     , tsProposalEndTime = sampleEndTimeInFuture
     , tsFor = 5
     , tsAgainst = 3
@@ -70,8 +82,20 @@ sampleUpgradeWithVotesEndTimeInPastTallyStateDatum =
     , tsAgainst = 3
     }
 
+sampleGeneralWithEndTimeInFutureTallyStateDatum :: TallyStateDatum
+sampleGeneralWithEndTimeInFutureTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = sampleGeneralProposalType
+    , tsProposalEndTime = sampleEndTimeInFuture
+    , tsFor = 5
+    , tsAgainst = 3
+    }
+
 sampleUpgradeProposalType :: ProposalType
 sampleUpgradeProposalType = Upgrade alwaysSucceedCurrencySymbol
+
+sampleGeneralProposalType :: ProposalType
+sampleGeneralProposalType = General dummyGeneralPaymentAddress 1
 
 -- Some arbitrary time way in the future
 sampleEndTimeInFuture :: POSIXTime
