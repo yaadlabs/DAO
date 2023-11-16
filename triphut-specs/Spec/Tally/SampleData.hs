@@ -10,6 +10,7 @@ module Spec.Tally.SampleData (
   sampleUpgradeWithVotesEndTimeInPastTallyStateDatum,
   sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum,
   sampleGeneralWithEndTimeInFutureTallyStateDatum,
+  sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum,
 ) where
 
 import Plutus.V1.Ledger.Api (POSIXTime (POSIXTime))
@@ -44,6 +45,15 @@ sampleUpgradeWithEndTimeInPastTallyStateDatum =
     , tsProposalEndTime = sampleEndTimeInPast
     , tsFor = 0
     , tsAgainst = 0
+    }
+
+sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum :: TallyStateDatum
+sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = sampleUpgradeProposalType
+    , tsProposalEndTime = sampleEndTimeInPast
+    , tsFor = 1
+    , tsAgainst = 100
     }
 
 sampleUpgradeWithEndTimeInFutureTallyStateDatum :: TallyStateDatum

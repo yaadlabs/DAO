@@ -2,6 +2,7 @@ module Spec.SampleData (
   sampleDynamicConfig,
   sampleVoteDynamicConfig,
   sampleTallyDynamicConfig,
+  sampleHighRelativeMajorityHighTotalVotesDynamicConfig,
 ) where
 
 import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName (TokenName), adaSymbol, adaToken)
@@ -30,7 +31,7 @@ sampleDynamicConfig =
     , dcUpgradeMajorityPercent = 1
     , dcUpgradeRelativeMajorityPercent = 1
     , dcGeneralMajorityPercent = 1
-    , dcGeneralRelativeMajorityPercent = 1
+    , dcGeneralRelativeMajorityPercent = 20
     , dcTripMajorityPercent = 1
     , dcTripRelativeMajorityPercent = 1
     , dcVoteNft = adaSymbol
@@ -38,6 +39,36 @@ sampleDynamicConfig =
     , dcVoteFungibleTokenName = adaToken
     , dcTotalVotes = 1
     , dcProposalTallyEndOffset = 0
+    , dcMaxGeneralDisbursement = 1
+    , dcMaxTripDisbursement = 1
+    , dcAgentDisbursementPercent = 1
+    , dcFungibleVotePercent = 1
+    , dcTallyIndexNft = adaSymbol
+    }
+
+sampleHighRelativeMajorityHighTotalVotesDynamicConfig :: DynamicConfigDatum
+sampleHighRelativeMajorityHighTotalVotesDynamicConfig =
+  DynamicConfigDatum
+    { dcTallyNft = dummyTallySymbol
+    , dcTallyValidator = tallyValidatorHash'
+    , dcTreasuryValidator = ValidatorHash ""
+    , dcConfigurationValidator = ValidatorHash ""
+    , dcVoteCurrencySymbol = adaSymbol
+    , dcVoteTokenName = adaToken
+    , dcVoteValidator = ValidatorHash ""
+    , dcUpgradeMajorityPercent = 1
+    , dcUpgradeRelativeMajorityPercent = 70
+    , -- \^ Just set to high value for negative test for upgrading config
+      dcGeneralMajorityPercent = 1
+    , dcGeneralRelativeMajorityPercent = 1
+    , dcTripMajorityPercent = 1
+    , dcTripRelativeMajorityPercent = 1
+    , dcVoteNft = adaSymbol
+    , dcVoteFungibleCurrencySymbol = adaSymbol
+    , dcVoteFungibleTokenName = adaToken
+    , dcTotalVotes = 2000
+    , -- \^ Set it high for negative test for upgrading config
+      dcProposalTallyEndOffset = 0
     , dcMaxGeneralDisbursement = 1
     , dcMaxTripDisbursement = 1
     , dcAgentDisbursementPercent = 1

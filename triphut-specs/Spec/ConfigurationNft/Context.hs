@@ -1,6 +1,6 @@
 {- |
 Module      : Spec.ConfigurationNft.Context
-Description : ConfigurationNft context unit tests
+Description : Configuration policy unit tests
 -}
 module Spec.ConfigurationNft.Context (
   validConfigNftTest,

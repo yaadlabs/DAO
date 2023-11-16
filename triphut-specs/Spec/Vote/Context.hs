@@ -1,6 +1,6 @@
 {- |
 Module      : Spec.Vote.Context
-Description : Vote policy context unit tests
+Description : Vote policy unit tests
 -}
 module Spec.Vote.Context (
   validVoteConfigNftTest,

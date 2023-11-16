@@ -1,3 +1,7 @@
+{- |
+Module      : Spec.Treasury.Context
+Description : Treasury validator unit tests
+-}
 module Spec.Treasury.Context (
   validTripTreasuryTest,
   validUpgradeTreasuryTest,

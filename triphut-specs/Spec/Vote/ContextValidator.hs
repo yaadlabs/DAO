@@ -1,5 +1,5 @@
 {- |
-Module      : Spec.Vote.Context
+Module      : Spec.Vote.ContextValidator
 Description : Tests the vote validator and tally validator in on transaction
 -}
 module Spec.Vote.ContextValidator (validVoteValidatorTest) where

@@ -1,5 +1,12 @@
-module Spec.Upgrade.Context (validUpgradeTest) where
+module Spec.Upgrade.Context (
+  validUpgradeTest,
+  invalidUpgradeNoTallyReferenceTest,
+  invalidUpgradeNoConfigInputTest,
+  invalidUpgradeNoUpgradeTokenMintedTest,
+  invalidUpgradeNotEnoughVotesTest,
+) where
 
+import Control.Monad (when)
 import Plutus.Model (
   Run,
   adaValue,
@@ -25,22 +32,99 @@ import Spec.AlwaysSucceed.Script (
   alwaysSucceedTypedMintingPolicy,
  )
 import Spec.ConfigurationNft.Script (upgradeConfigNftTypedValidator)
-import Spec.ConfigurationNft.Transactions (runInitConfig)
+import Spec.ConfigurationNft.Transactions (
+  runHighRelativeMajorityTotalVotesInitConfig,
+  runInitConfig,
+ )
 import Spec.ConfigurationNft.Utils (findConfig)
 import Spec.SpecUtils (amountOfAda)
-import Spec.Tally.Transactions (runInitUpgradeTallyWithEndTimeInPast)
+import Spec.Tally.Transactions (
+  runInitUpgradeTallyWithEndTimeInPast,
+  runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes,
+ )
 import Spec.Tally.Utils (findTally)
 import Spec.Values (dummyConfigNftValue)
 import Triphut.Types (DynamicConfigDatum (DynamicConfigDatum))
-import Prelude (mconcat, pure, ($), (<>))
+import Prelude (Eq, mconcat, mempty, otherwise, pure, ($), (<>), (==), (>>))
 
+-- | Positive test
 validUpgradeTest :: Run ()
-validUpgradeTest = mkUpgradeTest
+validUpgradeTest =
+  mkUpgradeTest
+    TallyIncluded
+    ConfigIncluded
+    UpgradeTokenMinted
+    HasEnoughVotes
 
-mkUpgradeTest :: Run ()
-mkUpgradeTest = do
-  runInitConfig
-  runInitUpgradeTallyWithEndTimeInPast
+-- | Negative tests
+invalidUpgradeNoTallyReferenceTest :: Run ()
+invalidUpgradeNoTallyReferenceTest =
+  mkUpgradeTest
+    TallyNotIncluded
+    ConfigIncluded
+    UpgradeTokenMinted
+    HasEnoughVotes
+
+invalidUpgradeNoConfigInputTest :: Run ()
+invalidUpgradeNoConfigInputTest =
+  mkUpgradeTest
+    TallyIncluded
+    ConfigNotIncluded
+    UpgradeTokenMinted
+    HasEnoughVotes
+
+invalidUpgradeNoUpgradeTokenMintedTest :: Run ()
+invalidUpgradeNoUpgradeTokenMintedTest =
+  mkUpgradeTest
+    TallyIncluded
+    ConfigIncluded
+    NoUpgradeTokenMinted
+    HasEnoughVotes
+
+invalidUpgradeNotEnoughVotesTest :: Run ()
+invalidUpgradeNotEnoughVotesTest =
+  mkUpgradeTest
+    TallyIncluded
+    ConfigIncluded
+    UpgradeTokenMinted
+    NotEnoughVotes
+
+data TallyReference
+  = TallyIncluded -- Valid
+  | TallyNotIncluded -- Invalid
+  deriving stock (Eq)
+
+data ConfigInput
+  = ConfigIncluded -- Valid
+  | ConfigNotIncluded -- Invalid
+  deriving stock (Eq)
+
+data UpgradeTokenMinted
+  = UpgradeTokenMinted -- Valid
+  | NoUpgradeTokenMinted -- Invalid
+  deriving stock (Eq)
+
+data EnoughVotes
+  = HasEnoughVotes -- Valid
+  | NotEnoughVotes -- Invalid
+  deriving stock (Eq)
+
+mkUpgradeTest ::
+  TallyReference ->
+  ConfigInput ->
+  UpgradeTokenMinted ->
+  EnoughVotes ->
+  Run ()
+mkUpgradeTest tallyReference configInput upgradeMinted enoughVotes = do
+  -- Choose which config to load based on whether we want to trigger
+  -- the negative test for not enough votes or
+  when (enoughVotes == HasEnoughVotes) runInitConfig
+  when (enoughVotes == NotEnoughVotes) runHighRelativeMajorityTotalVotesInitConfig
+
+  -- Choose which tally to load based on whether we want to trigger
+  -- the negative test for not enough votes or
+  when (enoughVotes == HasEnoughVotes) runInitUpgradeTallyWithEndTimeInPast
+  when (enoughVotes == NotEnoughVotes) runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes
 
   (configOutRef, _, configDatum) <- findConfig
   (tallyOutRef, _, tallyDatum) <- findTally
@@ -57,12 +141,24 @@ mkUpgradeTest = do
 
     baseTx =
       mconcat
-        [ spendScript upgradeConfigNftTypedValidator configOutRef () configDatum
-        , mintValue alwaysSucceedTypedMintingPolicy () upgradeToken
-        , refInputInline tallyOutRef
-        , userSpend spend1
+        [ userSpend spend1
         , userSpend spend2
         ]
+
+    -- Mint upgrade token for valid test
+    withUpgradeTokenMinted
+      | upgradeMinted == UpgradeTokenMinted = mintValue alwaysSucceedTypedMintingPolicy () upgradeToken
+      | otherwise = mempty
+
+    -- Spend config input for valid test
+    withConfigInput
+      | configInput == ConfigIncluded = spendScript upgradeConfigNftTypedValidator configOutRef () configDatum
+      | otherwise = mempty
+
+    -- Include tally in the reference inputs for valid test
+    withTallyReference
+      | tallyReference == TallyIncluded = refInputInline tallyOutRef
+      | otherwise = mempty
 
     payToConfigValidator =
       payToScript
@@ -79,6 +175,9 @@ mkUpgradeTest = do
         [ baseTx
         , payToConfigValidator
         , payUpgradeTokenToUser
+        , withTallyReference
+        , withConfigInput
+        , withUpgradeTokenMinted
         ]
 
   finalTx <- validateIn (from theTimeNow) combinedTxs

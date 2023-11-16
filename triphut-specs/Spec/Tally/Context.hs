@@ -1,6 +1,6 @@
 {- |
 Module      : Spec.Tally.Context
-Description : Tally policy context unit tests
+Description : Tally policy unit tests
 -}
 module Spec.Tally.Context (
   validTallyConfigNftTest,
