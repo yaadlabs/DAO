@@ -77,7 +77,7 @@ When the `Triphut.Vote.VoteMinterActionRedeemer` redeemer is set to `Mint`, this
   - This output contains a valid `Triphut.Vote.VoteDatum` datum.
   - The output token and valid datum are paid to the vote validator, specified in the `vmdcVoteValidator` of the `VoteMinterDynamicConfigDatum` that must be included in the reference inputs.
   - The proposal is still active. We check this by ensuring the proposal end time provided by the `TallyStateDatum` is after the validity range of the transaction. The `TallyStateDatum` must be included in the reference inputs.
-  - The total ADA is greater than the return ADA specificed by the `vReturnAda` field of the `VoteDatum`.
+  - The total ADA is greater than the return ADA specified by the `vReturnAda` field of the `VoteDatum`.
 
 When the `Triphut.Vote.VoteMinterActionRedeemer` redeemer is set to `Burn`, this policy performs the following checks:
   - That one vote token is burned.
@@ -105,7 +105,7 @@ The tests for both the vote validator and tally validator can be found in the `S
 
 ## Triphut.Treasury.Script
 
-In the `Triphut.Treasury.Script` module we have one script, the treasury validator. The treasury validator checks vary based on the type of proposal, there are three types of proposals represented by the constructors of the `Triphut.Types.ProposalType` type, `Trip`, `General`, and `Upgrade` (Which we referenced earlier when dicussing the `validateConfiguration` script).
+In the `Triphut.Treasury.Script` module we have one script, the treasury validator. The treasury validator checks vary based on the type of proposal, there are three types of proposals represented by the constructors of the `Triphut.Types.ProposalType` type, `Trip`, `General`, and `Upgrade` (Which we referenced earlier when discussing the `validateConfiguration` script).
 
 
 The validator always ensures:
@@ -161,9 +161,9 @@ The tests for the tally policy validator can be found in `Spec.Tally.Context`.
 The `Triphut.Tally.Script.validateTally` validator performs the following checks:
 
   - There is exactly one `Triphut.Tally.TallyDynamicConfigDatum` in the reference inputs, marked by the tally NFT. (The corresponding config `CurrencySymbol` and `TokenName` provided by the `TallyValidatorConfig` argument).
-  - That the tally NFT remains at the validadtor (the `newValueIsAtleastAsBigAsOldValue` check).
+  - That the tally NFT remains at the validator (the `newValueIsAtleastAsBigAsOldValue` check).
   - There is exactly one `Triphut.Tally.TallyStateDatum` in the outputs.
-  - This `Triphut.Tally.TallyStateDatum` in the outpus has been updated accordingly. We check this by ensuring the the new votes have been added to the `tsFor` and `tsAgainst` vote count fields of the new tally datum at the output.
+  - This `Triphut.Tally.TallyStateDatum` in the outputs has been updated accordingly. We check this by ensuring the new votes have been added to the `tsFor` and `tsAgainst` vote count fields of the new tally datum at the output.
   - That the proposal period has passed. We do this by checking the `tsProposalEndTime` field of the `TallyStateDatum` against the transaction validity range, ensuring the proposal end time has passed.
   - That all vote tokens are burned (there are no vote tokens in the outputs).
   
