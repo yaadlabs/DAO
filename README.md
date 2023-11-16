@@ -1,5 +1,14 @@
 # Triphut DAO Smart Contracts
 
+# Testing
+
+There is a full test suite contained in the `triphut-specs` directory, written with the `plutus-simple-model` framework. The suite covers all the scripts contained within the `triphut` directory.
+
+To run the test suite use the following command:
+```
+cabal test
+```
+
 # Prerequistes
 
 To run the tests and use the compile script, one must first install `cardano-cli-balance-fixer` from here: https://github.com/Canonical-LLC/cardano-cli-balance-fixer
