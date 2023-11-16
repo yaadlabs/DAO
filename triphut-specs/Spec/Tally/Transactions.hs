@@ -7,6 +7,7 @@ module Spec.Tally.Transactions (
   runInitGeneralTallyWithEndTimeInFuture,
   runInitUpgradeWithVotesWithEndTimeInFutureTallyStateDatum,
   runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes,
+  runInitTripTallyWithEndTimeInFutureNotEnoughVotes,
   runInitTallyConfig,
 ) where
 
@@ -16,7 +17,9 @@ import Spec.SampleData (sampleTallyDynamicConfig)
 import Spec.SpecUtils (minAda, runInitPayToScript, runInitReferenceScript)
 import Spec.Tally.SampleData (
   sampleGeneralWithEndTimeInFutureTallyStateDatum,
+  sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum,
   sampleTripWithEndTimeInFutureTallyStateDatum,
+  sampleUpgradeNotEnoughVotesEndTimeInFutureTallyStateDatum,
   sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum,
   sampleUpgradeWithEndTimeInFutureTallyStateDatum,
   sampleUpgradeWithEndTimeInPastTallyStateDatum,
@@ -26,6 +29,13 @@ import Spec.Tally.SampleData (
 import Spec.Tally.Script (tallyNftTypedValidator)
 import Spec.Values (dummyTallyConfigValue, dummyTallyValue)
 import Prelude ((<>))
+
+runInitTripTallyWithEndTimeInFutureNotEnoughVotes :: Run ()
+runInitTripTallyWithEndTimeInFutureNotEnoughVotes =
+  runInitPayToScript
+    tallyNftTypedValidator
+    sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum
+    dummyTallyValue
 
 runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes :: Run ()
 runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes =
