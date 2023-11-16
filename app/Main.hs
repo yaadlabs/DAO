@@ -3,73 +3,6 @@
 
 module Main (main) where
 
-import Canonical.AlwaysSucceed (succeed, succeed1, succeedHash, succeedHash1)
-import Canonical.ConfigurationNft (
-  ConfigurationValidatorConfig (
-    ConfigurationValidatorConfig,
-    cvcConfigNftCurrencySymbol,
-    cvcConfigNftTokenName
-  ),
-  NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
-  configurationScript,
-  configurationValidatorHash,
-  nftMinter,
-  nftMinterPolicyId,
- )
-import Canonical.Tally (
-  IndexNftConfig (IndexNftConfig, incIndexValidator, incInitialUtxo, incTokenName),
-  IndexValidatorConfig (
-    IndexValidatorConfig,
-    ivcConfigNftCurrencySymbol,
-    ivcConfigNftTokenName,
-    ivcNonce
-  ),
-  TallyNftConfig (
-    TallyNftConfig,
-    tncConfigNftCurrencySymbol,
-    tncConfigNftTokenName,
-    tncIndexNftPolicyId,
-    tncIndexNftTokenName
-  ),
-  TallyValidatorConfig (
-    TallyValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
-  indexScript,
-  indexValidatorHash,
-  tallyIndexNftMinter,
-  tallyIndexNftMinterPolicyId,
-  tallyNftMinter,
-  tallyNftMinterPolicyId,
-  tallyScript,
-  tallyValidatorHash,
- )
-import Canonical.Treasury (
-  TreasuryValidatorConfig (
-    TreasuryValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
-  treasuryScript,
-  treasuryValidatorHash,
- )
-import Canonical.Vote (
-  VoteMinterConfig (
-    VoteMinterConfig,
-    vmcConfigNftCurrencySymbol,
-    vmcConfigNftTokenName
-  ),
-  VoteValidatorConfig (
-    VoteValidatorConfig,
-    vvcConfigNftCurrencySymbol,
-    vvcConfigNftTokenName
-  ),
-  voteMinter,
-  voteMinterPolicyId,
-  voteScript,
-  voteValidatorHash,
- )
 import Cardano.Api hiding (TxId)
 import Data.String (fromString)
 import Options.Generic (
@@ -91,6 +24,82 @@ import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Scripts (ValidatorHash)
 import Plutus.V1.Ledger.Tx (TxId (TxId), TxOutRef (TxOutRef))
 import Plutus.V1.Ledger.Value (TokenName)
+import Triphut.AlwaysSucceed (succeed, succeed1, succeedHash, succeedHash1)
+import Triphut.ConfigurationNft (
+  ConfigurationValidatorConfig (
+    ConfigurationValidatorConfig,
+    cvcConfigNftCurrencySymbol,
+    cvcConfigNftTokenName
+  ),
+  NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
+ )
+import Triphut.ConfigurationNft.Script (
+  configurationNftCurrencySymbol,
+  configurationNftMintingPolicy,
+  configurationScript,
+  configurationValidatorHash,
+ )
+import Triphut.Index (
+  IndexNftConfig (IndexNftConfig, incIndexValidator, incInitialUtxo, incTokenName),
+  IndexValidatorConfig (
+    IndexValidatorConfig,
+    ivcConfigNftCurrencySymbol,
+    ivcConfigNftTokenName,
+    ivcNonce
+  ),
+ )
+import Triphut.Index.Script (
+  indexScript,
+  indexValidatorHash,
+  tallyIndexNftMinter,
+  tallyIndexNftMinterPolicyId,
+ )
+import Triphut.Tally (
+  TallyNftConfig (
+    TallyNftConfig,
+    tncConfigNftCurrencySymbol,
+    tncConfigNftTokenName,
+    tncIndexNftPolicyId,
+    tncIndexNftTokenName
+  ),
+  TallyValidatorConfig (
+    TallyValidatorConfig,
+    tvcConfigNftCurrencySymbol,
+    tvcConfigNftTokenName
+  ),
+ )
+import Triphut.Tally.Script (
+  tallyNftMinter,
+  tallyNftMinterPolicyId,
+  tallyScript,
+  tallyValidatorHash,
+ )
+import Triphut.Treasury (
+  TreasuryValidatorConfig (
+    TreasuryValidatorConfig,
+    tvcConfigNftCurrencySymbol,
+    tvcConfigNftTokenName
+  ),
+ )
+import Triphut.Treasury.Script (treasuryScript, treasuryValidatorHash)
+import Triphut.Vote (
+  VoteMinterConfig (
+    VoteMinterConfig,
+    vmcConfigNftCurrencySymbol,
+    vmcConfigNftTokenName
+  ),
+  VoteValidatorConfig (
+    VoteValidatorConfig,
+    vvcConfigNftCurrencySymbol,
+    vvcConfigNftTokenName
+  ),
+ )
+import Triphut.Vote.Script (
+  voteMinter,
+  voteMinterPolicyId,
+  voteScript,
+  voteValidatorHash,
+ )
 import Prelude (
   Either (Left, Right),
   FilePath,
@@ -211,9 +220,9 @@ run Options {..} = do
           , ncTokenName = configurationNftTokenName
           }
 
-  writeSource configurationNftOutput $ nftMinter nftConfig
+  writeSource configurationNftOutput $ configurationNftMintingPolicy nftConfig
 
-  let theConfigurationNftPolicyId = nftMinterPolicyId nftConfig
+  let theConfigurationNftPolicyId = configurationNftCurrencySymbol nftConfig
 
   writeFile configurationNftPolicyIdOutput $ show theConfigurationNftPolicyId
 

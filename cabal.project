@@ -49,7 +49,7 @@ package cryptonite
 -- ---------------------------------------------------------
 -- Disable all tests by default
 
-tests: False
+tests: true
 
 test-show-details: direct
 

@@ -1,11 +1,12 @@
-module Canonical.AlwaysSucceed (
+module Triphut.AlwaysSucceed (
   succeed,
   succeed1,
   succeedHash,
   succeedHash1,
+  succeedValidator,
+  succeedValidator1,
 ) where
 
-import Canonical.Shared (validatorHash)
 import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as LB
@@ -17,8 +18,9 @@ import Plutus.V2.Ledger.Contexts (
  )
 import PlutusTx (compile, unsafeFromBuiltinData)
 import PlutusTx.Prelude (Bool (True), BuiltinData, check, ($), (.), (==))
+import Triphut.Shared (validatorHash)
 
-succeedValidator :: BuiltinData -> BuiltinData -> BuiltinData -> Bool
+succeedValidator :: BuiltinData -> BuiltinData -> ScriptContext -> Bool
 succeedValidator _ _ _ = True
 
 succeedWrapped :: BuiltinData -> BuiltinData -> BuiltinData -> ()

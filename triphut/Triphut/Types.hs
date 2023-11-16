@@ -1,5 +1,10 @@
-module Canonical.Types (
-  DynamicConfig (..),
+{- |
+Module: Triphut.Types
+Description: Contains the `DynamicConfigDatum` type,
+  the `TallyState` type, and the `ProposalType` type.
+-}
+module Triphut.Types (
+  DynamicConfigDatum (..),
   ProposalType (..),
   TallyState (..),
 )
@@ -67,7 +72,8 @@ instance PlutusTx.Eq TallyState where
         && xFor == yFor
         && xAgainst == yAgainst
 
-data DynamicConfig = DynamicConfig
+-- | The configuration datum
+data DynamicConfigDatum = DynamicConfigDatum
   { dcTallyIndexNft :: CurrencySymbol
   , dcTallyNft :: CurrencySymbol
   , dcTallyValidator :: ValidatorHash
@@ -77,7 +83,7 @@ data DynamicConfig = DynamicConfig
   , dcVoteTokenName :: TokenName
   , dcVoteValidator :: ValidatorHash
   , dcUpgradeMajorityPercent :: Integer -- times a 1000
-  , dcUpgradRelativeMajorityPercent :: Integer -- times a 1000
+  , dcUpgradeRelativeMajorityPercent :: Integer -- times a 1000
   , dcGeneralMajorityPercent :: Integer -- times a 1000
   , dcGeneralRelativeMajorityPercent :: Integer -- times a 1000
   , dcTripMajorityPercent :: Integer -- times a 1000
@@ -93,6 +99,6 @@ data DynamicConfig = DynamicConfig
   , dcFungibleVotePercent :: Integer -- times a 1000
   }
 
-unstableMakeIsData ''DynamicConfig
+unstableMakeIsData ''DynamicConfigDatum
 unstableMakeIsData ''TallyState
 unstableMakeIsData ''ProposalType
