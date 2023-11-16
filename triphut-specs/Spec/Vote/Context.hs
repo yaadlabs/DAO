@@ -1,6 +1,6 @@
 {- |
 Module      : Spec.Vote.Context
-Description : Vote policy context unit tests
+Description : Vote policy unit tests
 -}
 module Spec.Vote.Context (
   validVoteConfigNftTest,
@@ -29,7 +29,7 @@ import Plutus.Model.V2 (
 import Plutus.V1.Ledger.Interval (to)
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
 import Spec.SpecUtils (minAda, oneSecond)
-import Spec.Tally.Transactions (runInitTally)
+import Spec.Tally.Transactions (runInitTallyWithEndTimeInFuture)
 import Spec.Tally.Utils (findTally)
 import Spec.Values (
   dummyVoteConfigNftSymbol,
@@ -43,7 +43,7 @@ import Spec.Vote.Script (
   voteTypedValidator,
  )
 import Spec.Vote.Transactions (runInitVoteConfig)
-import Spec.Vote.Utils (findVote)
+import Spec.Vote.Utils (findVoteConfig)
 import Triphut.Vote (VoteMinterActionRedeemer (Mint), VoteMinterConfig (VoteMinterConfig))
 import Prelude (mconcat, mempty, (*), (+), (<>))
 
@@ -90,9 +90,9 @@ mkVoteConfigNftTest ::
   Run ()
 mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
   void runInitVoteConfig
-  void runInitTally
+  void runInitTallyWithEndTimeInFuture
 
-  (voteOutRef, _, _voteDatum) <- findVote
+  (voteConfigOutRef, _, _voteDatum) <- findVoteConfig
   (tallyOutRef, _, _tallyDatum) <- findTally
 
   user <- newUser minAda
@@ -116,7 +116,7 @@ mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
           ]
 
       withVoteConfig = case voteConfigRef of
-        ConfigInRefInputs -> refInputInline voteOutRef
+        ConfigInRefInputs -> refInputInline voteConfigOutRef
         NoConfigInRefInputs -> mempty
 
       -- Pay the vote datum, and token,

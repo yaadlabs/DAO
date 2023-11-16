@@ -44,8 +44,7 @@ import Triphut.Index (
   IndexValidatorConfig (
     IndexValidatorConfig,
     ivcConfigNftCurrencySymbol,
-    ivcConfigNftTokenName,
-    ivcNonce
+    ivcConfigNftTokenName
   ),
  )
 import Triphut.Index.Script (
@@ -274,7 +273,6 @@ run Options {..} = do
         IndexValidatorConfig
           { ivcConfigNftCurrencySymbol = theConfigurationNftPolicyId
           , ivcConfigNftTokenName = configurationNftTokenName
-          , ivcNonce = indexValidatorNonce
           }
 
   writeSource indexValidatorOutput (indexScript indexValidatorConfig)

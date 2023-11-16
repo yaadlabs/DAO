@@ -1,6 +1,6 @@
 {- |
 Module      : Spec.Index.Context
-Description : Index policy context unit tests
+Description : Index policy unit tests
 -}
 module Spec.Index.Context (
   validIndexConfigNftTest,

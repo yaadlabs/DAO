@@ -322,7 +322,8 @@ voteMinter =
         - The transaction is signed by the vote owner, specified by the 'vOwner' field
           of the 'Triphut.Vote.VoteDatum'.
         - All the vote tokens are burned, checking that there are no vote tokens in the transaction outputs,
-          with the corresponding 'CurrencySymbol' specified by the 'vdcVoteCurrencySymbol' in the 'VoteDynamicConfigDatum'
+          with the corresponding 'CurrencySymbol' specified by the 'vdcVoteCurrencySymbol'
+          in the 'VoteDynamicConfigDatum'
 -}
 validateVote ::
   VoteValidatorConfig ->
@@ -346,7 +347,7 @@ validateVote
       VoteDynamicConfigDatum {..} =
         case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
           [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
-          _ -> traceError "Too many NFT values"
+          _ -> traceError "Should be exactly one output with the NFT"
      in
       case action of
         Count ->

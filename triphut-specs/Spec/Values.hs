@@ -11,6 +11,18 @@ module Spec.Values (
   dummyTallySymbol,
   dummyTallyTokenName,
   dummyTallyValue,
+  dummyVoteSymbol,
+  dummyVoteTokenName,
+  dummyVoteValue,
+  dummyTallyConfigSymbol,
+  dummyTallyConfigTokenName,
+  dummyTallyConfigValue,
+  dummyVoteFungibleSymbol,
+  dummyVoteFungibleToken,
+  dummyVoteFungibleValue,
+  dummyTreasurySymbol,
+  dummyTreasuryTokenName,
+  dummyTreasuryValue,
 ) where
 
 import Plutus.V1.Ledger.Bytes (getLedgerBytes)
@@ -46,7 +58,7 @@ dummyVoteConfigNftValue :: Value
 dummyVoteConfigNftValue = singleton dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName 1
 
 dummyVoteConfigNftTokenName :: TokenName
-dummyVoteConfigNftTokenName = TokenName "vote"
+dummyVoteConfigNftTokenName = TokenName "vote_config"
 
 dummyVoteConfigNftSymbol :: CurrencySymbol
 dummyVoteConfigNftSymbol =
@@ -64,3 +76,51 @@ dummyTallySymbol :: CurrencySymbol
 dummyTallySymbol =
   CurrencySymbol $
     getLedgerBytes "33333333333333333333333333333333333333333333333333333333"
+
+-- | Dummy vote
+dummyVoteValue :: Value
+dummyVoteValue = singleton dummyVoteSymbol dummyVoteTokenName 1
+
+dummyVoteTokenName :: TokenName
+dummyVoteTokenName = TokenName "vote"
+
+dummyVoteSymbol :: CurrencySymbol
+dummyVoteSymbol =
+  CurrencySymbol $
+    getLedgerBytes "44444444444444444444444444444444444444444444444444444444"
+
+-- | Dummy tally config
+dummyTallyConfigValue :: Value
+dummyTallyConfigValue = singleton dummyTallyConfigSymbol dummyTallyConfigTokenName 1
+
+dummyTallyConfigTokenName :: TokenName
+dummyTallyConfigTokenName = TokenName "tally_config"
+
+dummyTallyConfigSymbol :: CurrencySymbol
+dummyTallyConfigSymbol =
+  CurrencySymbol $
+    getLedgerBytes "55555555555555555555555555555555555555555555555555555555"
+
+-- | Dummy vote fungible
+dummyVoteFungibleValue :: Value
+dummyVoteFungibleValue = singleton dummyVoteFungibleSymbol dummyVoteFungibleToken 1
+
+dummyVoteFungibleToken :: TokenName
+dummyVoteFungibleToken = TokenName "vote_fungible"
+
+dummyVoteFungibleSymbol :: CurrencySymbol
+dummyVoteFungibleSymbol =
+  CurrencySymbol $
+    getLedgerBytes "66666666666666666666666666666666666666666666666666666666"
+
+-- | Dummy treasury
+dummyTreasuryValue :: Value
+dummyTreasuryValue = singleton dummyTreasurySymbol dummyTreasuryTokenName 1
+
+dummyTreasuryTokenName :: TokenName
+dummyTreasuryTokenName = TokenName "treasury"
+
+dummyTreasurySymbol :: CurrencySymbol
+dummyTreasurySymbol =
+  CurrencySymbol $
+    getLedgerBytes "77777777777777777777777777777777777777777777777777777777"

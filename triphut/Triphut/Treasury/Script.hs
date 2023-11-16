@@ -6,6 +6,7 @@ Description: Triphut treasury related scripts. It includes:
 module Triphut.Treasury.Script (
   -- * Validator
   treasuryScript,
+  treasuryValidator,
   treasuryValidatorHash,
 ) where
 
@@ -122,9 +123,11 @@ import Triphut.Types (
 
      The validator always ensures:
 
-
       - There is exactly one of this script contained in the transaction's inputs.
         This check is carried out using the 'Triphut.Treasury.Script.ownValueAndValidator' helper.
+
+      - It uses the 'tsProposal' field of 'Triphut.Types.TallyStateDatum' like a redeemer,
+        choosing which branch to follow based on the value of this field. (Trip, General, or Upgrade)
 
    == Trip proposal
 
@@ -139,7 +142,9 @@ import Triphut.Types (
           field of the 'Triphut.Types.DynamicConfigDatum'.
 
         - The correct amount is paid to the traveler's address, specified by the
-          corresponding 'Trip' field in the 'ProposalType'.
+          corresponding 'Trip' field in the 'ProposalType'. The traveler's amount should
+          be greater than or equal to the total cose of the travel minus the payment to
+          the travel agent.
 
         - The correct amount is paid to the travel agent's address, specified by the
           corresponding 'Trip' field in the 'ProposalType'.
@@ -226,7 +231,8 @@ validateTreasury
       !majorityPercent = (tsFor * 1000) `divide` totalVotes
 
       isAfterTallyEndTime :: Bool
-      !isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
+      !isAfterTallyEndTime =
+        (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
      in
       onlyOneOfThisScript tTxInfoInputs thisValidator thisTxRef
         && case tsProposal of
@@ -263,7 +269,8 @@ validateTreasury
                 lovelacesOf (valuePaidTo' tTxInfoOutputs travelAgentAddress) >= travelAgentLovelaces
 
               paidToTravelerAddress :: Bool
-              !paidToTravelerAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs travelerAddress) >= travelerLovelaces
+              !paidToTravelerAddress =
+                lovelacesOf (valuePaidTo' tTxInfoOutputs travelerAddress) >= travelerLovelaces
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
@@ -292,7 +299,8 @@ validateTreasury
 
               -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
               paidToAddress :: Bool
-              !paidToAddress = lovelacesOf (valuePaidTo' tTxInfoOutputs generalPaymentAddress) >= generalPaymentValue
+              !paidToAddress =
+                lovelacesOf (valuePaidTo' tTxInfoOutputs generalPaymentAddress) >= generalPaymentValue
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough

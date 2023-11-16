@@ -8,6 +8,9 @@ import Spec.ConfigurationNft qualified as ConfigurationNft
 import Spec.Index qualified as Index
 import Spec.Tally qualified as Tally
 import Spec.Vote qualified as Vote
+import Spec.Upgrade qualified as Upgrade
+import Spec.VoteValidator qualified as VoteValidator
+import Spec.Treasury qualified as Treasury
 import Test.Tasty (defaultMain, testGroup)
 
 main :: IO ()
@@ -15,10 +18,13 @@ main = do
   setLocaleEncoding utf8
   defaultMain $
     testGroup
-      "triphut"
+      "Triphut"
       [ Utils.spec
       , ConfigurationNft.spec
       , Index.spec
       , Tally.spec
       , Vote.spec
+      , VoteValidator.spec
+      , Treasury.spec
+      , Upgrade.spec
       ]

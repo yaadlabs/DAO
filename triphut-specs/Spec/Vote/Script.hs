@@ -26,7 +26,12 @@ import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
 import Spec.SpecUtils (mkTypedValidator')
 import Spec.Vote.SampleData (sampleVoteValidatorConfig)
-import Triphut.Vote (VoteDatum, VoteMinterActionRedeemer, VoteMinterConfig (VoteMinterConfig))
+import Triphut.Vote (
+  VoteActionRedeemer,
+  VoteDatum,
+  VoteMinterActionRedeemer,
+  VoteMinterConfig (VoteMinterConfig),
+ )
 import Triphut.Vote.Script (voteValidator, voteValidatorHash, wrappedPolicy)
 
 -- Policy script and info
@@ -51,7 +56,7 @@ voteValue :: VoteMinterConfig -> Value
 voteValue voteCfg@(VoteMinterConfig _ tokenName) = singleton (voteCurrencySymbol voteCfg) tokenName 1
 
 -- Validator script and info
-type VoteValidatorScript = TypedValidator VoteDatum ()
+type VoteValidatorScript = TypedValidator VoteDatum VoteActionRedeemer
 
 voteTypedValidator :: VoteValidatorScript
 voteTypedValidator = mkTypedValidator' sampleVoteValidatorConfig voteValidator

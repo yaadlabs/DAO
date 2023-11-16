@@ -1,6 +1,6 @@
 {- |
 Module      : Spec.ConfigurationNft.Context
-Description : ConfigurationNft context unit tests
+Description : Configuration policy unit tests
 -}
 module Spec.ConfigurationNft.Context (
   validConfigNftTest,
@@ -30,10 +30,10 @@ import Plutus.Model.V2 (
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
 import PlutusTx.Prelude (Bool (False, True), ($))
-import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator)
 import Spec.ConfigurationNft.Script (
   configNftCurrencySymbol,
   configNftTypedMintingPolicy,
+  upgradeConfigNftTypedValidator,
  )
 import Spec.SampleData (sampleDynamicConfig)
 import Spec.SpecUtils (minAda)
@@ -97,7 +97,11 @@ mkConfigNftTx hasDatum configValue config spend' user =
 
     -- Set up the txs
     baseTx = mconcat [mintValue configPolicy () configValue', userSpend spend']
-    withDatum = payToRef alwaysSucceedTypedValidator (InlineDatum sampleDynamicConfig) (adaValue 2 <> configValue')
+    withDatum =
+      payToRef
+        upgradeConfigNftTypedValidator
+        (InlineDatum sampleDynamicConfig)
+        (adaValue 2 <> configValue')
     withNoDatumToUser = payToKey user (adaValue 2 <> configValue')
    in
     -- If hasDatum is set to False we want the withNoDatumToUser tx

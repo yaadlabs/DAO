@@ -4,11 +4,25 @@ Description : Tally sample data for tests
 -}
 module Spec.Tally.SampleData (
   sampleTallyValidatorConfig,
-  sampleTallyStateDatum,
+  sampleUpgradeWithEndTimeInFutureTallyStateDatum,
+  sampleUpgradeWithEndTimeInPastTallyStateDatum,
+  sampleTripWithEndTimeInFutureTallyStateDatum,
+  sampleUpgradeWithVotesEndTimeInPastTallyStateDatum,
+  sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum,
+  sampleGeneralWithEndTimeInFutureTallyStateDatum,
+  sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum,
+  sampleUpgradeNotEnoughVotesEndTimeInFutureTallyStateDatum,
+  sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum,
 ) where
 
 import Plutus.V1.Ledger.Api (POSIXTime (POSIXTime))
-import Plutus.V1.Ledger.Value (adaSymbol, adaToken)
+import Spec.Addresses (
+  dummyGeneralPaymentAddress,
+  dummyTravelAgentAddress,
+  dummyTravelerPaymentAddress,
+ )
+import Spec.AlwaysSucceed.Script (alwaysSucceedCurrencySymbol)
+import Spec.Values (dummyTallyConfigSymbol, dummyTallyConfigTokenName)
 import Triphut.Tally (
   TallyValidatorConfig (
     TallyValidatorConfig,
@@ -16,27 +30,106 @@ import Triphut.Tally (
     tvcConfigNftTokenName
   ),
  )
-import Triphut.Types (ProposalType (Upgrade), TallyStateDatum (..))
+import Triphut.Types (ProposalType (General, Trip, Upgrade), TallyStateDatum (..))
 
 -- | Sample tally config
 sampleTallyValidatorConfig :: TallyValidatorConfig
 sampleTallyValidatorConfig =
   TallyValidatorConfig
-    { tvcConfigNftCurrencySymbol = adaSymbol
-    , tvcConfigNftTokenName = adaToken
+    { tvcConfigNftCurrencySymbol = dummyTallyConfigSymbol
+    , tvcConfigNftTokenName = dummyTallyConfigTokenName
     }
 
-sampleTallyStateDatum :: TallyStateDatum
-sampleTallyStateDatum =
+sampleUpgradeWithEndTimeInPastTallyStateDatum :: TallyStateDatum
+sampleUpgradeWithEndTimeInPastTallyStateDatum =
   TallyStateDatum
     { tsProposal = sampleUpgradeProposalType
-    , tsProposalEndTime = sampleEndTime
+    , tsProposalEndTime = sampleEndTimeInPast
     , tsFor = 0
     , tsAgainst = 0
     }
 
-sampleUpgradeProposalType :: ProposalType
-sampleUpgradeProposalType = Upgrade adaSymbol
+sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum :: TallyStateDatum
+sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = Trip dummyTravelAgentAddress dummyTravelerPaymentAddress 2
+    , tsProposalEndTime = sampleEndTimeInFuture
+    , tsFor = 1
+    , tsAgainst = 100
+    }
 
-sampleEndTime :: POSIXTime
-sampleEndTime = POSIXTime 3594201188000
+sampleUpgradeNotEnoughVotesEndTimeInFutureTallyStateDatum :: TallyStateDatum
+sampleUpgradeNotEnoughVotesEndTimeInFutureTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = sampleUpgradeProposalType
+    , tsProposalEndTime = sampleEndTimeInFuture
+    , tsFor = 1
+    , tsAgainst = 100
+    }
+
+sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum :: TallyStateDatum
+sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = sampleUpgradeProposalType
+    , tsProposalEndTime = sampleEndTimeInPast
+    , tsFor = 1
+    , tsAgainst = 100
+    }
+
+sampleUpgradeWithEndTimeInFutureTallyStateDatum :: TallyStateDatum
+sampleUpgradeWithEndTimeInFutureTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = sampleUpgradeProposalType
+    , tsProposalEndTime = sampleEndTimeInFuture
+    , tsFor = 0
+    , tsAgainst = 0
+    }
+
+sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum :: TallyStateDatum
+sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = sampleUpgradeProposalType
+    , tsProposalEndTime = sampleEndTimeInFuture
+    , tsFor = 8
+    , tsAgainst = 4
+    }
+
+sampleTripWithEndTimeInFutureTallyStateDatum :: TallyStateDatum
+sampleTripWithEndTimeInFutureTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = Trip dummyTravelAgentAddress dummyTravelerPaymentAddress 2
+    , tsProposalEndTime = sampleEndTimeInFuture
+    , tsFor = 5
+    , tsAgainst = 3
+    }
+
+sampleUpgradeWithVotesEndTimeInPastTallyStateDatum :: TallyStateDatum
+sampleUpgradeWithVotesEndTimeInPastTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = sampleUpgradeProposalType
+    , tsProposalEndTime = sampleEndTimeInPast
+    , tsFor = 5
+    , tsAgainst = 3
+    }
+
+sampleGeneralWithEndTimeInFutureTallyStateDatum :: TallyStateDatum
+sampleGeneralWithEndTimeInFutureTallyStateDatum =
+  TallyStateDatum
+    { tsProposal = sampleGeneralProposalType
+    , tsProposalEndTime = sampleEndTimeInFuture
+    , tsFor = 5
+    , tsAgainst = 3
+    }
+
+sampleUpgradeProposalType :: ProposalType
+sampleUpgradeProposalType = Upgrade alwaysSucceedCurrencySymbol
+
+sampleGeneralProposalType :: ProposalType
+sampleGeneralProposalType = General dummyGeneralPaymentAddress 1
+
+-- Some arbitrary time way in the future
+sampleEndTimeInFuture :: POSIXTime
+sampleEndTimeInFuture = POSIXTime 3594201188000
+
+sampleEndTimeInPast :: POSIXTime
+sampleEndTimeInPast = 0

@@ -78,7 +78,7 @@ import Triphut.Index (
     incTokenName
   ),
   IndexNftDatum (IndexNftDatum, indIndex),
-  IndexValidatorConfig (IndexValidatorConfig, ivcNonce),
+  IndexValidatorConfig (IndexValidatorConfig),
  )
 import Triphut.Shared (
   WrappedMintingPolicyType,
@@ -134,8 +134,7 @@ validateIndex
       outputDatumIsIncremented = outputIndex == inputIndex + 1
      in
       traceIfFalse "output datum is not incremented" outputDatumIsIncremented
-        -- && traceIfFalse "script value is not returned" outputValueGreaterThanInputValue
-        && ivcNonce == ivcNonce -- to help with testing
+        && traceIfFalse "script value is not returned" outputValueGreaterThanInputValue
 validateIndex _ _ _ _ = traceError "Wrong script purpose"
 
 indexValidator :: IndexValidatorConfig -> Validator

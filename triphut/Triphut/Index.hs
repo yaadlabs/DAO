@@ -37,7 +37,6 @@ makeLift ''IndexNftConfig
 data IndexValidatorConfig = IndexValidatorConfig
   { ivcConfigNftCurrencySymbol :: CurrencySymbol
   , ivcConfigNftTokenName :: TokenName
-  , ivcNonce :: Integer -- to help with testing
   }
 
 makeLift ''IndexValidatorConfig
