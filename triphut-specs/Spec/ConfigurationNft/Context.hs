@@ -10,11 +10,9 @@ module Spec.ConfigurationNft.Context (
 ) where
 
 import Plutus.Model (
-  Ada (Lovelace),
   Run,
   Tx,
   UserSpend,
-  ada,
   adaToken,
   adaValue,
   getHeadRef,
@@ -27,17 +25,18 @@ import Plutus.Model (
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
   payToKey,
-  payToScript,
+  payToRef,
  )
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
 import PlutusTx.Prelude (Bool (False, True), ($))
 import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator)
-import Spec.ConfigurationNft.SampleData (sampleDynamicConfig)
 import Spec.ConfigurationNft.Script (
   configNftCurrencySymbol,
   configNftTypedMintingPolicy,
  )
+import Spec.SampleData (sampleDynamicConfig)
+import Spec.SpecUtils (minAda)
 import Triphut.ConfigurationNft (NftConfig (NftConfig))
 import Prelude (mconcat, (<>))
 
@@ -80,7 +79,7 @@ invalidNftNoDatumSentToValidator = mkConfigNftTx False validNftConfigValue
 -- | Helper function for making tests
 mkConfigNftTest :: (NftConfig -> UserSpend -> PubKeyHash -> Tx) -> Run ()
 mkConfigNftTest tx = do
-  user <- newUser $ ada (Lovelace 2_000_000)
+  user <- newUser minAda
   spend' <- spend user (adaValue 2)
   let config = NftConfig (getHeadRef spend') (TokenName "triphut")
   submitTx user $ tx config spend' user
@@ -93,14 +92,13 @@ mkConfigNftTx :: Bool -> (NftConfig -> Value) -> NftConfig -> UserSpend -> PubKe
 mkConfigNftTx hasDatum configValue config spend' user =
   let
     -- Set up the value and scripts
-    mintVal = configValue config
-    policy = configNftTypedMintingPolicy config
-    validator = alwaysSucceedTypedValidator
+    configValue' = configValue config
+    configPolicy = configNftTypedMintingPolicy config
 
     -- Set up the txs
-    baseTx = mconcat [mintValue policy () mintVal, userSpend spend']
-    withDatum = payToScript validator (InlineDatum sampleDynamicConfig) (adaValue 2 <> mintVal)
-    withNoDatumToUser = payToKey user (adaValue 2 <> mintVal)
+    baseTx = mconcat [mintValue configPolicy () configValue', userSpend spend']
+    withDatum = payToRef alwaysSucceedTypedValidator (InlineDatum sampleDynamicConfig) (adaValue 2 <> configValue')
+    withNoDatumToUser = payToKey user (adaValue 2 <> configValue')
    in
     -- If hasDatum is set to False we want the withNoDatumToUser tx
     -- in order to trigger the negative test

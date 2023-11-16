@@ -1,3 +1,7 @@
+{- |
+Module: Triphut.Shared
+Description: Contains helper functions used across the other modules.
+-}
 module Triphut.Shared (
   WrappedMintingPolicyType,
   hasTokenInValueNoErrors,

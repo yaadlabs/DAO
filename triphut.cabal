@@ -84,17 +84,37 @@ library triphut-specs
   import: common-lang, common-depends, common-options, common-extensions, common-test-depends
   hs-source-dirs: triphut-specs
   exposed-modules:
+    Spec.Addresses
     Spec.AlwaysSucceed.Script
     Spec.ConfigurationNft
     Spec.ConfigurationNft.Context
     Spec.ConfigurationNft.SampleData
     Spec.ConfigurationNft.Script
+    Spec.ConfigurationNft.Transactions
+    Spec.ConfigurationNft.Utils
+    Spec.Index
+    Spec.Index.Context
+    Spec.Index.SampleData
     Spec.Index.Script
+    Spec.Index.Transactions
+    Spec.Index.Utils
+    Spec.SampleData
     Spec.SpecUtils
+    Spec.Tally
+    Spec.Tally.Context
     Spec.Tally.Script
+    Spec.Tally.SampleData
+    Spec.Tally.Transactions
+    Spec.Tally.Utils
     Spec.Utils
     Spec.Utils.Unit
+    Spec.Values
+    Spec.Vote
+    Spec.Vote.Context
+    Spec.Vote.SampleData
     Spec.Vote.Script
+    Spec.Vote.Transactions
+    Spec.Vote.Utils
   build-depends:
     , triphut
     , plutus-tx-plugin

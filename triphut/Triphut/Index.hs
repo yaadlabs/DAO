@@ -1,7 +1,14 @@
+{- |
+Module: Triphut.Index
+Description: Contains all the index specific types.
+-}
 module Triphut.Index (
+  -- * Datum
+  IndexNftDatum (..),
+
+  -- * Script arguments, containing relevant CurrenySymbol and TokenName
   IndexValidatorConfig (..),
   IndexNftConfig (..),
-  IndexNftDatum (..),
 ) where
 
 import Plutus.V1.Ledger.Scripts (ValidatorHash)

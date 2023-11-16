@@ -1,10 +1,24 @@
+{- |
+Module: Triphut.Vote
+Description: Contains all the voting specific types.
+-}
 module Triphut.Vote (
-  Vote (..),
+  -- * Datums
+  VoteDatum (..),
+  VoteMinterDynamicConfigDatum (..),
+  VoteDynamicConfigDatum (..),
+
+  -- * Redeemers
+  VoteMinterActionRedeemer (..),
+  VoteActionRedeemer (..),
+
+  -- * General vote related types
   VoteDirection (..),
+
+  -- * Script arguments, containing relevant CurrenySymbol and TokenName
   VoteMinterConfig (..),
   VoteValidatorConfig (..),
-  VoteDynamicConfig (..),
-  VoteAction (..),
+  -- Script context related types
   VoteScriptContext (..),
   VoteTxOut (..),
   VoteTxInInfo (..),
@@ -12,8 +26,6 @@ module Triphut.Vote (
   VoteMinterTxOut (..),
   VoteMinterTxInfo (..),
   VoteMinterTxInInfo (..),
-  VoteMinterDynamicConfig (..),
-  VoteMinterAction (..),
   VoteMinterScriptContext (..),
   VoteMinterScriptPurpose (..),
   VoteAddress (..),
@@ -43,6 +55,7 @@ import PlutusTx.Prelude (
  )
 import PlutusTx.Prelude qualified as PlutusTx
 
+-- | 'Triphut.Vote.Script.mkVoteMinter' argument
 data VoteMinterConfig = VoteMinterConfig
   { vmcConfigNftCurrencySymbol :: CurrencySymbol
   , vmcConfigNftTokenName :: TokenName
@@ -50,6 +63,7 @@ data VoteMinterConfig = VoteMinterConfig
 
 makeLift ''VoteMinterConfig
 
+-- | Vote direction
 data VoteDirection = For | Against
 
 instance PlutusTx.Eq VoteDirection where
@@ -57,29 +71,37 @@ instance PlutusTx.Eq VoteDirection where
   Against == Against = True
   _ == _ = False
 
-data Vote = Vote
+-- | The vote datum, represnting a vote cast by a user on a specific proposal
+data VoteDatum = VoteDatum
   { vProposalTokenName :: TokenName
+  -- ^ The name of the proposal for which this vote relates to.
+  -- This is checked in 'Triphut.Tally.Script.validateTally' to ensure
+  -- the vote is for the correct proposal.
   , vDirection :: VoteDirection
+  -- ^ Whether the vote is for or against the proposal.
   , vOwner :: Address
+  -- ^ The address of the user casting the vote.
   , vReturnAda :: Integer
+  -- ^ Ada amount to return
   }
 
-data VoteMinterAction = Mint | Burn
+-- | Redeemer for 'Triphut.Vote.Script.mkVoteMinter' policy
+data VoteMinterActionRedeemer = Mint | Burn
 
 unstableMakeIsData ''VoteDirection
-unstableMakeIsData ''VoteMinterAction
-unstableMakeIsData ''Vote
-
-data VoteMinterAddress = VoteMinterAddress
-  { vmAddressCredential :: Credential
-  , vmAddressStakingCredential :: BuiltinData
-  }
+unstableMakeIsData ''VoteMinterActionRedeemer
+unstableMakeIsData ''VoteDatum
 
 data VoteMinterTxOut = VoteMinterTxOut
   { vmTxOutAddress :: VoteMinterAddress
   , vmTxOutValue :: Value
   , vmTxOutDatum :: OutputDatum
   , vmTxOutReferenceScript :: BuiltinData
+  }
+
+data VoteMinterAddress = VoteMinterAddress
+  { vmAddressCredential :: Credential
+  , vmAddressStakingCredential :: BuiltinData
   }
 
 data VoteMinterTxInInfo = VoteMinterTxInInfo
@@ -109,7 +131,8 @@ data VoteMinterTxInfo = VoteMinterTxInfo
   , vmTxInfoId :: BuiltinData
   }
 
-data VoteMinterDynamicConfig = VoteMinterDynamicConfig
+-- | Vote minter config datum, representation mirrors the main 'Triphut.Types.DynamicConfigDatum'
+data VoteMinterDynamicConfigDatum = VoteMinterDynamicConfigDatum
   { vmdcTallyIndexNft :: BuiltinData
   , vmdcTallyNft :: CurrencySymbol
   , vmdcTallyValidator :: BuiltinData
@@ -135,13 +158,40 @@ data VoteMinterDynamicConfig = VoteMinterDynamicConfig
   , vmdcFungibleVotePercent :: BuiltinData
   }
 
+-- | Vote minter config datum, representation mirrors the main 'Triphut.Types.DynamicConfigDatum'
+data VoteDynamicConfigDatum = VoteDynamicConfigDatum
+  { vdcTallyIndexNft :: BuiltinData
+  , vdcTallyNft :: BuiltinData
+  , vdcTallyValidator :: BuiltinData
+  , vdcTreasuryValidator :: BuiltinData
+  , vdcConfigurationValidator :: BuiltinData
+  , vdcVoteCurrencySymbol :: BuiltinData
+  , vdcVoteTokenName :: BuiltinData
+  , vdcVoteValidator :: BuiltinData
+  , vdcUpgradeMajorityPercent :: BuiltinData
+  , vdcUpgradRelativeMajorityPercent :: BuiltinData
+  , vdcGeneralMajorityPercent :: BuiltinData
+  , vdcGeneralRelativeMajorityPercent :: BuiltinData
+  , vdcTripMajorityPercent :: BuiltinData
+  , vdcTripRelativeMajorityPercent :: BuiltinData
+  , vdcTotalVotes :: BuiltinData
+  , vdcVoteNft :: BuiltinData
+  , vdcVoteFungibleCurrencySymbol :: BuiltinData
+  , vdcVoteFungibleTokenName :: BuiltinData
+  , vdcProposalTallyEndOffset :: BuiltinData
+  , vdcMaxGeneralDisbursement :: BuiltinData
+  , vdcMaxTripDisbursement :: BuiltinData
+  , vdcAgentDisbursementPercent :: BuiltinData
+  , vdcFungibleVotePercent :: BuiltinData
+  }
+
 unstableMakeIsData ''VoteMinterAddress
 unstableMakeIsData ''VoteMinterTxOut
 unstableMakeIsData ''VoteMinterTxInInfo
 unstableMakeIsData ''VoteMinterScriptPurpose
 unstableMakeIsData ''VoteMinterScriptContext
 unstableMakeIsData ''VoteMinterTxInfo
-unstableMakeIsData ''VoteMinterDynamicConfig
+unstableMakeIsData ''VoteMinterDynamicConfigDatum
 
 data VoteAddress = VoteAddress
   { vAddressCredential :: Credential
@@ -180,33 +230,8 @@ data VoteTxInfo = VoteTxInfo
   , vTxInfoId :: BuiltinData
   }
 
-data VoteDynamicConfig = VoteDynamicConfig
-  { vdcTallyIndexNft :: BuiltinData
-  , vdcTallyNft :: BuiltinData
-  , vdcTallyValidator :: BuiltinData
-  , vdcTreasuryValidator :: BuiltinData
-  , vdcConfigurationValidator :: BuiltinData
-  , vdcVoteCurrencySymbol :: BuiltinData
-  , vdcVoteTokenName :: BuiltinData
-  , vdcVoteValidator :: BuiltinData
-  , vdcUpgradeMajorityPercent :: BuiltinData
-  , vdcUpgradRelativeMajorityPercent :: BuiltinData
-  , vdcGeneralMajorityPercent :: BuiltinData
-  , vdcGeneralRelativeMajorityPercent :: BuiltinData
-  , vdcTripMajorityPercent :: BuiltinData
-  , vdcTripRelativeMajorityPercent :: BuiltinData
-  , vdcTotalVotes :: BuiltinData
-  , vdcVoteNft :: BuiltinData
-  , vdcVoteFungibleCurrencySymbol :: BuiltinData
-  , vdcVoteFungibleTokenName :: BuiltinData
-  , vdcProposalTallyEndOffset :: BuiltinData
-  , vdcMaxGeneralDisbursement :: BuiltinData
-  , vdcMaxTripDisbursement :: BuiltinData
-  , vdcAgentDisbursementPercent :: BuiltinData
-  , vdcFungibleVotePercent :: BuiltinData
-  }
-
-data VoteAction
+-- | Redeemer for 'Triphut.Vote.Script.validateVote' validator
+data VoteActionRedeemer
   = Count
   | Cancel
 
@@ -220,6 +245,6 @@ unstableMakeIsData ''VoteTxOut
 unstableMakeIsData ''VoteTxInInfo
 unstableMakeIsData ''VoteScriptContext
 unstableMakeIsData ''VoteTxInfo
-unstableMakeIsData ''VoteAction
-unstableMakeIsData ''VoteDynamicConfig
+unstableMakeIsData ''VoteActionRedeemer
+unstableMakeIsData ''VoteDynamicConfigDatum
 makeLift ''VoteValidatorConfig

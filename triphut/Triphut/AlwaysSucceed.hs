@@ -1,3 +1,7 @@
+{- |
+Module: Triphut.AlwaysSucceed
+Description: Contains all the always succeed script to be used for referencing.
+-}
 module Triphut.AlwaysSucceed (
   succeed,
   succeed1,

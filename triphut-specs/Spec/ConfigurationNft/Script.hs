@@ -10,17 +10,17 @@ module Spec.ConfigurationNft.Script (
 
 import Plutus.Model.V2 (
   TypedPolicy,
-  TypedValidator (TypedValidator),
+  TypedValidator,
   mkTypedPolicy,
   scriptCurrencySymbol,
   toBuiltinPolicy,
-  toV2,
  )
 import Plutus.V1.Ledger.Value (CurrencySymbol)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
-import Triphut.ConfigurationNft (ConfigurationValidatorConfig, NftConfig)
+import Spec.SpecUtils (mkTypedValidator')
+import Triphut.ConfigurationNft (NftConfig)
 import Triphut.ConfigurationNft.Script (configurationValidator, mkConfigurationNftPolicy)
 import Triphut.Types (DynamicConfigDatum)
 
@@ -38,7 +38,4 @@ configNftCurrencySymbol = scriptCurrencySymbol . configNftTypedMintingPolicy
 type ConfigValidatorScript = TypedValidator DynamicConfigDatum ()
 
 configNftTypedValidator :: ConfigValidatorScript
-configNftTypedValidator = mkTypedValidator' sampleConfigValidatorConfig
-
-mkTypedValidator' :: ConfigurationValidatorConfig -> ConfigValidatorScript
-mkTypedValidator' cfg = TypedValidator . toV2 $ configurationValidator cfg
+configNftTypedValidator = mkTypedValidator' sampleConfigValidatorConfig configurationValidator

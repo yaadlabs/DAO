@@ -1,14 +1,16 @@
 {- |
 Module: Triphut.ConfigurationNft.Script
-Description: Triphut configuration related scripts.
-Includes:
+Description: Triphut configuration related scripts. It includes:
   - Minting policy for Triphut configuration.
   - Validator for upgrading the configuration.
 -}
 module Triphut.ConfigurationNft.Script (
+  -- * Minting policy
   mkConfigurationNftPolicy,
   configurationNftMintingPolicy,
   configurationNftCurrencySymbol,
+
+  -- * Validator
   configurationScript,
   configurationValidator,
   configurationValidatorHash,
@@ -120,7 +122,7 @@ import Triphut.Types (
     dcUpgradeRelativeMajorityPercent
   ),
   ProposalType (Upgrade),
-  TallyState (TallyState, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
+  TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
 
 {- | Policy for minting configuration NFT.
@@ -152,7 +154,7 @@ mkConfigurationNftPolicy
       _newOutput :: DynamicConfigDatum
       !_newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
         [TxOut {txOutDatum}] -> convertDatum txInfoData txOutDatum
-        _ -> traceError "Impossible. No valid minted output."
+        _ -> traceError "Should be exactly one valid minted output."
 
       -- Ensure that the reference UTXO is spent
       hasUTxO :: Bool
@@ -206,6 +208,26 @@ wrappedPolicy config a b = check (mkConfigurationNftPolicy config a (unsafeFromB
 -- and makes sure a token is minted to validate the upgrade
 -------------------------------------------------------------------------------
 
+{- | Validator for proposal upgrades.
+
+   This validator performs the following checks:
+
+    - There is exactly one 'Triphut.Tally.TallyStateDatum' in the reference inputs,
+      marked by the tally NFT
+      (Corresponding tally CurrencySymbol is contained in the 'dcTallyNft' field of the 'DynamicConfigDatum')
+    - There is a configuration token in the inputs
+    - The proposal is an upgrade proposal (Triphut.Types.ProposalType.Upgrade)
+    - That one 'Upgrade' token was minted in the transaction with the CurrencySymbol specified in
+      the 'ProposalType.Upgrade'
+    - That the upgrade proposal has enough votes
+        We do this by checking that the number of votes recorded in the 'TallyStateDatum' via the
+        'tsFor' and 'tsAgainst' fields are greater than or equal to the required majorities specified in
+        the 'dcUpgradeRelativeMajorityPercent' and 'dcUpgradeMajorityPercent' fields of the 'DynamicConfigDatum'.
+    - That the time period for voting on the proposal has passed.
+        We do this by checking the 'tsProposalEndTime' (specified in the 'TallyStateDatum') added to the
+        'dcProposalTallyEndOffset' (specified ) against the validity range of the transaction, ensuring they
+        sum to a time before the transaction's validity range.
+-}
 validateConfiguration ::
   ConfigurationValidatorConfig ->
   DynamicConfigDatum ->
@@ -224,33 +246,43 @@ validateConfiguration
       thisScriptValue :: Value
       !thisScriptValue = ownValue cTxInfoInputs thisOutRef
 
+      -- Ensure there is a config token in the inputs
       hasConfigurationNft :: Bool
       !hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName thisScriptValue
 
+      -- Helper for filtering for tally UTXO in the reference inputs
       hasTallyNft :: Value -> Bool
       hasTallyNft = hasSymbolInValue dcTallyNft
 
-      TallyState {tsProposal = proposal, ..} =
+      -- Ensure there is exactly one output that contains the 'TallyStateDatum' datum
+      -- The `convertDatum` helper will throw an error if the output datum is not found
+      TallyStateDatum {tsProposal = proposal, ..} =
         case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
-          [] -> traceError "Missing tally NFT"
+          [] -> traceError "Should be exactly one tally NFT in the reference inputs. None found."
           [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] ->
             convertDatum cTxInfoData cTxOutDatum
-          _ -> traceError "Too many NFT values"
+          _ -> traceError "Should be exactly one tally NFT in the reference inputs. More than one found."
 
+      -- Ensure that the 'ProposalType' set in the 'tsProposal' field
+      -- of the 'TallyStateDatum' is 'Upgrade', and retrieve the upgrade symbol
       upgradeMinter :: CurrencySymbol
       upgradeMinter = case proposal of
         Upgrade u -> u
         _ -> traceError "Not an upgrade proposal"
 
+      -- The total votes, for and against, in the 'TallyStateDatum'
       totalVotes :: Integer
       !totalVotes = tsFor + tsAgainst
 
+      -- Calculate the majorities
       relativeMajority :: Integer
       !relativeMajority = (totalVotes * 1000) `divide` dcTotalVotes
 
       majorityPercent :: Integer
       !majorityPercent = (tsFor * 1000) `divide` totalVotes
 
+      -- Ensure the upgrade proposal has sufficient votes by checking
+      -- the majorities against the required amounts specified in the 'DynamicConfigDatum'
       hasEnoughVotes :: Bool
       !hasEnoughVotes =
         traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradeRelativeMajorityPercent)
@@ -260,12 +292,13 @@ validateConfiguration
       hasUpgradeMinterToken :: Bool
       !hasUpgradeMinterToken = hasTokenInValue upgradeMinter "validateConfiguration, upgradeMinter" cTxInfoMint
 
+      -- Ensure the proposal has finished
       isAfterTallyEndTime :: Bool
       isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` cTxInfoValidRange
      in
-      traceIfFalse "Missing configuration nft" hasConfigurationNft
+      traceIfFalse "Should be exactly one configuration NFT in the inputs" hasConfigurationNft
         && traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
-        && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
+        && traceIfFalse "Should be exactly one upgrade token minted" hasUpgradeMinterToken
         && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 
 configurationValidator :: ConfigurationValidatorConfig -> Validator
