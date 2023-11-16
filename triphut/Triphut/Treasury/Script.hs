@@ -142,7 +142,9 @@ import Triphut.Types (
           field of the 'Triphut.Types.DynamicConfigDatum'.
 
         - The correct amount is paid to the traveler's address, specified by the
-          corresponding 'Trip' field in the 'ProposalType'.
+          corresponding 'Trip' field in the 'ProposalType'. The traveler's amount should
+          be greater than or equal to the total cose of the travel minus the payment to
+          the travel agent.
 
         - The correct amount is paid to the travel agent's address, specified by the
           corresponding 'Trip' field in the 'ProposalType'.
@@ -229,7 +231,8 @@ validateTreasury
       !majorityPercent = (tsFor * 1000) `divide` totalVotes
 
       isAfterTallyEndTime :: Bool
-      !isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
+      !isAfterTallyEndTime =
+        (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
      in
       onlyOneOfThisScript tTxInfoInputs thisValidator thisTxRef
         && case tsProposal of
@@ -270,9 +273,9 @@ validateTreasury
                 lovelacesOf (valuePaidTo' tTxInfoOutputs travelerAddress) >= travelerLovelaces
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
-                -- && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
+                && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
                 && traceIfFalse "Not paying enough to the travel agent address" paidToTravelAgentAddress
-          -- && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
+                && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
           General generalPaymentAddress generalPaymentValue ->
             let
               hasEnoughVotes :: Bool

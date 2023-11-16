@@ -65,7 +65,7 @@ validTripTreasuryTest = do
 
   user <- newUser $ amountOfAda 9_000_000
   spend1 <- spend user $ amountOfAda 6_000_000
-  spend2 <- spend user $ amountOfAda 2_000_002
+  spend2 <- spend user $ amountOfAda 6_000_000
   spend3 <- spend user $ amountOfAda 8_000_002
 
   let baseTx =
@@ -81,7 +81,7 @@ validTripTreasuryTest = do
         payToScript
           treasuryTypedValidator
           (InlineDatum ())
-          (adaValue 2 <> dummyTreasuryValue)
+          (amountOfAda 4_000_000 <> dummyTreasuryValue)
 
       -- Need to pay something to the traveller's payment address provided
       payToTravelerAddress =
@@ -156,7 +156,7 @@ validGeneralTreasuryTest = do
 
   user <- newUser $ amountOfAda 9_000_000
   spend1 <- spend user $ amountOfAda 6_000_000
-  spend2 <- spend user $ amountOfAda 2_000_002
+  spend2 <- spend user $ amountOfAda 6_000_000
   spend3 <- spend user $ amountOfAda 8_000_002
 
   let baseTx =
@@ -172,7 +172,7 @@ validGeneralTreasuryTest = do
         payToScript
           treasuryTypedValidator
           (InlineDatum ())
-          (adaValue 2 <> dummyTreasuryValue)
+          (amountOfAda 4_000_000 <> dummyTreasuryValue)
 
       -- Need to pay something to the payment address provided
       payToGeneralAddress =

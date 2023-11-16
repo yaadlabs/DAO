@@ -1,6 +1,7 @@
 {- |
 Module      : Spec.Tally
-Description : Tests for `tallyNftPolicy` minting policy
+Description : Tests for `tallyNftPolicy` minting policy.
+  Also tests the `validateIndex` validator in the same transaction.
 -}
 module Spec.Tally (spec) where
 

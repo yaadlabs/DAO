@@ -35,7 +35,7 @@ import Spec.ConfigurationNft.Utils (findConfig)
 import Spec.Index.Script (indexNftTypedValidator)
 import Spec.Index.Transactions (runInitIndex)
 import Spec.Index.Utils (findIndex)
-import Spec.SpecUtils (minAda)
+import Spec.SpecUtils (amountOfAda)
 import Spec.Tally.SampleData (sampleUpgradeWithEndTimeInFutureTallyStateDatum)
 import Spec.Tally.Script (
   tallyConfigNftCurrencySymbol,
@@ -126,9 +126,9 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
   (configOutRef, _, _) <- findConfig
   (indexOutRef, _, indexDatum) <- findIndex
 
-  user <- newUser minAda
-  spend1 <- spend user (adaValue 2)
-  spend2 <- spend user (adaValue 2)
+  user <- newUser $ amountOfAda 4_000_000
+  spend1 <- spend user (adaValue 2_000_002)
+  spend2 <- spend user (adaValue 4_000_000)
 
   let config =
         TallyNftConfig
@@ -185,7 +185,7 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
       payToScript
         indexNftTypedValidator
         (InlineDatum $ updateIndexDatum indexDatum)
-        (adaValue 2 <> dummyIndexConfigNftValue)
+        (amountOfAda 4_000_000 <> dummyIndexConfigNftValue)
 
     -- Combine the txs
     allTxs =
