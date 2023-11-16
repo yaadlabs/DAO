@@ -12,6 +12,7 @@ import Plutus.Model (
  )
 import Spec.SpecUtils (amountOfAda, checkFails)
 import Spec.Treasury.Context (
+  invalidNotEnoughVotesTripTreasuryTest,
   validGeneralTreasuryTest,
   validTripTreasuryTest,
   validUpgradeTreasuryTest,
@@ -30,6 +31,7 @@ nftSpec config =
     [ positiveTripTest
     , positiveUpgradeTest
     , positiveGeneralTest
+    , negativeTest1
     ]
   where
     good = testNoErrors initialFunds config
@@ -46,6 +48,15 @@ nftSpec config =
       good
         "Valid treasury test - general proposal, should pass"
         validGeneralTreasuryTest
+
+    negativeTest1 =
+      good
+        ( mconcat
+            [ "Invalid trip treasury test - should fail with: "
+            , ""
+            ]
+        )
+        invalidNotEnoughVotesTripTreasuryTest
 
     initialFunds =
       mconcat

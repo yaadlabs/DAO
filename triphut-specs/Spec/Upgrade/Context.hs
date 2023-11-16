@@ -117,12 +117,12 @@ mkUpgradeTest ::
   Run ()
 mkUpgradeTest tallyReference configInput upgradeMinted enoughVotes = do
   -- Choose which config to load based on whether we want to trigger
-  -- the negative test for not enough votes or
+  -- the negative test for not enough votes or not
   when (enoughVotes == HasEnoughVotes) runInitConfig
   when (enoughVotes == NotEnoughVotes) runHighRelativeMajorityTotalVotesInitConfig
 
   -- Choose which tally to load based on whether we want to trigger
-  -- the negative test for not enough votes or
+  -- the negative test for not enough votes or not
   when (enoughVotes == HasEnoughVotes) runInitUpgradeTallyWithEndTimeInPast
   when (enoughVotes == NotEnoughVotes) runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes
 

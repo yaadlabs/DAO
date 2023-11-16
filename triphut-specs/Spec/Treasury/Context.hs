@@ -6,9 +6,10 @@ module Spec.Treasury.Context (
   validTripTreasuryTest,
   validUpgradeTreasuryTest,
   validGeneralTreasuryTest,
+  invalidNotEnoughVotesTripTreasuryTest,
 ) where
 
-import Control.Monad (void)
+import Control.Monad (void, when)
 import Plutus.Model (
   Run,
   adaValue,
@@ -39,12 +40,16 @@ import Spec.AlwaysSucceed.Script (
   alwaysSucceedCurrencySymbol,
   alwaysSucceedTypedMintingPolicy,
  )
-import Spec.ConfigurationNft.Transactions (runInitConfig)
+import Spec.ConfigurationNft.Transactions (
+  runHighRelativeMajorityTotalVotesInitConfig,
+  runInitConfig,
+ )
 import Spec.ConfigurationNft.Utils (findConfig)
 import Spec.SpecUtils (amountOfAda)
 import Spec.Tally.Transactions (
   runInitGeneralTallyWithEndTimeInFuture,
   runInitTripTallyWithEndTimeInFuture,
+  runInitTripTallyWithEndTimeInFutureNotEnoughVotes,
   runInitUpgradeTallyWithEndTimeInPast,
   runInitUpgradeWithVotesWithEndTimeInFutureTallyStateDatum,
  )
@@ -54,13 +59,32 @@ import Spec.Treasury.Transactions (runInitTreasury)
 import Spec.Treasury.Utils (findTreasury)
 import Spec.Values (dummyTreasuryValue)
 import Triphut.Vote (VoteActionRedeemer (Count))
-import Prelude (mconcat, pure, show, (*), (+), (<>))
+import Prelude (Eq, mconcat, pure, show, (*), (+), (<>), (==))
 
 -- Positive test for when the proposal is an Trip proposal
 validTripTreasuryTest :: Run ()
-validTripTreasuryTest = do
-  runInitConfig
-  runInitTripTallyWithEndTimeInFuture
+validTripTreasuryTest = mkTripTreasuryTest HasEnoughVotes
+
+invalidNotEnoughVotesTripTreasuryTest :: Run ()
+invalidNotEnoughVotesTripTreasuryTest = mkTripTreasuryTest NotEnoughVotes
+
+data EnoughVotes
+  = HasEnoughVotes -- Valid
+  | NotEnoughVotes -- Invalid
+  deriving stock (Eq)
+
+mkTripTreasuryTest :: EnoughVotes -> Run ()
+mkTripTreasuryTest enoughVotes = do
+  -- Choose which config to load based on whether we want to trigger
+  -- the negative test for not enough votes or not
+  when (enoughVotes == HasEnoughVotes) runInitConfig
+  when (enoughVotes == NotEnoughVotes) runHighRelativeMajorityTotalVotesInitConfig
+
+  -- Choose which tally to load based on whether we want to trigger
+  -- the negative test for not enough votes or not
+  when (enoughVotes == HasEnoughVotes) runInitTripTallyWithEndTimeInFuture
+  when (enoughVotes == NotEnoughVotes) runInitTripTallyWithEndTimeInFutureNotEnoughVotes
+
   runInitTreasury
 
   (configOutRef, _, _) <- findConfig
