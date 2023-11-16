@@ -1,3 +1,7 @@
+{- |
+Module      : Spec.Vote.Context
+Description : Tests the vote validator and tally validator in on transaction
+-}
 module Spec.Vote.ContextValidator (validVoteValidatorTest) where
 
 import Control.Monad (void)
@@ -47,8 +51,8 @@ mkVoteValidatorTest = do
   (voteOutRef, _, voteDatum) <- findVote
 
   user <- newUser $ amountOfAda 4_000_000
-  spend1 <- spend user (adaValue 2)
-  spend2 <- spend user (adaValue 2)
+  spend1 <- spend user $ amountOfAda 2_000_000
+  spend2 <- spend user $ amountOfAda 2_000_002
 
   theTimeNow <- currentTime
 
@@ -66,7 +70,7 @@ mkVoteValidatorTest = do
         payToScript
           tallyNftTypedValidator
           (InlineDatum tallyDatum)
-          (adaValue 2 <> dummyTallyValue)
+          (amountOfAda 4_000_000 <> dummyTallyValue)
 
       payToVoteValidator =
         payToScript

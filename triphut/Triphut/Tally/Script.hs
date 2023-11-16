@@ -495,8 +495,7 @@ validateTally
         && traceIfFalse "Not all vote tokens and Ada returned" voteNftAndAdaToVoters
         && traceIfFalse "Not all vote tokens are burned" voteTokenAreAllBurned
         && traceIfFalse "Tally datum is not updated" tallyDatumIsUpdated
-
--- && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
+        && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
 
 tallyValidator :: TallyValidatorConfig -> Validator
 tallyValidator config = mkValidatorWithSettings compiledCode False
