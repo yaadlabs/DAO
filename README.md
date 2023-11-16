@@ -9,6 +9,10 @@ To run the test suite use the following command:
 cabal test
 ```
 
+# Project overview
+
+You can find an overview of the project and the scripts contained within it in the `docs/overview.md` file.
+
 # Prerequistes
 
 To run the tests and use the compile script, one must first install `cardano-cli-balance-fixer` from here: https://github.com/Canonical-LLC/cardano-cli-balance-fixer
