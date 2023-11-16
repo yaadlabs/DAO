@@ -26,7 +26,7 @@ The scripts are made up of a number of minting policies and validators contained
 
 In the `Triphut.ConfigurationNft.Script` module we have two scripts, a minting policy and a validator which we will outline below.
 
-The `Triphut.ConfigurationNft.Script.mkConfigurationNftPolicy` is a one-shot minting policy script used for minting the NFT which marks the UTXO containing the `Triphut.Types.DynamicConfigDatum`. This configuration datum includes a number of fields for choosing how the application will function, such as  is used in the application to determine 
+The `Triphut.ConfigurationNft.Script.mkConfigurationNftPolicy` is a one-shot minting policy script used for minting the NFT which marks the UTXO containing the `Triphut.Types.DynamicConfigDatum`. This configuration datum includes a number of fields for choosing how the application will function, we will reference it again in the section on the application's types below.
 
 The `mkConfigurationNftPolicy` script performs the following validation checks:
 
