@@ -13,8 +13,7 @@ import Triphut.Index (
   IndexValidatorConfig (
     IndexValidatorConfig,
     ivcConfigNftCurrencySymbol,
-    ivcConfigNftTokenName,
-    ivcNonce
+    ivcConfigNftTokenName
   ),
  )
 
@@ -28,5 +27,4 @@ sampleIndexValidatorConfig =
   IndexValidatorConfig
     { ivcConfigNftCurrencySymbol = adaSymbol
     , ivcConfigNftTokenName = adaToken
-    , ivcNonce = 1
     }
