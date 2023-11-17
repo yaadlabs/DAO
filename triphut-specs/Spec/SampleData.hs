@@ -1,5 +1,6 @@
 module Spec.SampleData (
   sampleDynamicConfig,
+  sampleVoteMinterDynamicConfig,
   sampleVoteDynamicConfig,
   sampleTallyDynamicConfig,
   sampleHighRelativeMajorityHighTotalVotesDynamicConfig,
@@ -15,7 +16,10 @@ import Spec.Vote.SampleData (sampleVoteMinterConfig)
 import Spec.Vote.Script (voteCurrencySymbol, voteValidatorHash')
 import Triphut.Tally (TallyDynamicConfigDatum (..))
 import Triphut.Types (DynamicConfigDatum (..))
-import Triphut.Vote (VoteMinterDynamicConfigDatum (..))
+import Triphut.Vote (
+  VoteDynamicConfigDatum (..),
+  VoteMinterDynamicConfigDatum (..),
+ )
 
 -- DynamicConfigDatum samples
 sampleDynamicConfig :: DynamicConfigDatum
@@ -77,8 +81,8 @@ sampleHighRelativeMajorityHighTotalVotesDynamicConfig =
     }
 
 -- VoteMinterDynamicConfigDatum samples
-sampleVoteDynamicConfig :: VoteMinterDynamicConfigDatum
-sampleVoteDynamicConfig =
+sampleVoteMinterDynamicConfig :: VoteMinterDynamicConfigDatum
+sampleVoteMinterDynamicConfig =
   VoteMinterDynamicConfigDatum
     { vmdcTallyIndexNft = toBuiltinData (adaSymbol :: CurrencySymbol)
     , vmdcTallyNft = dummyTallySymbol
@@ -103,6 +107,35 @@ sampleVoteDynamicConfig =
     , vmdcMaxTripDisbursement = toBuiltinData (1 :: Integer)
     , vmdcAgentDisbursementPercent = toBuiltinData (1 :: Integer)
     , vmdcFungibleVotePercent = toBuiltinData (1 :: Integer)
+    }
+
+-- VoteDynamicConfigDatum samples
+sampleVoteDynamicConfig :: VoteDynamicConfigDatum
+sampleVoteDynamicConfig =
+  VoteDynamicConfigDatum
+    { vdcTallyIndexNft = toBuiltinData (adaSymbol :: CurrencySymbol)
+    , vdcTallyNft = toBuiltinData (adaSymbol :: CurrencySymbol)
+    , vdcTallyValidator = toBuiltinData tallyValidatorHash'
+    , vdcTreasuryValidator = toBuiltinData (ValidatorHash "")
+    , vdcConfigurationValidator = toBuiltinData (ValidatorHash "")
+    , vdcVoteCurrencySymbol = toBuiltinData (dummyVoteFungibleSymbol :: CurrencySymbol)
+    , vdcVoteTokenName = toBuiltinData (adaToken :: TokenName)
+    , vdcVoteValidator = toBuiltinData (ValidatorHash "")
+    , vdcUpgradeMajorityPercent = toBuiltinData (1 :: Integer)
+    , vdcUpgradRelativeMajorityPercent = toBuiltinData (1 :: Integer)
+    , vdcGeneralMajorityPercent = toBuiltinData (1 :: Integer)
+    , vdcGeneralRelativeMajorityPercent = toBuiltinData (1 :: Integer)
+    , vdcTripMajorityPercent = toBuiltinData (1 :: Integer)
+    , vdcTripRelativeMajorityPercent = toBuiltinData (1 :: Integer)
+    , vdcTotalVotes = toBuiltinData (1 :: Integer)
+    , vdcVoteNft = toBuiltinData adaSymbol
+    , vdcVoteFungibleCurrencySymbol = toBuiltinData (adaSymbol :: CurrencySymbol)
+    , vdcVoteFungibleTokenName = toBuiltinData (adaToken :: TokenName)
+    , vdcProposalTallyEndOffset = toBuiltinData (1 :: Integer)
+    , vdcMaxGeneralDisbursement = toBuiltinData (1 :: Integer)
+    , vdcMaxTripDisbursement = toBuiltinData (1 :: Integer)
+    , vdcAgentDisbursementPercent = toBuiltinData (1 :: Integer)
+    , vdcFungibleVotePercent = toBuiltinData (1 :: Integer)
     }
 
 sampleTallyDynamicConfig :: TallyDynamicConfigDatum

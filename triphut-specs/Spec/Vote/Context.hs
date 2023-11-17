@@ -42,7 +42,7 @@ import Spec.Vote.Script (
   voteTypedMintingPolicy,
   voteTypedValidator,
  )
-import Spec.Vote.Transactions (runInitVoteConfig)
+import Spec.Vote.Transactions (runInitVoteMinterConfig)
 import Spec.Vote.Utils (findVoteConfig)
 import Triphut.Vote (VoteMinterActionRedeemer (Mint), VoteMinterConfig (VoteMinterConfig))
 import Prelude (mconcat, mempty, (*), (+), (<>))
@@ -89,7 +89,7 @@ mkVoteConfigNftTest ::
   ValidityRange ->
   Run ()
 mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
-  void runInitVoteConfig
+  void runInitVoteMinterConfig
   void runInitTallyWithEndTimeInFuture
 
   (voteConfigOutRef, _, _voteDatum) <- findVoteConfig

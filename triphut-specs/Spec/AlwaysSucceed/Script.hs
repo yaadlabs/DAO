@@ -1,8 +1,9 @@
 module Spec.AlwaysSucceed.Script (
-  AlwaysSucceedScriptVoteDynamicConfig,
+  AlwaysSucceedScriptVoteMinterDynamicConfig,
   AlwaysSucceedScriptTallyDynamicConfig,
   alwaysSucceedTypedValidator1,
   alwaysSucceedTypedValidator2,
+  alwaysSucceedTypedValidator3,
   alwaysSucceedTypedMintingPolicy,
   alwaysSucceedCurrencySymbol,
 ) where
@@ -22,12 +23,12 @@ import PlutusTx (compile)
 import PlutusTx.Prelude (Bool (True), BuiltinData)
 import Triphut.AlwaysSucceed (succeedValidator1)
 import Triphut.Tally (TallyDynamicConfigDatum)
-import Triphut.Vote (VoteMinterDynamicConfigDatum)
+import Triphut.Vote (VoteDynamicConfigDatum, VoteMinterDynamicConfigDatum)
 
 -- Vote dynamic config reference script
-type AlwaysSucceedScriptVoteDynamicConfig = TypedValidator VoteMinterDynamicConfigDatum ()
+type AlwaysSucceedScriptVoteMinterDynamicConfig = TypedValidator VoteMinterDynamicConfigDatum ()
 
-alwaysSucceedTypedValidator1 :: AlwaysSucceedScriptVoteDynamicConfig
+alwaysSucceedTypedValidator1 :: AlwaysSucceedScriptVoteMinterDynamicConfig
 alwaysSucceedTypedValidator1 =
   mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator1||])
 
@@ -36,6 +37,13 @@ type AlwaysSucceedScriptTallyDynamicConfig = TypedValidator TallyDynamicConfigDa
 
 alwaysSucceedTypedValidator2 :: AlwaysSucceedScriptTallyDynamicConfig
 alwaysSucceedTypedValidator2 =
+  mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator1||])
+
+-- Vote dynamic config reference script
+type AlwaysSucceedScriptVoteDynamicConfig = TypedValidator VoteDynamicConfigDatum ()
+
+alwaysSucceedTypedValidator3 :: AlwaysSucceedScriptVoteDynamicConfig
+alwaysSucceedTypedValidator3 =
   mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator1||])
 
 -- For upgrade minter testing

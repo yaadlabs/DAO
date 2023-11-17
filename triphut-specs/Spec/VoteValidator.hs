@@ -20,11 +20,14 @@ import Spec.Values (
   dummyVoteValue,
  )
 import Spec.Vote.ContextValidator (
+  invalidNotSignedByOwnerVoteValidatorCancelRedeemerTest,
+  invalidVoteStillInTallyPeriodTest,
   invalidVoteValidatorNoConfigInRefInputsTest,
   invalidVoteValidatorNoTallyConfigInRefInputsTest,
   invalidVoteValidatorNoTallyInInputsTest,
   invalidVoteValidatorNoVoteInInputsTest,
-  validVoteValidatorTest,
+  validVoteValidatorCancelRedeemerTest,
+  validVoteValidatorCountRedeemerTest,
  )
 import Test.Tasty (TestTree, testGroup)
 import Prelude (mconcat, (<>))
@@ -36,17 +39,19 @@ nftSpec :: MockConfig -> TestTree
 nftSpec config =
   testGroup
     "Vote validator tests"
-    [ positiveTest
-    , negativeTest1
-    , negativeTest2
-    , negativeTest3
-    , negativeTest4
+    [ positiveCountRedeemerTest
+    , negativeCountRedeemerTest1
+    , negativeCountRedeemerTest2
+    , negativeCountRedeemerTest3
+    , negativeCountRedeemerTest4
+    , negativeCountRedeemerTest5
+    , positiveCancelRedeemerTest
+    , negativeCancelRedeemerTest1
     ]
   where
-    good = testNoErrors initialFunds config
-    bad = checkFails config initialFunds
-    positiveTest = good "Valid vote validator test" validVoteValidatorTest
-    negativeTest1 =
+    -- Count redeemer tests
+    positiveCountRedeemerTest = good "Valid vote validator, Cancel redeemer, test" validVoteValidatorCountRedeemerTest
+    negativeCountRedeemerTest1 =
       bad
         ( mconcat
             [ "No config in the reference inputs, should fail with: "
@@ -54,7 +59,7 @@ nftSpec config =
             ]
         )
         invalidVoteValidatorNoConfigInRefInputsTest
-    negativeTest2 =
+    negativeCountRedeemerTest2 =
       bad
         ( mconcat
             [ "No tally validator in inputs, should fail with a balancing error. "
@@ -63,14 +68,33 @@ nftSpec config =
             ]
         )
         invalidVoteValidatorNoTallyInInputsTest
-    negativeTest3 =
+    negativeCountRedeemerTest3 =
       bad
         "No tally validator in inputs, should fail with balancing error: "
         invalidVoteValidatorNoTallyConfigInRefInputsTest
-    negativeTest4 =
+    negativeCountRedeemerTest4 =
       bad
         "No vote validator in inputs, should fail with a balancing error. "
         invalidVoteValidatorNoVoteInInputsTest
+    negativeCountRedeemerTest5 =
+      bad
+        ( mconcat
+            [ "Tally period not over, should fail with: "
+            , "[Tally is active]"
+            ]
+        )
+        invalidVoteStillInTallyPeriodTest
+
+    -- Cancel redeemer tests
+    positiveCancelRedeemerTest = good "Valid vote validator, Cancel redeemer, test" validVoteValidatorCancelRedeemerTest
+    negativeCancelRedeemerTest1 =
+      bad
+        ( mconcat
+            [ "Tally period not over, should fail with: "
+            , "[Transaction should be signed by the vote owner]"
+            ]
+        )
+        invalidNotSignedByOwnerVoteValidatorCancelRedeemerTest
 
     initialFunds =
       mconcat
@@ -80,3 +104,5 @@ nftSpec config =
         , dummyVoteValue
         , dummyTallyValue
         ]
+    good = testNoErrors initialFunds config
+    bad = checkFails config initialFunds

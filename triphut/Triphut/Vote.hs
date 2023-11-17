@@ -158,7 +158,7 @@ data VoteMinterDynamicConfigDatum = VoteMinterDynamicConfigDatum
   , vmdcFungibleVotePercent :: BuiltinData
   }
 
--- | Vote minter config datum, representation mirrors the main 'Triphut.Types.DynamicConfigDatum'
+-- | Vote config datum, representation mirrors the main 'Triphut.Types.DynamicConfigDatum'
 data VoteDynamicConfigDatum = VoteDynamicConfigDatum
   { vdcTallyIndexNft :: BuiltinData
   , vdcTallyNft :: BuiltinData
