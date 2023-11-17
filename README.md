@@ -11,7 +11,7 @@ cabal test
 
 # Project overview
 
-You can find an overview of the project and the scripts contained within it in the `docs/overview.md` file.
+[Here you can find an overview of the project and the scripts contained within it](docs/overview.md).
 
 # Prerequistes
 
