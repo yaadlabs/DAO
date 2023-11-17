@@ -2,7 +2,13 @@
 Module      : Spec.Vote.ContextValidator
 Description : Tests the vote validator and tally validator in on transaction
 -}
-module Spec.Vote.ContextValidator (validVoteValidatorTest) where
+module Spec.Vote.ContextValidator (
+  validVoteValidatorTest,
+  invalidVoteValidatorNoConfigInRefInputsTest,
+  invalidVoteValidatorNoTallyInInputsTest,
+  invalidVoteValidatorNoTallyConfigInRefInputsTest,
+  invalidVoteValidatorNoVoteInInputsTest,
+) where
 
 import Control.Monad (void)
 import Plutus.Model (
@@ -33,13 +39,75 @@ import Spec.Vote.Script (voteTypedValidator)
 import Spec.Vote.Transactions (runInitVote, runInitVoteConfig)
 import Spec.Vote.Utils (findVote, findVoteConfig)
 import Triphut.Vote (VoteActionRedeemer (Count))
-import Prelude (mconcat, pure, show, (*), (+), (<>))
+import Prelude (Eq, mconcat, mempty, pure, show, (*), (+), (<>))
 
 validVoteValidatorTest :: Run ()
-validVoteValidatorTest = mkVoteValidatorTest
+validVoteValidatorTest =
+  mkVoteValidatorTest
+    HasConfigInReferenceInputs
+    HasVoteValidatorInInputs
+    HasTallyValidatorInInputs
+    HasTallyConfigInReferenceInputs
 
-mkVoteValidatorTest :: Run ()
-mkVoteValidatorTest = do
+invalidVoteValidatorNoConfigInRefInputsTest :: Run ()
+invalidVoteValidatorNoConfigInRefInputsTest =
+  mkVoteValidatorTest
+    NoConfigInReferenceInputs
+    HasVoteValidatorInInputs
+    HasTallyValidatorInInputs
+    HasTallyConfigInReferenceInputs
+
+invalidVoteValidatorNoTallyInInputsTest :: Run ()
+invalidVoteValidatorNoTallyInInputsTest =
+  mkVoteValidatorTest
+    HasConfigInReferenceInputs
+    HasVoteValidatorInInputs
+    NoTallyValidatorInInputs
+    HasTallyConfigInReferenceInputs
+
+invalidVoteValidatorNoVoteInInputsTest :: Run ()
+invalidVoteValidatorNoVoteInInputsTest =
+  mkVoteValidatorTest
+    HasConfigInReferenceInputs
+    NoVoteValidatorInInputs
+    HasTallyValidatorInInputs
+    HasTallyConfigInReferenceInputs
+
+invalidVoteValidatorNoTallyConfigInRefInputsTest :: Run ()
+invalidVoteValidatorNoTallyConfigInRefInputsTest =
+  mkVoteValidatorTest
+    HasConfigInReferenceInputs
+    HasVoteValidatorInInputs
+    NoTallyValidatorInInputs
+    HasTallyConfigInReferenceInputs
+
+data VoteConfigReference
+  = HasConfigInReferenceInputs
+  | NoConfigInReferenceInputs
+  deriving stock (Eq)
+
+data TallyValidatorInput
+  = HasTallyValidatorInInputs
+  | NoTallyValidatorInInputs
+  deriving stock (Eq)
+
+data VoteValidatorInput
+  = HasVoteValidatorInInputs
+  | NoVoteValidatorInInputs
+  deriving stock (Eq)
+
+data TallyConfigReference
+  = HasTallyConfigInReferenceInputs
+  | NoTallyConfigInReferenceInputs
+  deriving stock (Eq)
+
+mkVoteValidatorTest ::
+  VoteConfigReference ->
+  VoteValidatorInput ->
+  TallyValidatorInput ->
+  TallyConfigReference ->
+  Run ()
+mkVoteValidatorTest configRef voteValidator tallyValidator tallyConfigRef = do
   runInitVoteConfig
   runInitTallyConfig
   runInitTallyWithEndTimeInPast
@@ -58,13 +126,25 @@ mkVoteValidatorTest = do
 
   let baseTx =
         mconcat
-          [ spendScript tallyNftTypedValidator tallyOutRef () tallyDatum
-          , spendScript voteTypedValidator voteOutRef Count voteDatum
-          , refInputInline voteConfigOutRef
-          , refInputInline tallyConfigOutRef
-          , userSpend spend1
+          [ userSpend spend1
           , userSpend spend2
           ]
+
+      withVoteConfigRef = case configRef of
+        HasConfigInReferenceInputs -> refInputInline voteConfigOutRef
+        NoConfigInReferenceInputs -> mempty
+
+      withTallyRef = case tallyConfigRef of
+        HasTallyConfigInReferenceInputs -> refInputInline tallyConfigOutRef
+        NoTallyConfigInReferenceInputs -> mempty
+
+      withVoteValidator = case voteValidator of
+        HasVoteValidatorInInputs -> spendScript voteTypedValidator voteOutRef Count voteDatum
+        NoVoteValidatorInInputs -> mempty
+
+      withTallyValidator = case tallyValidator of
+        HasTallyValidatorInInputs -> spendScript tallyNftTypedValidator tallyOutRef () tallyDatum
+        NoTallyValidatorInInputs -> mempty
 
       payToTallyValidator =
         payToScript
@@ -78,7 +158,16 @@ mkVoteValidatorTest = do
           (InlineDatum voteDatum)
           (adaValue 2 <> dummyVoteValue)
 
-      combinedTxs = baseTx <> payToTallyValidator <> payToVoteValidator
+      combinedTxs =
+        mconcat
+          [ baseTx
+          , withVoteConfigRef
+          , withVoteValidator
+          , withTallyValidator
+          , withTallyRef
+          , payToTallyValidator
+          , payToVoteValidator
+          ]
 
   -- We want to ensure the `tsProposalEndTime` is before the valid range
   -- Hence using the `from` function here and setting `tsProposalEndTime` to zero

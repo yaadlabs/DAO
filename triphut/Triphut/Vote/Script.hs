@@ -347,7 +347,7 @@ validateVote
       VoteDynamicConfigDatum {..} =
         case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
           [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
-          _ -> traceError "Should be exactly one output with the NFT"
+          _ -> traceError "Should be exactly one config NFT in the reference inputs. None found."
      in
       case action of
         Count ->
