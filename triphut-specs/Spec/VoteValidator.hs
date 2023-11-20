@@ -6,14 +6,11 @@ module Spec.VoteValidator (spec) where
 
 import Plutus.Model (
   MockConfig,
-  adaValue,
   defaultBabbage,
   testNoErrors,
  )
 import Spec.SpecUtils (amountOfAda, checkFails)
 import Spec.Values (
-  dummyConfigNftValue,
-  dummyIndexConfigNftValue,
   dummyTallyConfigValue,
   dummyTallyValue,
   dummyVoteConfigNftValue,
@@ -30,7 +27,7 @@ import Spec.Vote.ContextValidator (
   validVoteValidatorCountRedeemerTest,
  )
 import Test.Tasty (TestTree, testGroup)
-import Prelude (mconcat, (<>))
+import Prelude (mconcat)
 
 spec :: TestTree
 spec = nftSpec defaultBabbage

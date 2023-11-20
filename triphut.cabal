@@ -39,15 +39,6 @@ common common-options
 common common-depends
   build-depends:
     , base ^>=4.14
-    , cardano-api
-    , plutus-ledger-api
-
-common common-test-depends
-  build-depends:
-   , plutus-simple-model
-   , tasty
-   , tasty-hunit
-   , plutus-tx
 
 library
   import: common-lang, common-depends, common-options, common-extensions
@@ -74,6 +65,8 @@ library
     , plutus-tx-plugin
     , serialise
     , plutonomy
+    , cardano-api
+    , plutus-ledger-api
 
   hs-source-dirs:  triphut
   ghc-options:
@@ -81,8 +74,14 @@ library
     -fno-omit-interface-pragmas -Wno-unused-packages
 
 library triphut-specs
-  import: common-lang, common-depends, common-options, common-extensions, common-test-depends
+  import: common-lang, common-depends, common-options, common-extensions
   hs-source-dirs: triphut-specs
+  build-depends:
+   , tasty-hunit
+   , plutus-simple-model
+   , plutus-ledger-api
+   , tasty
+   , plutus-tx
   exposed-modules:
     Spec.Addresses
     Spec.AlwaysSucceed.Script
@@ -139,9 +138,10 @@ executable create-sc
     , optparse-generic
 
 test-suite triphut-test
-  import: common-lang, common-depends, common-options, common-extensions, common-test-depends
+  import: common-lang, common-depends, common-options, common-extensions
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   hs-source-dirs: triphut-test
   build-depends:
     , triphut-specs
+    , tasty

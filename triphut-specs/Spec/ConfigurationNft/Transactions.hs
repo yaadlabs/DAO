@@ -11,7 +11,6 @@ import Spec.SampleData (
  )
 import Spec.SpecUtils (runInitReferenceScript)
 import Spec.Values (dummyConfigNftValue)
-import Prelude ((<>))
 
 runInitConfig :: Run ()
 runInitConfig =

@@ -6,11 +6,10 @@ module Spec.Treasury (spec) where
 
 import Plutus.Model (
   MockConfig,
-  adaValue,
   defaultBabbage,
   testNoErrors,
  )
-import Spec.SpecUtils (amountOfAda, checkFails)
+import Spec.SpecUtils (amountOfAda)
 import Spec.Treasury.Context (
   invalidNotEnoughVotesTripTreasuryTest,
   validGeneralTreasuryTest,
@@ -35,7 +34,6 @@ nftSpec config =
     ]
   where
     good = testNoErrors initialFunds config
-    bad = checkFails config initialFunds
     positiveTripTest =
       good
         "Valid treasury test - trip proposal, should pass"

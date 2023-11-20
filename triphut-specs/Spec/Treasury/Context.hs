@@ -9,7 +9,7 @@ module Spec.Treasury.Context (
   invalidNotEnoughVotesTripTreasuryTest,
 ) where
 
-import Control.Monad (void, when)
+import Control.Monad (when)
 import Plutus.Model (
   Run,
   adaValue,
@@ -24,7 +24,6 @@ import Plutus.Model (
  )
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
-  logInfo,
   payToKey,
   payToScript,
   refInputInline,
@@ -51,15 +50,13 @@ import Spec.Tally.Transactions (
   runInitTripTallyWithEndTimeInFuture,
   runInitTripTallyWithEndTimeInFutureNotEnoughVotes,
   runInitUpgradeTallyWithEndTimeInPast,
-  runInitUpgradeWithVotesWithEndTimeInFutureTallyStateDatum,
  )
 import Spec.Tally.Utils (findTally)
 import Spec.Treasury.Script (treasuryTypedValidator)
 import Spec.Treasury.Transactions (runInitTreasury)
 import Spec.Treasury.Utils (findTreasury)
 import Spec.Values (dummyTreasuryValue)
-import Triphut.Vote (VoteActionRedeemer (Count))
-import Prelude (Eq, mconcat, pure, show, (*), (+), (<>), (==))
+import Prelude (Eq, mconcat, (<>), (==))
 
 -- Positive test for when the proposal is an Trip proposal
 validTripTreasuryTest :: Run ()
@@ -88,7 +85,7 @@ mkTripTreasuryTest enoughVotes = do
   runInitTreasury
 
   (configOutRef, _, _) <- findConfig
-  (tallyOutRef, _, tallyDatum) <- findTally
+  (tallyOutRef, _, _) <- findTally
   (treasuryOutRef, _, _) <- findTreasury
 
   user <- newUser $ amountOfAda 9_000_000
@@ -132,7 +129,7 @@ validUpgradeTreasuryTest = do
   runInitTreasury
 
   (configOutRef, _, _) <- findConfig
-  (tallyOutRef, _, tallyDatum) <- findTally
+  (tallyOutRef, _, _) <- findTally
   (treasuryOutRef, _, _) <- findTreasury
 
   user <- newUser $ amountOfAda 8_000_000
@@ -179,7 +176,7 @@ validGeneralTreasuryTest = do
   runInitTreasury
 
   (configOutRef, _, _) <- findConfig
-  (tallyOutRef, _, tallyDatum) <- findTally
+  (tallyOutRef, _, _) <- findTally
   (treasuryOutRef, _, _) <- findTreasury
 
   user <- newUser $ amountOfAda 9_000_000

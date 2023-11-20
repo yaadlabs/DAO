@@ -16,14 +16,12 @@ module Spec.Vote.ContextValidator (
   invalidNotSignedByOwnerVoteValidatorCancelRedeemerTest,
 ) where
 
-import Control.Monad (void, when)
-import Data.Maybe (Maybe (Just, Nothing))
+import Control.Monad (when)
 import Plutus.Model (
   Run,
   adaValue,
   currentTime,
   newUser,
-  signTx,
   spend,
   spendScript,
   submitTx,
@@ -32,13 +30,11 @@ import Plutus.Model (
  )
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
-  logInfo,
   payToScript,
   refInputInline,
  )
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Interval (from)
-import Spec.SpecUtils (amountOfAda, getPubKeyHashFromAddress)
+import Spec.SpecUtils (amountOfAda)
 import Spec.Tally.Script (tallyNftTypedValidator)
 import Spec.Tally.Transactions (
   runInitTallyConfig,
@@ -50,8 +46,8 @@ import Spec.Values (dummyTallyValue, dummyVoteValue)
 import Spec.Vote.Script (voteTypedValidator)
 import Spec.Vote.Transactions (runInitVote, runInitVoteConfig, runInitVoteMinterConfig, runInitVoteWithUser)
 import Spec.Vote.Utils (findVote, findVoteConfig)
-import Triphut.Vote (VoteActionRedeemer (Cancel, Count), VoteDatum (vOwner))
-import Prelude (Eq, mconcat, mempty, pure, show, ($), (*), (+), (<>), (==))
+import Triphut.Vote (VoteActionRedeemer (Cancel, Count))
+import Prelude (Eq, mconcat, mempty, ($), (<>), (==))
 
 -- | Count redeemer tests
 validVoteValidatorCountRedeemerTest :: Run ()

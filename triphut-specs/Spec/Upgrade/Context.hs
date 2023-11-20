@@ -44,8 +44,7 @@ import Spec.Tally.Transactions (
  )
 import Spec.Tally.Utils (findTally)
 import Spec.Values (dummyConfigNftValue)
-import Triphut.Types (DynamicConfigDatum (DynamicConfigDatum))
-import Prelude (Eq, mconcat, mempty, otherwise, pure, ($), (<>), (==), (>>))
+import Prelude (Eq, mconcat, mempty, otherwise, ($), (<>), (==))
 
 -- | Positive test
 validUpgradeTest :: Run ()
@@ -127,7 +126,7 @@ mkUpgradeTest tallyReference configInput upgradeMinted enoughVotes = do
   when (enoughVotes == NotEnoughVotes) runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes
 
   (configOutRef, _, configDatum) <- findConfig
-  (tallyOutRef, _, tallyDatum) <- findTally
+  (tallyOutRef, _, _) <- findTally
 
   user <- newUser $ amountOfAda 8_000_000
   spend1 <- spend user $ amountOfAda 4_000_000

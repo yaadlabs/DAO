@@ -5,23 +5,11 @@ module Spec.Vote.Transactions (
   runInitVoteWithUser,
 ) where
 
-import Plutus.Model (
-  Run,
-  getMainUser,
-  spend,
-  submitTx,
-  userSpend,
- )
-import Plutus.Model.V2 (
-  DatumMode (InlineDatum),
-  payToRef,
-  payToScript,
- )
+import Plutus.Model (Run)
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
-import PlutusTx.Prelude (($))
 import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator1, alwaysSucceedTypedValidator3)
 import Spec.SampleData (sampleVoteDynamicConfig, sampleVoteMinterDynamicConfig)
-import Spec.SpecUtils (initScriptRef, minAda, runInitPayToScript, runInitReferenceScript)
+import Spec.SpecUtils (minAda, runInitPayToScript, runInitReferenceScript)
 import Spec.Values (dummyVoteConfigNftValue, dummyVoteValue)
 import Spec.Vote.SampleData (sampleVoteDatum, sampleVoteDatumWithUser)
 import Spec.Vote.Script (voteTypedValidator)
