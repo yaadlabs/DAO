@@ -136,6 +136,8 @@ executable create-sc
   build-depends:
     , triphut
     , optparse-generic
+    , cardano-api
+    , plutus-ledger-api
 
 test-suite triphut-test
   import: common-lang, common-depends, common-options, common-extensions

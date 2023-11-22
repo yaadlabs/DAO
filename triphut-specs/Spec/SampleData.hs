@@ -115,7 +115,7 @@ sampleVoteDynamicConfig =
   VoteDynamicConfigDatum
     { vdcTallyIndexNft = toBuiltinData (adaSymbol :: CurrencySymbol)
     , vdcTallyNft = toBuiltinData (adaSymbol :: CurrencySymbol)
-    , vdcTallyValidator = toBuiltinData tallyValidatorHash'
+    , vdcTallyValidator = tallyValidatorHash'
     , vdcTreasuryValidator = toBuiltinData (ValidatorHash "")
     , vdcConfigurationValidator = toBuiltinData (ValidatorHash "")
     , vdcVoteCurrencySymbol = toBuiltinData (dummyVoteFungibleSymbol :: CurrencySymbol)

@@ -43,7 +43,34 @@ import Plutus.V1.Ledger.Value (
   mpsSymbol,
   valueOf,
  )
-import Plutus.V2.Ledger.Contexts (TxInInfo (TxInInfo, txInInfoResolved))
+import Plutus.V2.Ledger.Contexts (
+  ScriptContext (
+    ScriptContext,
+    scriptContextPurpose,
+    scriptContextTxInfo
+  ),
+  ScriptPurpose (Minting),
+  TxInInfo (
+    TxInInfo,
+    txInInfoResolved
+  ),
+  TxInfo (
+    TxInfo,
+    txInfoData,
+    txInfoInputs,
+    txInfoMint,
+    txInfoOutputs,
+    txInfoReferenceInputs,
+    txInfoSignatories,
+    txInfoValidRange
+  ),
+  TxOut (
+    TxOut,
+    txOutAddress,
+    txOutDatum,
+    txOutValue
+  ),
+ )
 import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (applyCode, compile, liftCode, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
@@ -99,52 +126,6 @@ import Triphut.Vote (
     vmdcVoteTokenName,
     vmdcVoteValidator
   ),
-  VoteMinterScriptContext (
-    VoteMinterScriptContext,
-    vmScriptContextPurpose,
-    vmScriptContextTxInfo
-  ),
-  VoteMinterScriptPurpose (VMMinting),
-  VoteMinterTxInInfo (
-    VoteMinterTxInInfo,
-    vmTxInInfoResolved
-  ),
-  VoteMinterTxInfo (
-    VoteMinterTxInfo,
-    vmTxInfoData,
-    vmTxInfoMint,
-    vmTxInfoOutputs,
-    vmTxInfoReferenceInputs,
-    vmTxInfoValidRange
-  ),
-  VoteMinterTxOut (
-    VoteMinterTxOut,
-    vmTxOutAddress,
-    vmTxOutDatum,
-    vmTxOutValue
-  ),
-  VoteScriptContext (
-    VoteScriptContext,
-    vScriptContextTxInfo
-  ),
-  VoteTxInInfo (
-    VoteTxInInfo,
-    vTxInInfoResolved
-  ),
-  VoteTxInfo (
-    VoteTxInfo,
-    vTxInfoData,
-    vTxInfoInputs,
-    vTxInfoOutputs,
-    vTxInfoReferenceInputs,
-    vTxInfoSignatories
-  ),
-  VoteTxOut (
-    VoteTxOut,
-    vTxOutAddress,
-    vTxOutDatum,
-    vTxOutValue
-  ),
   VoteValidatorConfig (
     VoteValidatorConfig,
     vvcConfigNftCurrencySymbol,
@@ -180,19 +161,19 @@ import Triphut.Vote (
 
         - That one vote token is burned
 -}
-mkVoteMinter :: VoteMinterConfig -> VoteMinterActionRedeemer -> VoteMinterScriptContext -> Bool
+mkVoteMinter :: VoteMinterConfig -> VoteMinterActionRedeemer -> ScriptContext -> Bool
 mkVoteMinter
   VoteMinterConfig {..}
   action
-  VoteMinterScriptContext
-    { vmScriptContextTxInfo = VoteMinterTxInfo {..}
-    , vmScriptContextPurpose = VMMinting thisCurrencySymbol
+  ScriptContext
+    { scriptContextTxInfo = TxInfo {..}
+    , scriptContextPurpose = Minting thisCurrencySymbol
     } = case action of
     Burn ->
       let
         -- Check the transaction burns a valid token
         burnsTokens :: Bool
-        !burnsTokens = hasBurnedTokens thisCurrencySymbol vmTxInfoMint "Vote Minter Burn"
+        !burnsTokens = hasBurnedTokens thisCurrencySymbol txInfoMint "Vote Minter Burn"
        in
         traceIfFalse "Need to burn a vote token" burnsTokens
     Mint ->
@@ -203,22 +184,22 @@ mkVoteMinter
 
         -- The datums
         theData :: Map DatumHash Datum
-        theData = unsafeFromBuiltinData vmTxInfoData
+        theData = txInfoData
 
         -- Get the configuration from the reference inputs
         VoteMinterDynamicConfigDatum {..} =
           case filter
-            (hasConfigurationNft . vmTxOutValue . vmTxInInfoResolved)
-            (unsafeFromBuiltinData vmTxInfoReferenceInputs) of
-            [VoteMinterTxInInfo {vmTxInInfoResolved = VoteMinterTxOut {..}}] -> convertDatum theData vmTxOutDatum
+            (hasConfigurationNft . txOutValue . txInInfoResolved)
+            txInfoReferenceInputs of
+            [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum theData txOutDatum
             _ -> traceError "Should be exactly one valid config in the reference inputs"
 
         -- Get output at the vote validator, should just be one.
         (VoteDatum {..}, !voteValue) =
           case filter
-            ((== ScriptCredential vmdcVoteValidator) . vmAddressCredential . vmTxOutAddress)
-            (unsafeFromBuiltinData vmTxInfoOutputs) of
-            [VoteMinterTxOut {..}] -> (convertDatum theData vmTxOutDatum, vmTxOutValue)
+            ((== ScriptCredential vmdcVoteValidator) . addressCredential . txOutAddress)
+            txInfoOutputs of
+            [TxOut {..}] -> (convertDatum theData txOutDatum, txOutValue)
             _ -> traceError "Should be exactly one vote datum (proposal reference) at the output"
 
         -- Helper for filtering for tally UTXO in the outputs
@@ -229,13 +210,13 @@ mkVoteMinter
         TallyStateDatum {tsProposalEndTime} =
           case filter
             (hasTallyNft . txOutValue . txInInfoResolved)
-            (unsafeFromBuiltinData vmTxInfoReferenceInputs) of
+            txInfoReferenceInputs of
             [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum theData txOutDatum
             _ -> traceError "Should be exactly one tally state datum in the reference inputs"
 
         -- Ensure the proposal end time is after the transaction's validity range
         proposalIsActive :: Bool
-        !proposalIsActive = tsProposalEndTime `after` unsafeFromBuiltinData vmTxInfoValidRange
+        !proposalIsActive = tsProposalEndTime `after` txInfoValidRange
 
         -- Ensure the vote value contains exactly one valid witness token
         hasWitness :: Bool
@@ -245,7 +226,7 @@ mkVoteMinter
         onlyMintedOne :: Bool
         !onlyMintedOne =
           hasSingleTokenWithSymbolAndTokenName
-            vmTxInfoMint
+            txInfoMint
             thisCurrencySymbol
             vmdcVoteTokenName
 
@@ -329,14 +310,14 @@ validateVote ::
   VoteValidatorConfig ->
   VoteDatum ->
   VoteActionRedeemer ->
-  VoteScriptContext ->
+  ScriptContext ->
   Bool
 validateVote
   VoteValidatorConfig {..}
   VoteDatum {..}
   action
-  VoteScriptContext
-    { vScriptContextTxInfo = VoteTxInfo {..}
+  ScriptContext
+    { scriptContextTxInfo = TxInfo {..}
     } =
     let
       -- Helper for filtering for config UTXO in the reference inputs
@@ -345,8 +326,8 @@ validateVote
 
       -- Get the configuration from the reference inputs
       VoteDynamicConfigDatum {..} =
-        case filter (hasConfigurationNft . vTxOutValue . vTxInInfoResolved) vTxInfoReferenceInputs of
-          [VoteTxInInfo {vTxInInfoResolved = VoteTxOut {..}}] -> convertDatum vTxInfoData vTxOutDatum
+        case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
+          [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Should be exactly one config NFT in the reference inputs. None found."
      in
       case action of
@@ -355,12 +336,12 @@ validateVote
           traceIfFalse
             "Missing Tally Validator input"
             ( any
-                ( (== ScriptCredential (unsafeFromBuiltinData vdcTallyValidator))
-                    . vAddressCredential
-                    . vTxOutAddress
-                    . vTxInInfoResolved
+                ( (== ScriptCredential vdcTallyValidator)
+                    . addressCredential
+                    . txOutAddress
+                    . txInInfoResolved
                 )
-                (unsafeFromBuiltinData vTxInfoInputs :: [VoteTxInInfo])
+                (txInfoInputs :: [TxInInfo])
             )
         Cancel ->
           let
@@ -370,7 +351,7 @@ validateVote
             !isSignedByOwner =
               any
                 ((== addressCredential vOwner) . PubKeyCredential)
-                (unsafeFromBuiltinData vTxInfoSignatories :: [PubKeyHash])
+                (txInfoSignatories :: [PubKeyHash])
 
             -- Helper for filtering for UTXOs containing a vote token
             hasVoteToken :: Value -> Bool
@@ -379,7 +360,7 @@ validateVote
             -- Ensure there are no vote tokens in the outputs
             voteTokenAreAllBurned :: Bool
             !voteTokenAreAllBurned =
-              not $ any (hasVoteToken . vTxOutValue) (unsafeFromBuiltinData vTxInfoOutputs :: [VoteTxOut])
+              not $ any (hasVoteToken . txOutValue) (txInfoOutputs :: [TxOut])
            in
             traceIfFalse "Transaction should be signed by the vote owner" isSignedByOwner
               && traceIfFalse "All vote tokens should be burned" voteTokenAreAllBurned
