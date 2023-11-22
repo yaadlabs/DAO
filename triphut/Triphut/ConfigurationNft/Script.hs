@@ -17,30 +17,6 @@ module Triphut.ConfigurationNft.Script (
 ) where
 
 import Triphut.ConfigurationNft (
-  ConfigurationScriptContext (
-    ConfigurationScriptContext,
-    cScriptContextPurpose,
-    cScriptContextTxInfo
-  ),
-  ConfigurationScriptPurpose (ConfigurationSpend),
-  ConfigurationTxInInfo (
-    ConfigurationTxInInfo,
-    cTxInInfoOutRef,
-    cTxInInfoResolved
-  ),
-  ConfigurationTxInfo (
-    ConfigurationTxInfo,
-    cTxInfoData,
-    cTxInfoInputs,
-    cTxInfoMint,
-    cTxInfoReferenceInputs,
-    cTxInfoValidRange
-  ),
-  ConfigurationTxOut (
-    ConfigurationTxOut,
-    cTxOutDatum,
-    cTxOutValue
-  ),
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
     cvcConfigNftCurrencySymbol,
@@ -65,9 +41,17 @@ import Plutus.V1.Ledger.Value (
  )
 import Plutus.V2.Ledger.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
-  ScriptPurpose (Minting),
-  TxInInfo (txInInfoOutRef),
-  TxInfo (TxInfo, txInfoData, txInfoInputs, txInfoMint, txInfoOutputs),
+  ScriptPurpose (Minting, Spending),
+  TxInInfo (TxInInfo, txInInfoOutRef, txInInfoResolved),
+  TxInfo (
+    TxInfo,
+    txInfoData,
+    txInfoInputs,
+    txInfoMint,
+    txInfoOutputs,
+    txInfoReferenceInputs,
+    txInfoValidRange
+  ),
  )
 import Plutus.V2.Ledger.Tx (
   TxOut (TxOut, txOutDatum, txOutValue),
@@ -232,19 +216,19 @@ validateConfiguration ::
   ConfigurationValidatorConfig ->
   DynamicConfigDatum ->
   BuiltinData ->
-  ConfigurationScriptContext ->
+  ScriptContext ->
   Bool
 validateConfiguration
   ConfigurationValidatorConfig {..}
   DynamicConfigDatum {..}
   _
-  ConfigurationScriptContext
-    { cScriptContextTxInfo = ConfigurationTxInfo {..}
-    , cScriptContextPurpose = ConfigurationSpend thisOutRef
+  ScriptContext
+    { scriptContextTxInfo = TxInfo {..}
+    , scriptContextPurpose = Spending thisOutRef
     } =
     let
       thisScriptValue :: Value
-      !thisScriptValue = ownValue cTxInfoInputs thisOutRef
+      !thisScriptValue = ownValue txInfoInputs thisOutRef
 
       -- Ensure there is a config token in the inputs
       hasConfigurationNft :: Bool
@@ -257,10 +241,10 @@ validateConfiguration
       -- Ensure there is exactly one output that contains the 'TallyStateDatum' datum
       -- The `convertDatum` helper will throw an error if the output datum is not found
       TallyStateDatum {tsProposal = proposal, ..} =
-        case filter (hasTallyNft . cTxOutValue . cTxInInfoResolved) cTxInfoReferenceInputs of
+        case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [] -> traceError "Should be exactly one tally NFT in the reference inputs. None found."
-          [ConfigurationTxInInfo {cTxInInfoResolved = ConfigurationTxOut {..}}] ->
-            convertDatum cTxInfoData cTxOutDatum
+          [TxInInfo {txInInfoResolved = TxOut {..}}] ->
+            convertDatum txInfoData txOutDatum
           _ -> traceError "Should be exactly one tally NFT in the reference inputs. More than one found."
 
       -- Ensure that the 'ProposalType' set in the 'tsProposal' field
@@ -290,16 +274,17 @@ validateConfiguration
 
       -- Make sure the upgrade token was minted
       hasUpgradeMinterToken :: Bool
-      !hasUpgradeMinterToken = hasTokenInValue upgradeMinter "validateConfiguration, upgradeMinter" cTxInfoMint
+      !hasUpgradeMinterToken = hasTokenInValue upgradeMinter "validateConfiguration, upgradeMinter" txInfoMint
 
       -- Ensure the proposal has finished
       isAfterTallyEndTime :: Bool
-      isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` cTxInfoValidRange
+      isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` txInfoValidRange
      in
       traceIfFalse "Should be exactly one configuration NFT in the inputs" hasConfigurationNft
         && traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
         && traceIfFalse "Should be exactly one upgrade token minted" hasUpgradeMinterToken
         && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
+validateConfiguration _ _ _ _ = traceError "Wrong script purpose"
 
 configurationValidator :: ConfigurationValidatorConfig -> Validator
 configurationValidator config = mkValidatorWithSettings compiledCode True
@@ -315,12 +300,12 @@ configurationValidatorHash = validatorHash . configurationValidator
 configurationScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
 configurationScript = validatorToScript configurationValidator
 
-ownValue :: [ConfigurationTxInInfo] -> TxOutRef -> Value
+ownValue :: [TxInInfo] -> TxOutRef -> Value
 ownValue ins txOutRef = go ins
   where
     go = \case
       [] -> traceError "The impossible happened"
-      ConfigurationTxInInfo {cTxInInfoOutRef, cTxInInfoResolved = ConfigurationTxOut {cTxOutValue}} : xs ->
-        if cTxInInfoOutRef == txOutRef
-          then cTxOutValue
+      TxInInfo {txInInfoOutRef, txInInfoResolved = TxOut {txOutValue}} : xs ->
+        if txInInfoOutRef == txOutRef
+          then txOutValue
           else go xs

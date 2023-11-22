@@ -107,7 +107,7 @@ validateIndex ::
   ScriptContext ->
   Bool
 validateIndex
-  IndexValidatorConfig {..}
+  _indexValidatorConfig
   IndexNftDatum {indIndex = inputIndex}
   _
   ctx@ScriptContext

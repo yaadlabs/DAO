@@ -30,10 +30,6 @@ data IndexNftConfig = IndexNftConfig
 unstableMakeIsData ''IndexNftDatum
 makeLift ''IndexNftConfig
 
--------------------------------------------------------------------------------
--- Nft Index Validator
--------------------------------------------------------------------------------
-
 data IndexValidatorConfig = IndexValidatorConfig
   { ivcConfigNftCurrencySymbol :: CurrencySymbol
   , ivcConfigNftTokenName :: TokenName
