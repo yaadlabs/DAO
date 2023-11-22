@@ -9,33 +9,11 @@ module Triphut.Tally (
   -- * Script arguments, containing relevant CurrenySymbol and TokenName
   TallyNftConfig (..),
   TallyValidatorConfig (..),
-
-  -- * Script context related types
-  TallyTxOut (..),
-  TallyTxInInfo (..),
-  TallyTxInfo (..),
-  TallyScriptContext (..),
-  TallyScriptPurpose (..),
 ) where
 
-import Plutus.V1.Ledger.Address (Address)
-import Plutus.V1.Ledger.Scripts (
-  Datum,
-  DatumHash,
-  ValidatorHash,
- )
-import Plutus.V1.Ledger.Time (POSIXTimeRange)
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value)
-import Plutus.V2.Ledger.Tx (
-  OutputDatum,
-  TxOutRef,
- )
-import PlutusTx (
-  makeIsDataIndexed,
-  makeLift,
-  unstableMakeIsData,
- )
-import PlutusTx.AssocMap (Map)
+import Plutus.V1.Ledger.Scripts (ValidatorHash)
+import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
+import PlutusTx (makeLift, unstableMakeIsData)
 import PlutusTx.Prelude (BuiltinData, Integer)
 
 -- | Tally policy configuration
@@ -47,40 +25,6 @@ data TallyNftConfig = TallyNftConfig
   }
 
 makeLift ''TallyNftConfig
-
-data TallyTxOut = TallyTxOut
-  { tTxOutAddress :: Address
-  , tTxOutValue :: Value
-  , tTxOutDatum :: OutputDatum
-  , tTxOutReferenceScript :: BuiltinData
-  }
-
-data TallyTxInInfo = TallyTxInInfo
-  { tTxInInfoOutRef :: TxOutRef
-  , tTxInInfoResolved :: TallyTxOut
-  }
-
-newtype TallyScriptPurpose = TallySpend TxOutRef
-
-data TallyScriptContext = TallyScriptContext
-  { tScriptContextTxInfo :: TallyTxInfo
-  , tScriptContextPurpose :: TallyScriptPurpose
-  }
-
-data TallyTxInfo = TallyTxInfo
-  { tTxInfoInputs :: [TallyTxInInfo]
-  , tTxInfoReferenceInputs :: [TallyTxInInfo]
-  , tTxInfoOutputs :: [TallyTxOut]
-  , tTxInfoFee :: BuiltinData
-  , tTxInfoMint :: BuiltinData
-  , tTxInfoDCert :: BuiltinData
-  , tTxInfoWdrl :: BuiltinData
-  , tTxInfoValidRange :: POSIXTimeRange
-  , tTxInfoSignatories :: BuiltinData
-  , tTxInfoRedeemers :: BuiltinData
-  , tTxInfoData :: Map DatumHash Datum
-  , tTxInfoId :: BuiltinData
-  }
 
 -- | Tally config datum, representation mirrors the main 'Triphut.Types.DynamicConfigDatum'
 data TallyDynamicConfigDatum = TallyDynamicConfigDatum
@@ -116,9 +60,4 @@ data TallyValidatorConfig = TallyValidatorConfig
   , tvcConfigNftTokenName :: TokenName
   }
 
-unstableMakeIsData ''TallyTxOut
-unstableMakeIsData ''TallyTxInInfo
-makeIsDataIndexed ''TallyScriptPurpose [('TallySpend, 1)]
-unstableMakeIsData ''TallyScriptContext
-unstableMakeIsData ''TallyTxInfo
 makeLift ''TallyValidatorConfig

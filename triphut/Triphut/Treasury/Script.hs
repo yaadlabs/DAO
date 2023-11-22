@@ -92,7 +92,6 @@ import Triphut.Shared (
   wrapValidate,
  )
 import Triphut.Treasury (
-  Treasury,
   TreasuryValidatorConfig (
     TreasuryValidatorConfig,
     tvcConfigNftCurrencySymbol,
@@ -185,7 +184,7 @@ import Triphut.Types (
 -}
 validateTreasury ::
   TreasuryValidatorConfig ->
-  Treasury ->
+  BuiltinData ->
   BuiltinData ->
   ScriptContext ->
   Bool
