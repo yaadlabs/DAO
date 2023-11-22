@@ -105,7 +105,6 @@ import Triphut.Shared (
 import Triphut.Types (TallyStateDatum (TallyStateDatum, tsProposalEndTime))
 import Triphut.Vote (
   VoteActionRedeemer (Cancel, Count),
-  VoteAddress (vAddressCredential),
   VoteDatum (VoteDatum, vOwner, vReturnAda),
   VoteDynamicConfigDatum (
     VoteDynamicConfigDatum,
@@ -113,7 +112,6 @@ import Triphut.Vote (
     vdcVoteCurrencySymbol
   ),
   VoteMinterActionRedeemer (Burn, Mint),
-  VoteMinterAddress (vmAddressCredential),
   VoteMinterConfig (
     VoteMinterConfig,
     vmcConfigNftCurrencySymbol,
@@ -242,6 +240,7 @@ mkVoteMinter
           && traceIfFalse "Missing witness on output" hasWitness
           && traceIfFalse "Should be exactly one valid token minted" onlyMintedOne
           && traceIfFalse "Total ada is not high enough" totalAdaIsGreaterThanReturnAda
+mkVoteMinter _ _ _ = traceError "Wrong type of script purpose!"
 
 wrappedPolicy :: VoteMinterConfig -> WrappedMintingPolicyType
 wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) (unsafeFromBuiltinData b))
