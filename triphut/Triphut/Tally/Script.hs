@@ -178,7 +178,8 @@ import Triphut.Vote (
     - The token name matches the 'indIndex' field of the 'IndexNftDatum'
     - There is exactly one output containing the tally NFT.
     - This output contains a valid 'Triphut.Types.TallyStateDatum' datum.
-    - The initial votes for fields of the 'Triphut.Types.TallyStateDatum' are both set to zero.
+    - The initial vote count fields `tsFor` and `tsAgainst` of
+      the 'Triphut.Types.TallyStateDatum' are both set to zero.
     - The tally output is at the tally validator
       (Corresponding to the tally script provided by the 'dcTallyValidator'
        field of the 'Triphut.Types.DynamicConfigDatum')
