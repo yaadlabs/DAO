@@ -79,29 +79,8 @@ data VoteMinterDynamicConfigDatum = VoteMinterDynamicConfigDatum
 
 -- | Vote config datum, representation mirrors the main 'Triphut.Types.DynamicConfigDatum'
 data VoteDynamicConfigDatum = VoteDynamicConfigDatum
-  { vdcTallyIndexNft :: BuiltinData
-  , vdcTallyNft :: BuiltinData
-  , vdcTallyValidator :: ValidatorHash
-  , vdcTreasuryValidator :: BuiltinData
-  , vdcConfigurationValidator :: BuiltinData
+  { vdcTallyValidator :: ValidatorHash
   , vdcVoteCurrencySymbol :: BuiltinData
-  , vdcVoteTokenName :: BuiltinData
-  , vdcVoteValidator :: BuiltinData
-  , vdcUpgradeMajorityPercent :: BuiltinData
-  , vdcUpgradRelativeMajorityPercent :: BuiltinData
-  , vdcGeneralMajorityPercent :: BuiltinData
-  , vdcGeneralRelativeMajorityPercent :: BuiltinData
-  , vdcTripMajorityPercent :: BuiltinData
-  , vdcTripRelativeMajorityPercent :: BuiltinData
-  , vdcTotalVotes :: BuiltinData
-  , vdcVoteNft :: BuiltinData
-  , vdcVoteFungibleCurrencySymbol :: BuiltinData
-  , vdcVoteFungibleTokenName :: BuiltinData
-  , vdcProposalTallyEndOffset :: BuiltinData
-  , vdcMaxGeneralDisbursement :: BuiltinData
-  , vdcMaxTripDisbursement :: BuiltinData
-  , vdcAgentDisbursementPercent :: BuiltinData
-  , vdcFungibleVotePercent :: BuiltinData
   }
 
 unstableMakeIsData ''VoteMinterDynamicConfigDatum
