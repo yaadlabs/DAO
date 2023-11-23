@@ -43,7 +43,7 @@ import Spec.Vote.Script (
   voteTypedValidator,
  )
 import Spec.Vote.Transactions (runInitVoteMinterConfig)
-import Spec.Vote.Utils (findVoteConfig)
+import Spec.Vote.Utils (findVoteMinterConfig)
 import Triphut.Vote (VoteMinterActionRedeemer (Mint), VoteMinterConfig (VoteMinterConfig))
 import Prelude (mconcat, mempty, (*), (+), (<>))
 
@@ -92,7 +92,7 @@ mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
   void runInitVoteMinterConfig
   void runInitTallyWithEndTimeInFuture
 
-  (voteConfigOutRef, _, _voteDatum) <- findVoteConfig
+  (voteConfigOutRef, _, _voteDatum) <- findVoteMinterConfig
   (tallyOutRef, _, _tallyDatum) <- findTally
 
   user <- newUser minAda
