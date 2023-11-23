@@ -77,28 +77,44 @@ instance PlutusTx.Eq TallyStateDatum where
 
 -- | DynamicConfig Datum holds the main info needed for the contracts.
 data DynamicConfigDatum = DynamicConfigDatum
-  { dcTallyIndexNft :: CurrencySymbol
-  , dcTallyNft :: CurrencySymbol
-  , dcTallyValidator :: ValidatorHash
+  { dcTallyValidator :: ValidatorHash
   , dcTreasuryValidator :: ValidatorHash
   , dcConfigurationValidator :: ValidatorHash
+  , dcVoteValidator :: ValidatorHash
+  -- ^ The validator scripts belonging to the DAO protocol
+  , dcUpgradeMajorityPercent :: Integer
+  , dcUpgradeRelativeMajorityPercent :: Integer
+  , dcGeneralMajorityPercent :: Integer
+  , dcGeneralRelativeMajorityPercent :: Integer
+  , dcTripMajorityPercent :: Integer
+  , dcTripRelativeMajorityPercent :: Integer
+  -- ^ The majority and relative majority percentages used
+  -- in calculating whether a proposal has sufficient votes to pass
+  -- (All times a 1000)
+  , dcTotalVotes :: Integer
+  -- ^ A threshold that needs to be passed when checking in
+  -- the script if there is a sufficient relative majority
+  , dcMaxGeneralDisbursement :: Integer
+  , dcMaxTripDisbursement :: Integer
+  -- ^ Disbursement allowable disbursement amounts, for general and trip proposals
+  -- Checked in the `Triphut.Treasury.Script.validateTreasury` validator
+  , dcAgentDisbursementPercent :: Integer
+  -- ^ The percentage of the total travel cost for the agent in trip proposals
+  -- Checked in the `Triphut.Treasury.Script.validateTreasury` validator
+  -- (Agent disbursement percentage is times a 1000)
+  , dcProposalTallyEndOffset :: Integer
+  -- ^ Like a cool down period to be added to the proposal end time
+  -- specified in the `Triphut.Types.TallyStateDatum` datum.
+  -- The treasury cannot disburse funds until
+  -- after the end time plus the offset has passed
+  -- (Offset is in milliseconds)
+  , dcTallyIndexNft :: CurrencySymbol
+  , dcTallyNft :: CurrencySymbol
   , dcVoteCurrencySymbol :: CurrencySymbol
   , dcVoteTokenName :: TokenName
-  , dcVoteValidator :: ValidatorHash
-  , dcUpgradeMajorityPercent :: Integer -- times a 1000
-  , dcUpgradeRelativeMajorityPercent :: Integer -- times a 1000
-  , dcGeneralMajorityPercent :: Integer -- times a 1000
-  , dcGeneralRelativeMajorityPercent :: Integer -- times a 1000
-  , dcTripMajorityPercent :: Integer -- times a 1000
-  , dcTripRelativeMajorityPercent :: Integer -- times a 1000
-  , dcTotalVotes :: Integer
   , dcVoteNft :: CurrencySymbol
   , dcVoteFungibleCurrencySymbol :: CurrencySymbol
   , dcVoteFungibleTokenName :: TokenName
-  , dcProposalTallyEndOffset :: Integer -- in milliseconds
-  , dcMaxGeneralDisbursement :: Integer
-  , dcMaxTripDisbursement :: Integer
-  , dcAgentDisbursementPercent :: Integer -- times a 1000
   , dcFungibleVotePercent :: Integer -- times a 1000
   }
 
