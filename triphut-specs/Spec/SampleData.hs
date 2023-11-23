@@ -84,29 +84,10 @@ sampleHighRelativeMajorityHighTotalVotesDynamicConfig =
 sampleVoteMinterDynamicConfig :: VoteMinterDynamicConfigDatum
 sampleVoteMinterDynamicConfig =
   VoteMinterDynamicConfigDatum
-    { vmdcTallyIndexNft = toBuiltinData (adaSymbol :: CurrencySymbol)
-    , vmdcTallyNft = dummyTallySymbol
-    , vmdcTallyValidator = toBuiltinData tallyValidatorHash'
-    , vmdcTreasuryValidator = toBuiltinData (ValidatorHash "")
-    , vmdcConfigurationValidator = toBuiltinData (ValidatorHash "")
-    , vmdcVoteCurrencySymbol = toBuiltinData (adaSymbol :: CurrencySymbol)
+    { vmdcTallyNft = dummyTallySymbol
     , vmdcVoteTokenName = TokenName "vote"
     , vmdcVoteValidator = voteValidatorHash'
-    , vmdcUpgradeMajorityPercent = toBuiltinData (1 :: Integer)
-    , vmdcUpgradRelativeMajorityPercent = toBuiltinData (1 :: Integer)
-    , vmdcGeneralMajorityPercent = toBuiltinData (1 :: Integer)
-    , vmdcGeneralRelativeMajorityPercent = toBuiltinData (1 :: Integer)
-    , vmdcTripMajorityPercent = toBuiltinData (1 :: Integer)
-    , vmdcTripRelativeMajorityPercent = toBuiltinData (1 :: Integer)
-    , vmdcTotalVotes = toBuiltinData (1 :: Integer)
     , vmdcVoteNft = voteCurrencySymbol sampleVoteMinterConfig
-    , vmdcVoteFungibleCurrencySymbol = toBuiltinData (adaSymbol :: CurrencySymbol)
-    , vmdcVoteFungibleTokenName = toBuiltinData (adaToken :: TokenName)
-    , vmdcProposalTallyEndOffset = toBuiltinData (1 :: Integer)
-    , vmdcMaxGeneralDisbursement = toBuiltinData (1 :: Integer)
-    , vmdcMaxTripDisbursement = toBuiltinData (1 :: Integer)
-    , vmdcAgentDisbursementPercent = toBuiltinData (1 :: Integer)
-    , vmdcFungibleVotePercent = toBuiltinData (1 :: Integer)
     }
 
 -- VoteDynamicConfigDatum samples
