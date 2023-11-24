@@ -108,7 +108,6 @@ data DynamicConfigDatum = DynamicConfigDatum
   -- The treasury cannot disburse funds until
   -- after the end time plus the offset has passed
   -- (Offset is in milliseconds)
-  , dcTallyIndexNft :: CurrencySymbol
   , dcTallyNft :: CurrencySymbol
   , dcVoteCurrencySymbol :: CurrencySymbol
   , dcVoteTokenName :: TokenName
