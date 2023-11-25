@@ -1,7 +1,6 @@
 module Spec.SampleData (
   sampleDynamicConfig,
   sampleVoteMinterDynamicConfig,
-  sampleVoteDynamicConfig,
   sampleTallyDynamicConfig,
   sampleHighRelativeMajorityHighTotalVotesDynamicConfig,
 ) where
@@ -16,10 +15,7 @@ import Spec.Vote.SampleData (sampleVoteMinterConfig)
 import Spec.Vote.Script (voteCurrencySymbol, voteValidatorHash')
 import Triphut.Tally (TallyDynamicConfigDatum (..))
 import Triphut.Types (DynamicConfigDatum (..))
-import Triphut.Vote (
-  VoteDynamicConfigDatum (..),
-  VoteMinterDynamicConfigDatum (..),
- )
+import Triphut.Vote (VoteMinterDynamicConfigDatum (..))
 
 -- DynamicConfigDatum samples
 sampleDynamicConfig :: DynamicConfigDatum
@@ -29,7 +25,7 @@ sampleDynamicConfig =
     , dcTallyValidator = tallyValidatorHash'
     , dcTreasuryValidator = ValidatorHash ""
     , dcConfigurationValidator = ValidatorHash ""
-    , dcVoteCurrencySymbol = adaSymbol
+    , dcVoteCurrencySymbol = dummyVoteFungibleSymbol
     , dcVoteTokenName = adaToken
     , dcVoteValidator = ValidatorHash ""
     , dcUpgradeMajorityPercent = 1
@@ -47,7 +43,6 @@ sampleDynamicConfig =
     , dcMaxTripDisbursement = 1
     , dcAgentDisbursementPercent = 1
     , dcFungibleVotePercent = 1
-    , dcTallyIndexNft = adaSymbol
     }
 
 sampleHighRelativeMajorityHighTotalVotesDynamicConfig :: DynamicConfigDatum
@@ -57,7 +52,7 @@ sampleHighRelativeMajorityHighTotalVotesDynamicConfig =
     , dcTallyValidator = tallyValidatorHash'
     , dcTreasuryValidator = ValidatorHash ""
     , dcConfigurationValidator = ValidatorHash ""
-    , dcVoteCurrencySymbol = adaSymbol
+    , dcVoteCurrencySymbol = dummyVoteFungibleSymbol
     , dcVoteTokenName = adaToken
     , dcVoteValidator = ValidatorHash ""
     , dcUpgradeMajorityPercent = 1
@@ -77,7 +72,6 @@ sampleHighRelativeMajorityHighTotalVotesDynamicConfig =
     , dcMaxTripDisbursement = 1
     , dcAgentDisbursementPercent = 1
     , dcFungibleVotePercent = 1
-    , dcTallyIndexNft = adaSymbol
     }
 
 -- VoteMinterDynamicConfigDatum samples
@@ -88,14 +82,6 @@ sampleVoteMinterDynamicConfig =
     , vmdcVoteTokenName = TokenName "vote"
     , vmdcVoteValidator = voteValidatorHash'
     , vmdcVoteNft = voteCurrencySymbol sampleVoteMinterConfig
-    }
-
--- VoteDynamicConfigDatum samples
-sampleVoteDynamicConfig :: VoteDynamicConfigDatum
-sampleVoteDynamicConfig =
-  VoteDynamicConfigDatum
-    { vdcTallyValidator = tallyValidatorHash'
-    , vdcVoteCurrencySymbol = toBuiltinData (dummyVoteFungibleSymbol :: CurrencySymbol)
     }
 
 sampleTallyDynamicConfig :: TallyDynamicConfigDatum

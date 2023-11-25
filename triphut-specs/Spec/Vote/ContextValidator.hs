@@ -34,6 +34,8 @@ import Plutus.Model.V2 (
   refInputInline,
  )
 import Plutus.V1.Ledger.Interval (from)
+import Spec.ConfigurationNft.Transactions (runInitConfig)
+import Spec.ConfigurationNft.Utils (findConfig)
 import Spec.SpecUtils (amountOfAda)
 import Spec.Tally.Script (tallyNftTypedValidator)
 import Spec.Tally.Transactions (
@@ -44,8 +46,8 @@ import Spec.Tally.Transactions (
 import Spec.Tally.Utils (findTally, findTallyConfig)
 import Spec.Values (dummyTallyValue, dummyVoteValue)
 import Spec.Vote.Script (voteTypedValidator)
-import Spec.Vote.Transactions (runInitVote, runInitVoteConfig, runInitVoteWithUser)
-import Spec.Vote.Utils (findVote, findVoteConfig)
+import Spec.Vote.Transactions (runInitVote, runInitVoteWithUser)
+import Spec.Vote.Utils (findVote)
 import Triphut.Vote (VoteActionRedeemer (Cancel, Count))
 import Prelude (Eq, mconcat, mempty, ($), (<>), (==))
 
@@ -138,12 +140,12 @@ mkVoteValidatorCountRedeemerTest ::
   Run ()
 mkVoteValidatorCountRedeemerTest configRef voteValidator tallyValidator tallyConfigRef tallyPeriod = do
   runInitVote
-  runInitVoteConfig
+  runInitConfig
   runInitTallyConfig
 
   when (tallyPeriod == TallyPeriodOver) runInitTallyWithEndTimeInPast -- Valid
   when (tallyPeriod == StillInTallyPeriod) runInitTallyWithEndTimeInFuture -- Invalid
-  (voteConfigOutRef, _, _) <- findVoteConfig
+  (configOutRef, _, _) <- findConfig
   (tallyConfigOutRef, _, _) <- findTallyConfig
   (tallyOutRef, _, tallyDatum) <- findTally
   (voteOutRef, _, voteDatum) <- findVote
@@ -161,7 +163,7 @@ mkVoteValidatorCountRedeemerTest configRef voteValidator tallyValidator tallyCon
           ]
 
       withVoteConfigRef = case configRef of
-        HasConfigInReferenceInputs -> refInputInline voteConfigOutRef
+        HasConfigInReferenceInputs -> refInputInline configOutRef
         NoConfigInReferenceInputs -> mempty
 
       withTallyRef = case tallyConfigRef of
@@ -247,12 +249,12 @@ mkVoteValidatorCancelRedeemerTest
   tallyConfigRef
   tallyPeriod
   ownerSigns = do
-    runInitVoteConfig
+    runInitConfig
     runInitTallyConfig
 
     when (tallyPeriod == TallyPeriodOver) runInitTallyWithEndTimeInPast -- Valid
     when (tallyPeriod == StillInTallyPeriod) runInitTallyWithEndTimeInFuture -- Invalid
-    (voteConfigOutRef, _, _) <- findVoteConfig
+    (configOutRef, _, _) <- findConfig
     (tallyConfigOutRef, _, _) <- findTallyConfig
     (tallyOutRef, _, tallyDatum) <- findTally
 
@@ -275,7 +277,7 @@ mkVoteValidatorCancelRedeemerTest
             ]
 
         withVoteConfigRef = case configRef of
-          HasConfigInReferenceInputs -> refInputInline voteConfigOutRef
+          HasConfigInReferenceInputs -> refInputInline configOutRef
           NoConfigInReferenceInputs -> mempty
 
         withTallyRef = case tallyConfigRef of

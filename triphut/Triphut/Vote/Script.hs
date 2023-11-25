@@ -102,15 +102,17 @@ import Triphut.Shared (
   validatorToScript,
   wrapValidate,
  )
-import Triphut.Types (TallyStateDatum (TallyStateDatum, tsProposalEndTime))
+import Triphut.Types (
+  DynamicConfigDatum (
+    DynamicConfigDatum,
+    dcTallyValidator,
+    dcVoteCurrencySymbol
+  ),
+  TallyStateDatum (TallyStateDatum, tsProposalEndTime),
+ )
 import Triphut.Vote (
   VoteActionRedeemer (Cancel, Count),
   VoteDatum (VoteDatum, vOwner, vReturnAda),
-  VoteDynamicConfigDatum (
-    VoteDynamicConfigDatum,
-    vdcTallyValidator,
-    vdcVoteCurrencySymbol
-  ),
   VoteMinterActionRedeemer (Burn, Mint),
   VoteMinterConfig (
     VoteMinterConfig,
@@ -282,7 +284,7 @@ voteMinter =
 
      The validator always ensures:
 
-       - There is exactly one 'Triphut.Vote.VoteDynamicConfigDatum' in the reference inputs,
+       - There is exactly one 'Triphut.Types.DynamicConfigDatum' in the reference inputs,
           marked by the config NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
           provided by the 'VoteValidatorConfig' argument)
 
@@ -292,7 +294,7 @@ voteMinter =
       is set to 'Count', this validator performs the following checks:
 
         - That the tally validator is present in the inputs, the tally validator is specified
-          by the 'vdcTallyValidator' field of the 'VoteDynamicConfigDatum'
+          by the 'dcTallyValidator' field of the 'DynamicConfigDatum'
 
    == Cancel vote
 
@@ -302,8 +304,8 @@ voteMinter =
         - The transaction is signed by the vote owner, specified by the 'vOwner' field
           of the 'Triphut.Vote.VoteDatum'.
         - All the vote tokens are burned, checking that there are no vote tokens in the transaction outputs,
-          with the corresponding 'CurrencySymbol' specified by the 'vdcVoteCurrencySymbol'
-          in the 'VoteDynamicConfigDatum'
+          with the corresponding 'CurrencySymbol' specified by the 'dcVoteCurrencySymbol'
+          in the 'DynamicConfigDatum'
 -}
 validateVote ::
   VoteValidatorConfig ->
@@ -324,18 +326,18 @@ validateVote
       hasConfigurationNft = hasOneOfToken vvcConfigNftCurrencySymbol vvcConfigNftTokenName
 
       -- Get the configuration from the reference inputs
-      VoteDynamicConfigDatum {..} =
+      DynamicConfigDatum {..} =
         case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Should be exactly one config NFT in the reference inputs. None found."
      in
       case action of
         Count ->
-          -- Ensure the vote validator is contained in the inputs
+          -- Ensure the tally validator is contained in the inputs
           traceIfFalse
             "Missing Tally Validator input"
             ( any
-                ( (== ScriptCredential vdcTallyValidator)
+                ( (== ScriptCredential dcTallyValidator)
                     . addressCredential
                     . txOutAddress
                     . txInInfoResolved
@@ -354,7 +356,7 @@ validateVote
 
             -- Helper for filtering for UTXOs containing a vote token
             hasVoteToken :: Value -> Bool
-            hasVoteToken = hasSymbolInValue (unsafeFromBuiltinData vdcVoteCurrencySymbol)
+            hasVoteToken = hasSymbolInValue dcVoteCurrencySymbol
 
             -- Ensure there are no vote tokens in the outputs
             voteTokenAreAllBurned :: Bool

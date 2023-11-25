@@ -6,7 +6,6 @@ module Triphut.Vote (
   -- * Datums
   VoteDatum (..),
   VoteMinterDynamicConfigDatum (..),
-  VoteDynamicConfigDatum (..),
 
   -- * Redeemers
   VoteMinterActionRedeemer (..),
@@ -77,12 +76,6 @@ data VoteMinterDynamicConfigDatum = VoteMinterDynamicConfigDatum
   , vmdcVoteNft :: CurrencySymbol
   }
 
--- | Vote config datum, representation mirrors the main 'Triphut.Types.DynamicConfigDatum'
-data VoteDynamicConfigDatum = VoteDynamicConfigDatum
-  { vdcTallyValidator :: ValidatorHash
-  , vdcVoteCurrencySymbol :: BuiltinData
-  }
-
 unstableMakeIsData ''VoteMinterDynamicConfigDatum
 
 -- | Redeemer for 'Triphut.Vote.Script.validateVote' validator
@@ -96,5 +89,4 @@ data VoteValidatorConfig = VoteValidatorConfig
   }
 
 unstableMakeIsData ''VoteActionRedeemer
-unstableMakeIsData ''VoteDynamicConfigDatum
 makeLift ''VoteValidatorConfig

@@ -13,7 +13,12 @@ import Plutus.V1.Ledger.Address (pubKeyHashAddress)
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Value (adaToken)
 import Spec.Addresses (dummyVoterAddress)
-import Spec.Values (dummyVoteConfigNftSymbol, dummyVoteConfigNftTokenName)
+import Spec.Values (
+  dummyConfigNftSymbol,
+  dummyConfigNftTokenName,
+  dummyVoteConfigNftSymbol,
+  dummyVoteConfigNftTokenName,
+ )
 import Triphut.Vote (
   VoteDatum (..),
   VoteDirection (For),
@@ -40,7 +45,7 @@ sampleVoteDatumWithUser user =
     }
 
 sampleVoteValidatorConfig :: VoteValidatorConfig
-sampleVoteValidatorConfig = VoteValidatorConfig dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName
+sampleVoteValidatorConfig = VoteValidatorConfig dummyConfigNftSymbol dummyConfigNftTokenName
 
 sampleVoteMinterConfig :: VoteMinterConfig
 sampleVoteMinterConfig = VoteMinterConfig dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName

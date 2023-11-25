@@ -308,7 +308,7 @@ valuePaidTo' outs addr = go mempty outs
       marked by the tally NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
       provided by the 'TallyValidatorConfig' argument)
 
-    - That the tally NFT remains at the validadtor (the 'newValueIsAtleastAsBigAsOldValue' check)
+    - That the tally NFT remains at the validator (the 'newValueIsAtleastAsBigAsOldValue' check)
 
     - There is exactly one 'Triphut.Tally.TallyStateDatum' in the outputs.
 

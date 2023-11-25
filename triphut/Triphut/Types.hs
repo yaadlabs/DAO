@@ -78,10 +78,13 @@ instance PlutusTx.Eq TallyStateDatum where
 -- | DynamicConfig Datum holds the main info needed for the contracts.
 data DynamicConfigDatum = DynamicConfigDatum
   { dcTallyValidator :: ValidatorHash
+  -- ^ Hash of the `Triphut.Types.Tally.Script.validateTally` validator
   , dcTreasuryValidator :: ValidatorHash
+  -- ^ Hash of the `Triphut.Types.Treasury.Script.validateTreasury` validator
   , dcConfigurationValidator :: ValidatorHash
+  -- ^ Hash of the `Triphut.Types.ConfigurationNft.Script.validateConfiguration` validator
   , dcVoteValidator :: ValidatorHash
-  -- ^ The validator scripts belonging to the DAO protocol
+  -- ^ Hash of the `Triphut.Types.Vote.Script.validateVote` validator
   , dcUpgradeMajorityPercent :: Integer
   , dcUpgradeRelativeMajorityPercent :: Integer
   , dcGeneralMajorityPercent :: Integer
@@ -109,12 +112,19 @@ data DynamicConfigDatum = DynamicConfigDatum
   -- after the end time plus the offset has passed
   -- (Offset is in milliseconds)
   , dcTallyNft :: CurrencySymbol
+  -- ^ Symbol of the `Triphut.Tally.Script.mkTallyNftMinter` minting policy
   , dcVoteCurrencySymbol :: CurrencySymbol
+  -- ^ Symbol of the `Triphut.Vote.Script.mkVoteMinter` minting policy
   , dcVoteTokenName :: TokenName
+  -- ^ Token name for the vote
   , dcVoteNft :: CurrencySymbol
+  -- ^ Symbol of the Vote NFT (Where does this come from?)
   , dcVoteFungibleCurrencySymbol :: CurrencySymbol
+  -- ^ Symbol of the fungible vote value (Where does this come from?)
   , dcVoteFungibleTokenName :: TokenName
-  , dcFungibleVotePercent :: Integer -- times a 1000
+  -- ^ Token name for fungible vote value
+  , dcFungibleVotePercent :: Integer
+  -- ^ Fungible token percentage (Percentage value is times a 1000)
   }
 
 unstableMakeIsData ''DynamicConfigDatum
