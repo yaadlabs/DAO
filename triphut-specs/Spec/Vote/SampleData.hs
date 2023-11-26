@@ -3,7 +3,6 @@ Module      : Spec.Vote.SampleData
 Description : Vote sample data for tests
 -}
 module Spec.Vote.SampleData (
-  sampleVoteMinterConfig,
   sampleVoteDatumWithUser,
   sampleVoteDatum,
 ) where
@@ -19,7 +18,6 @@ import Spec.Values (
 import Triphut.Vote (
   VoteDatum (..),
   VoteDirection (For),
-  VoteMinterConfig (VoteMinterConfig),
  )
 
 sampleVoteDatum :: VoteDatum
@@ -39,6 +37,3 @@ sampleVoteDatumWithUser user =
     , vOwner = pubKeyHashAddress user
     , vReturnAda = 1
     }
-
-sampleVoteMinterConfig :: VoteMinterConfig
-sampleVoteMinterConfig = VoteMinterConfig dummyConfigNftSymbol dummyConfigNftTokenName

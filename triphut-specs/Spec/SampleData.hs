@@ -5,9 +5,9 @@ module Spec.SampleData (
 
 import Plutus.V1.Ledger.Value (TokenName (TokenName), adaToken)
 import Plutus.V2.Ledger.Api (ValidatorHash (ValidatorHash))
+import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
 import Spec.Tally.Script (tallyValidatorHash')
 import Spec.Values (dummyTallySymbol, dummyVoteFungibleSymbol)
-import Spec.Vote.SampleData (sampleVoteMinterConfig)
 import Spec.Vote.Script (voteCurrencySymbol, voteValidatorHash')
 import Triphut.Types (DynamicConfigDatum (..))
 
@@ -28,7 +28,7 @@ sampleDynamicConfig =
     , dcGeneralRelativeMajorityPercent = 20
     , dcTripMajorityPercent = 1
     , dcTripRelativeMajorityPercent = 1
-    , dcVoteNft = voteCurrencySymbol sampleVoteMinterConfig
+    , dcVoteNft = voteCurrencySymbol sampleConfigValidatorConfig
     , dcVoteFungibleCurrencySymbol = dummyVoteFungibleSymbol
     , dcVoteFungibleTokenName = adaToken
     , dcTotalVotes = 1
@@ -56,7 +56,7 @@ sampleHighRelativeMajorityHighTotalVotesDynamicConfig =
     , dcGeneralRelativeMajorityPercent = 1
     , dcTripMajorityPercent = 1
     , dcTripRelativeMajorityPercent = 1
-    , dcVoteNft = voteCurrencySymbol sampleVoteMinterConfig
+    , dcVoteNft = voteCurrencySymbol sampleConfigValidatorConfig
     , dcVoteFungibleCurrencySymbol = dummyVoteFungibleSymbol
     , dcVoteFungibleTokenName = adaToken
     , dcTotalVotes = 2000

@@ -28,19 +28,21 @@ import Plutus.Model.V2 (
  )
 import Plutus.V1.Ledger.Interval (to)
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
+import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
 import Spec.ConfigurationNft.Transactions (runInitConfig)
 import Spec.ConfigurationNft.Utils (findConfig)
 import Spec.SpecUtils (minAda, oneSecond)
 import Spec.Tally.Transactions (runInitTallyWithEndTimeInFuture)
 import Spec.Tally.Utils (findTally)
-import Spec.Vote.SampleData (sampleVoteDatum, sampleVoteMinterConfig)
+import Spec.Vote.SampleData (sampleVoteDatum)
 import Spec.Vote.Script (
   VoteMintingPolicy,
   voteCurrencySymbol,
   voteTypedMintingPolicy,
   voteTypedValidator,
  )
-import Triphut.Vote (VoteMinterActionRedeemer (Mint), VoteMinterConfig)
+import Triphut.ConfigurationNft (ConfigurationValidatorConfig)
+import Triphut.Vote (VoteMinterActionRedeemer (Mint))
 import Prelude (mconcat, mempty, (*), (+), (<>))
 
 validVoteConfigNftTest :: Run ()
@@ -80,7 +82,7 @@ data ValidityRange
   | NoSpecificRange
 
 mkVoteConfigNftTest ::
-  (VoteMinterConfig -> Value) ->
+  (ConfigurationValidatorConfig -> Value) ->
   VoteConfigRef ->
   ValidityRange ->
   Run ()
@@ -97,10 +99,10 @@ mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
 
   let
     voteValue :: Value
-    voteValue = voteConfigValue sampleVoteMinterConfig
+    voteValue = voteConfigValue sampleConfigValidatorConfig
 
     votePolicy :: VoteMintingPolicy
-    votePolicy = voteTypedMintingPolicy sampleVoteMinterConfig
+    votePolicy = voteTypedMintingPolicy sampleConfigValidatorConfig
 
     -- Set up the txs
     baseTx =
@@ -131,9 +133,9 @@ mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
     NoSpecificRange -> submitTx user combinedTxs -- Should (will) fail
 
 -- Valid token value, correct symbol and exactly one minted
-validVoteConfigValue :: VoteMinterConfig -> Value
+validVoteConfigValue :: ConfigurationValidatorConfig -> Value
 validVoteConfigValue config = singleton (voteCurrencySymbol config) (TokenName "vote") 1
 
 -- Valid token value, correct symbol and exactly one minted
-invalidMoreThanOneVoteConfigValue :: VoteMinterConfig -> Value
+invalidMoreThanOneVoteConfigValue :: ConfigurationValidatorConfig -> Value
 invalidMoreThanOneVoteConfigValue config = singleton (voteCurrencySymbol config) (TokenName "vote") 2

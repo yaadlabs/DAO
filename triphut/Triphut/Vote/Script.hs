@@ -125,11 +125,6 @@ import Triphut.Vote (
   VoteActionRedeemer (Cancel, Count),
   VoteDatum (VoteDatum, vOwner, vReturnAda),
   VoteMinterActionRedeemer (Burn, Mint),
-  VoteMinterConfig (
-    VoteMinterConfig,
-    vmcConfigNftCurrencySymbol,
-    vmcConfigNftTokenName
-  ),
  )
 
 {- | Policy for minting or burning the vote NFT.
@@ -141,7 +136,7 @@ import Triphut.Vote (
 
         - There is exactly one 'Triphut.Types.DynamicConfigDatum' in the reference inputs,
           marked by the config NFT
-          (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'VoteMinterConfig' argument)
+          (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'ConfigurationValidatorConfig' argument)
         - There is exactly one 'Triphut.Types.TallyStateDatum' in the reference inputs,
           marked by the Tally NFT
         - Exactly one valid Vote NFT is minted with the valid token name.
@@ -160,9 +155,9 @@ import Triphut.Vote (
 
         - That one vote token is burned
 -}
-mkVoteMinter :: VoteMinterConfig -> VoteMinterActionRedeemer -> ScriptContext -> Bool
+mkVoteMinter :: ConfigurationValidatorConfig -> VoteMinterActionRedeemer -> ScriptContext -> Bool
 mkVoteMinter
-  VoteMinterConfig {..}
+  ConfigurationValidatorConfig {..}
   action
   ScriptContext
     { scriptContextTxInfo = TxInfo {..}
@@ -179,7 +174,7 @@ mkVoteMinter
       let
         -- Helper for filtering for config UTXO in the reference inputs
         hasConfigurationNft :: Value -> Bool
-        hasConfigurationNft = hasOneOfToken vmcConfigNftCurrencySymbol vmcConfigNftTokenName
+        hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
 
         -- The datums
         theData :: Map DatumHash Datum
@@ -243,19 +238,19 @@ mkVoteMinter
           && traceIfFalse "Total ada is not high enough" totalAdaIsGreaterThanReturnAda
 mkVoteMinter _ _ _ = traceError "Wrong type of script purpose!"
 
-wrappedPolicy :: VoteMinterConfig -> WrappedMintingPolicyType
+wrappedPolicy :: ConfigurationValidatorConfig -> WrappedMintingPolicyType
 wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) (unsafeFromBuiltinData b))
 
-policy :: VoteMinterConfig -> MintingPolicy
+policy :: ConfigurationValidatorConfig -> MintingPolicy
 policy cfg =
   mkMintingPolicyScript $
     $$(compile [||\c -> wrappedPolicy c||])
       `PlutusTx.applyCode` PlutusTx.liftCode cfg
 
-voteMinterPolicyId :: VoteMinterConfig -> CurrencySymbol
+voteMinterPolicyId :: ConfigurationValidatorConfig -> CurrencySymbol
 voteMinterPolicyId = mpsSymbol . plutonomyMintingPolicyHash . policy
 
-scriptAsCbor :: VoteMinterConfig -> BSL.ByteString
+scriptAsCbor :: ConfigurationValidatorConfig -> BSL.ByteString
 scriptAsCbor =
   let
     optimizerSettings =
@@ -270,7 +265,7 @@ scriptAsCbor =
       . unMintingPolicyScript
       . policy
 
-voteMinter :: VoteMinterConfig -> PlutusScript PlutusScriptV2
+voteMinter :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
 voteMinter =
   PlutusScriptSerialised
     . BSS.toShort

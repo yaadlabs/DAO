@@ -12,28 +12,17 @@ module Triphut.Vote (
 
   -- * General vote related types
   VoteDirection (..),
-
-  -- * Script arguments, containing relevant CurrenySymbol and TokenName
-  VoteMinterConfig (..),
 ) where
 
 import Plutus.V1.Ledger.Address (Address)
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
-import PlutusTx (makeLift, unstableMakeIsData)
+import Plutus.V1.Ledger.Value (TokenName)
+import PlutusTx (unstableMakeIsData)
 import PlutusTx.Prelude (
   Bool (False, True),
   Integer,
   (==),
  )
 import PlutusTx.Prelude qualified as PlutusTx
-
--- | 'Triphut.Vote.Script.mkVoteMinter' argument
-data VoteMinterConfig = VoteMinterConfig
-  { vmcConfigNftCurrencySymbol :: CurrencySymbol
-  , vmcConfigNftTokenName :: TokenName
-  }
-
-makeLift ''VoteMinterConfig
 
 -- | Vote direction
 data VoteDirection = For | Against

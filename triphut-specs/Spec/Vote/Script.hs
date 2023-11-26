@@ -26,34 +26,34 @@ import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
 import Spec.SpecUtils (mkTypedValidator')
+import Triphut.ConfigurationNft (ConfigurationValidatorConfig (ConfigurationValidatorConfig))
 import Triphut.Vote (
   VoteActionRedeemer,
   VoteDatum,
   VoteMinterActionRedeemer,
-  VoteMinterConfig (VoteMinterConfig),
  )
 import Triphut.Vote.Script (voteValidator, voteValidatorHash, wrappedPolicy)
 
 -- Policy script and info
 type VoteMintingPolicy = TypedPolicy VoteMinterActionRedeemer
 
-voteTypedMintingPolicy :: VoteMinterConfig -> VoteMintingPolicy
+voteTypedMintingPolicy :: ConfigurationValidatorConfig -> VoteMintingPolicy
 voteTypedMintingPolicy config =
   mkTypedPolicy $
     $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
       `PlutusTx.applyCode` PlutusTx.liftCode config
 
-voteMintingPolicy :: VoteMinterConfig -> MintingPolicy
+voteMintingPolicy :: ConfigurationValidatorConfig -> MintingPolicy
 voteMintingPolicy config =
   mkMintingPolicyScript $
     $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
       `PlutusTx.applyCode` PlutusTx.liftCode config
 
-voteCurrencySymbol :: VoteMinterConfig -> CurrencySymbol
+voteCurrencySymbol :: ConfigurationValidatorConfig -> CurrencySymbol
 voteCurrencySymbol = scriptCurrencySymbol . voteTypedMintingPolicy
 
-voteValue :: VoteMinterConfig -> Value
-voteValue voteCfg@(VoteMinterConfig _ tokenName) = singleton (voteCurrencySymbol voteCfg) tokenName 1
+voteValue :: ConfigurationValidatorConfig -> Value
+voteValue voteCfg@(ConfigurationValidatorConfig _ tokenName) = singleton (voteCurrencySymbol voteCfg) tokenName 1
 
 -- Validator script and info
 type VoteValidatorScript = TypedValidator VoteDatum VoteActionRedeemer

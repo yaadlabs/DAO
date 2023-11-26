@@ -76,13 +76,6 @@ import Triphut.Treasury (
   ),
  )
 import Triphut.Treasury.Script (treasuryScript, treasuryValidatorHash)
-import Triphut.Vote (
-  VoteMinterConfig (
-    VoteMinterConfig,
-    vmcConfigNftCurrencySymbol,
-    vmcConfigNftTokenName
-  ),
- )
 import Triphut.Vote.Script (
   voteMinter,
   voteMinterPolicyId,
@@ -227,15 +220,10 @@ run Options {..} = do
   writeFile configurationValidatorHashOutput $ show (configurationValidatorHash configurationValidatorConfig)
 
   ---
-  let voteMinterConfig =
-        VoteMinterConfig
-          { vmcConfigNftCurrencySymbol = theConfigurationNftPolicyId
-          , vmcConfigNftTokenName = configurationNftTokenName
-          }
 
-  writeSource voteMinterOutput (voteMinter voteMinterConfig)
+  writeSource voteMinterOutput (voteMinter configurationValidatorConfig)
 
-  let theVoteMinterCurrencySymbol = voteMinterPolicyId voteMinterConfig
+  let theVoteMinterCurrencySymbol = voteMinterPolicyId configurationValidatorConfig
 
   writeFile voteMinterPolicyIdOutput $ show theVoteMinterCurrencySymbol
 
