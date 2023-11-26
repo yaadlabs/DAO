@@ -24,8 +24,8 @@ import Plutus.V1.Ledger.Scripts (
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
+import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
 import Spec.SpecUtils (mkTypedValidator')
-import Spec.Vote.SampleData (sampleVoteValidatorConfig)
 import Triphut.Vote (
   VoteActionRedeemer,
   VoteDatum,
@@ -59,7 +59,7 @@ voteValue voteCfg@(VoteMinterConfig _ tokenName) = singleton (voteCurrencySymbol
 type VoteValidatorScript = TypedValidator VoteDatum VoteActionRedeemer
 
 voteTypedValidator :: VoteValidatorScript
-voteTypedValidator = mkTypedValidator' sampleVoteValidatorConfig voteValidator
+voteTypedValidator = mkTypedValidator' sampleConfigValidatorConfig voteValidator
 
 voteValidatorHash' :: ValidatorHash
-voteValidatorHash' = voteValidatorHash sampleVoteValidatorConfig
+voteValidatorHash' = voteValidatorHash sampleConfigValidatorConfig

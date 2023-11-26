@@ -90,6 +90,13 @@ import PlutusTx.Prelude (
   (||),
  )
 import PlutusTx.Prelude qualified as PlutusTx
+import Triphut.ConfigurationNft (
+  ConfigurationValidatorConfig (
+    ConfigurationValidatorConfig,
+    cvcConfigNftCurrencySymbol,
+    cvcConfigNftTokenName
+  ),
+ )
 import Triphut.Index (IndexNftDatum (IndexNftDatum, indIndex))
 import Triphut.Shared (
   WrappedMintingPolicyType,
@@ -115,11 +122,6 @@ import Triphut.Tally (
     tncConfigNftTokenName,
     tncIndexNftPolicyId,
     tncIndexNftTokenName
-  ),
-  TallyValidatorConfig (
-    TallyValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
   ),
  )
 import Triphut.Types (
@@ -306,7 +308,7 @@ valuePaidTo' outs addr = go mempty outs
 
     - There is exactly one 'Triphut.Types.DynamicConfigDatum' in the reference inputs,
       marked by the tally NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
-      provided by the 'TallyValidatorConfig' argument)
+      provided by the 'ConfigurationValidatorConfig' argument)
 
     - That the tally NFT remains at the validator (the 'newValueIsAtleastAsBigAsOldValue' check)
 
@@ -322,13 +324,13 @@ valuePaidTo' outs addr = go mempty outs
     - That all vote tokens are burned (there are no vote tokens in the outputs).
 -}
 validateTally ::
-  TallyValidatorConfig ->
+  ConfigurationValidatorConfig ->
   TallyStateDatum ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateTally
-  TallyValidatorConfig {..}
+  ConfigurationValidatorConfig {..}
   ts@TallyStateDatum {tsFor = oldFor, tsAgainst = oldAgainst, tsProposalEndTime}
   _
   ScriptContext
@@ -338,7 +340,7 @@ validateTally
     let
       -- Helper for filtering for config UTXO in the reference inputs
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft = hasOneOfToken tvcConfigNftCurrencySymbol tvcConfigNftTokenName
+      hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
 
       -- Get the 'DynamicConfig' from the reference inputs
       DynamicConfigDatum {..} =
@@ -475,14 +477,14 @@ validateTally
         && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
 validateTally _ _ _ _ = traceError "Wrong script purpose"
 
-tallyValidator :: TallyValidatorConfig -> Validator
+tallyValidator :: ConfigurationValidatorConfig -> Validator
 tallyValidator config = mkValidatorWithSettings compiledCode False
   where
     wrapValidateTally = wrapValidate validateTally
     compiledCode = $$(PlutusTx.compile [||wrapValidateTally||]) `applyCode` liftCode config
 
-tallyValidatorHash :: TallyValidatorConfig -> ValidatorHash
+tallyValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 tallyValidatorHash = validatorHash . tallyValidator
 
-tallyScript :: TallyValidatorConfig -> PlutusScript PlutusScriptV2
+tallyScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
 tallyScript = validatorToScript tallyValidator

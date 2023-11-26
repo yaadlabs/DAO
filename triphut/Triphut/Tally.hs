@@ -3,9 +3,8 @@ Module: Triphut.Tally
 Description: Contains all the tally specific types.
 -}
 module Triphut.Tally (
-  -- * Script arguments, containing relevant CurrenySymbol and TokenName
+  -- * Script argument, containing relevant CurrenySymbol and TokenName
   TallyNftConfig (..),
-  TallyValidatorConfig (..),
 ) where
 
 import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
@@ -20,10 +19,3 @@ data TallyNftConfig = TallyNftConfig
   }
 
 makeLift ''TallyNftConfig
-
-data TallyValidatorConfig = TallyValidatorConfig
-  { tvcConfigNftCurrencySymbol :: CurrencySymbol
-  , tvcConfigNftTokenName :: TokenName
-  }
-
-makeLift ''TallyValidatorConfig

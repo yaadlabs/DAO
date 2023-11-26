@@ -22,8 +22,8 @@ import Plutus.V1.Ledger.Scripts (ValidatorHash)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
+import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
 import Spec.SpecUtils (mkTypedValidator')
-import Spec.Tally.SampleData (sampleTallyValidatorConfig)
 import Triphut.Tally (TallyNftConfig (TallyNftConfig))
 import Triphut.Tally.Script (mkTallyNftMinter, tallyValidator, tallyValidatorHash)
 import Triphut.Types (TallyStateDatum)
@@ -46,7 +46,7 @@ tallyConfigNftValue nftCfg@(TallyNftConfig _ tokenName _ _) =
 type TallyValidatorScript = TypedValidator TallyStateDatum ()
 
 tallyNftTypedValidator :: TallyValidatorScript
-tallyNftTypedValidator = mkTypedValidator' sampleTallyValidatorConfig tallyValidator
+tallyNftTypedValidator = mkTypedValidator' sampleConfigValidatorConfig tallyValidator
 
 tallyValidatorHash' :: ValidatorHash
-tallyValidatorHash' = tallyValidatorHash sampleTallyValidatorConfig
+tallyValidatorHash' = tallyValidatorHash sampleConfigValidatorConfig

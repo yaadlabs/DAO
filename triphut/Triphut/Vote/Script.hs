@@ -88,6 +88,13 @@ import PlutusTx.Prelude (
   (==),
   (>),
  )
+import Triphut.ConfigurationNft (
+  ConfigurationValidatorConfig (
+    ConfigurationValidatorConfig,
+    cvcConfigNftCurrencySymbol,
+    cvcConfigNftTokenName
+  ),
+ )
 import Triphut.Shared (
   WrappedMintingPolicyType,
   convertDatum,
@@ -122,11 +129,6 @@ import Triphut.Vote (
     VoteMinterConfig,
     vmcConfigNftCurrencySymbol,
     vmcConfigNftTokenName
-  ),
-  VoteValidatorConfig (
-    VoteValidatorConfig,
-    vvcConfigNftCurrencySymbol,
-    vvcConfigNftTokenName
   ),
  )
 
@@ -283,7 +285,7 @@ voteMinter =
 
        - There is exactly one 'Triphut.Types.DynamicConfigDatum' in the reference inputs,
           marked by the config NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
-          provided by the 'VoteValidatorConfig' argument)
+          provided by the 'ConfigurationValidatorConfig' argument)
 
    == Count vote
 
@@ -305,13 +307,13 @@ voteMinter =
           in the 'DynamicConfigDatum'
 -}
 validateVote ::
-  VoteValidatorConfig ->
+  ConfigurationValidatorConfig ->
   VoteDatum ->
   VoteActionRedeemer ->
   ScriptContext ->
   Bool
 validateVote
-  VoteValidatorConfig {..}
+  ConfigurationValidatorConfig {..}
   VoteDatum {..}
   action
   ScriptContext
@@ -320,7 +322,7 @@ validateVote
     let
       -- Helper for filtering for config UTXO in the reference inputs
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft = hasOneOfToken vvcConfigNftCurrencySymbol vvcConfigNftTokenName
+      hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
 
       -- Get the configuration from the reference inputs
       DynamicConfigDatum {..} =
@@ -363,14 +365,14 @@ validateVote
             traceIfFalse "Transaction should be signed by the vote owner" isSignedByOwner
               && traceIfFalse "All vote tokens should be burned" voteTokenAreAllBurned
 
-voteValidator :: VoteValidatorConfig -> Validator
+voteValidator :: ConfigurationValidatorConfig -> Validator
 voteValidator config = mkValidatorWithSettings compiledCode False
   where
     wrapValidateVote = wrapValidate validateVote
     compiledCode = $$(PlutusTx.compile [||wrapValidateVote||]) `applyCode` liftCode config
 
-voteValidatorHash :: VoteValidatorConfig -> ValidatorHash
+voteValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 voteValidatorHash = validatorHash . voteValidator
 
-voteScript :: VoteValidatorConfig -> PlutusScript PlutusScriptV2
+voteScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
 voteScript = validatorToScript voteValidator

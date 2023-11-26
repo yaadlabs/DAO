@@ -3,7 +3,6 @@ Module      : Spec.Tally.SampleData
 Description : Tally sample data for tests
 -}
 module Spec.Tally.SampleData (
-  sampleTallyValidatorConfig,
   sampleUpgradeWithEndTimeInFutureTallyStateDatum,
   sampleUpgradeWithEndTimeInPastTallyStateDatum,
   sampleTripWithEndTimeInFutureTallyStateDatum,
@@ -23,22 +22,7 @@ import Spec.Addresses (
  )
 import Spec.AlwaysSucceed.Script (alwaysSucceedCurrencySymbol)
 import Spec.Values (dummyConfigNftSymbol, dummyConfigNftTokenName)
-import Triphut.Tally (
-  TallyValidatorConfig (
-    TallyValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
- )
 import Triphut.Types (ProposalType (General, Trip, Upgrade), TallyStateDatum (..))
-
--- | Sample tally config
-sampleTallyValidatorConfig :: TallyValidatorConfig
-sampleTallyValidatorConfig =
-  TallyValidatorConfig
-    { tvcConfigNftCurrencySymbol = dummyConfigNftSymbol
-    , tvcConfigNftTokenName = dummyConfigNftTokenName
-    }
 
 sampleUpgradeWithEndTimeInPastTallyStateDatum :: TallyStateDatum
 sampleUpgradeWithEndTimeInPastTallyStateDatum =

@@ -15,7 +15,6 @@ module Triphut.Vote (
 
   -- * Script arguments, containing relevant CurrenySymbol and TokenName
   VoteMinterConfig (..),
-  VoteValidatorConfig (..),
 ) where
 
 import Plutus.V1.Ledger.Address (Address)
@@ -70,10 +69,4 @@ data VoteActionRedeemer
   = Count
   | Cancel
 
-data VoteValidatorConfig = VoteValidatorConfig
-  { vvcConfigNftCurrencySymbol :: CurrencySymbol
-  , vvcConfigNftTokenName :: TokenName
-  }
-
 unstableMakeIsData ''VoteActionRedeemer
-makeLift ''VoteValidatorConfig

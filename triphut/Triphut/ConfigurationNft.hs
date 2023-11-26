@@ -1,12 +1,14 @@
 {- |
 Module: Triphut.ConfigurationNft
-Description: Contains all the configuration specific types.
+Description: Contains the configuration specific script argument types.
 -}
 module Triphut.ConfigurationNft (
   -- * Script argument,containing relevant CurrenySymbol and TokenName
   ConfigurationValidatorConfig (..),
 
   -- * Script argument,containing relevant TxOutRef and TokenName
+
+  -- for minting policy
   NftConfig (..),
 ) where
 

@@ -61,11 +61,6 @@ import Triphut.Tally (
     tncIndexNftPolicyId,
     tncIndexNftTokenName
   ),
-  TallyValidatorConfig (
-    TallyValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
  )
 import Triphut.Tally.Script (
   tallyNftMinter,
@@ -86,11 +81,6 @@ import Triphut.Vote (
     VoteMinterConfig,
     vmcConfigNftCurrencySymbol,
     vmcConfigNftTokenName
-  ),
-  VoteValidatorConfig (
-    VoteValidatorConfig,
-    vvcConfigNftCurrencySymbol,
-    vvcConfigNftTokenName
   ),
  )
 import Triphut.Vote.Script (
@@ -249,15 +239,9 @@ run Options {..} = do
 
   writeFile voteMinterPolicyIdOutput $ show theVoteMinterCurrencySymbol
 
-  let voteValidatorConfig =
-        VoteValidatorConfig
-          { vvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
-          , vvcConfigNftTokenName = configurationNftTokenName
-          }
+  writeSource voteValidatorOutput (voteScript configurationValidatorConfig)
 
-  writeSource voteValidatorOutput (voteScript voteValidatorConfig)
-
-  writeFile voteValidatorHashOutput $ show (voteValidatorHash voteValidatorConfig)
+  writeFile voteValidatorHashOutput $ show (voteValidatorHash configurationValidatorConfig)
 
   let treasuryValidatorConfig =
         TreasuryValidatorConfig
@@ -308,14 +292,8 @@ run Options {..} = do
 
   writeFile tallyNftPolicyIdOutput $ show theTallyNftPolicyId
 
-  let tallyValidatorConfig =
-        TallyValidatorConfig
-          { tvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
-          , tvcConfigNftTokenName = configurationNftTokenName
-          }
+  writeSource tallyValidatorOutput (tallyScript configurationValidatorConfig)
 
-  writeSource tallyValidatorOutput (tallyScript tallyValidatorConfig)
-
-  let theTallyValidatorHash = tallyValidatorHash tallyValidatorConfig
+  let theTallyValidatorHash = tallyValidatorHash configurationValidatorConfig
 
   writeFile tallyValidatorHashOutput $ show theTallyValidatorHash
