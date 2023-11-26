@@ -105,8 +105,12 @@ import Triphut.Shared (
 import Triphut.Types (
   DynamicConfigDatum (
     DynamicConfigDatum,
+    dcTallyNft,
     dcTallyValidator,
-    dcVoteCurrencySymbol
+    dcVoteCurrencySymbol,
+    dcVoteNft,
+    dcVoteTokenName,
+    dcVoteValidator
   ),
   TallyStateDatum (TallyStateDatum, tsProposalEndTime),
  )
@@ -118,13 +122,6 @@ import Triphut.Vote (
     VoteMinterConfig,
     vmcConfigNftCurrencySymbol,
     vmcConfigNftTokenName
-  ),
-  VoteMinterDynamicConfigDatum (
-    VoteMinterDynamicConfigDatum,
-    vmdcTallyNft,
-    vmdcVoteNft,
-    vmdcVoteTokenName,
-    vmdcVoteValidator
   ),
   VoteValidatorConfig (
     VoteValidatorConfig,
@@ -140,13 +137,13 @@ import Triphut.Vote (
       When the 'Triphut.Vote.VoteMinterActionRedeemer' redeemer
       is set to 'Mint', this policy performs the following checks:
 
-        - There is exactly one 'Triphut.Vote.VoteMinterDynamicConfigDatum' in the reference inputs,
+        - There is exactly one 'Triphut.Types.DynamicConfigDatum' in the reference inputs,
           marked by the config NFT
           (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'VoteMinterConfig' argument)
         - There is exactly one 'Triphut.Types.TallyStateDatum' in the reference inputs,
           marked by the Tally NFT
         - Exactly one valid Vote NFT is minted with the valid token name.
-        - The token name matches the 'vmdcVoteTokenName' field of the 'VoteMinterDynamicConfigDatum'.
+        - The token name matches the 'dcVoteTokenName' field of the 'DynamicConfigDatum'.
         - There is exactly one output containing the vote NFT.
         - This output contains a valid 'Triphut.Vote.VoteDatum' datum.
         - The proposal is still active.
@@ -187,7 +184,7 @@ mkVoteMinter
         theData = txInfoData
 
         -- Get the configuration from the reference inputs
-        VoteMinterDynamicConfigDatum {..} =
+        DynamicConfigDatum {..} =
           case filter
             (hasConfigurationNft . txOutValue . txInInfoResolved)
             txInfoReferenceInputs of
@@ -197,14 +194,14 @@ mkVoteMinter
         -- Get output at the vote validator, should just be one.
         (VoteDatum {..}, !voteValue) =
           case filter
-            ((== ScriptCredential vmdcVoteValidator) . addressCredential . txOutAddress)
+            ((== ScriptCredential dcVoteValidator) . addressCredential . txOutAddress)
             txInfoOutputs of
             [TxOut {..}] -> (convertDatum theData txOutDatum, txOutValue)
             _ -> traceError "Should be exactly one vote datum (proposal reference) at the output"
 
         -- Helper for filtering for tally UTXO in the outputs
         hasTallyNft :: Value -> Bool
-        hasTallyNft = hasSymbolInValue vmdcTallyNft
+        hasTallyNft = hasSymbolInValue dcTallyNft
 
         -- Get the tally state datum at the output marked by the tally NFT
         TallyStateDatum {tsProposalEndTime} =
@@ -220,7 +217,7 @@ mkVoteMinter
 
         -- Ensure the vote value contains exactly one valid witness token
         hasWitness :: Bool
-        !hasWitness = hasOneOfToken thisCurrencySymbol vmdcVoteTokenName voteValue
+        !hasWitness = hasOneOfToken thisCurrencySymbol dcVoteTokenName voteValue
 
         -- Ensure exactly one valid vote token is minted
         onlyMintedOne :: Bool
@@ -228,10 +225,10 @@ mkVoteMinter
           hasSingleTokenWithSymbolAndTokenName
             txInfoMint
             thisCurrencySymbol
-            vmdcVoteTokenName
+            dcVoteTokenName
 
         hasVoteNft :: Bool
-        !hasVoteNft = hasTokenInValue vmdcVoteNft "Vote NFT" voteValue
+        !hasVoteNft = hasTokenInValue dcVoteNft "Vote NFT" voteValue
 
         -- Ensure the return ADA is less than the ada provided by the user, contained in the vote value
         totalAdaIsGreaterThanReturnAda :: Bool

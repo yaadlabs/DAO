@@ -116,7 +116,7 @@ data DynamicConfigDatum = DynamicConfigDatum
   , dcVoteCurrencySymbol :: CurrencySymbol
   -- ^ Symbol of the `Triphut.Vote.Script.mkVoteMinter` minting policy
   , dcVoteTokenName :: TokenName
-  -- ^ Token name for the vote
+  -- ^ Token name for the vote value minted by `Triphut.Vote.Script.mkVoteMinter`
   , dcVoteNft :: CurrencySymbol
   -- ^ Symbol of the Vote NFT (Where does this come from?)
   , dcVoteFungibleCurrencySymbol :: CurrencySymbol

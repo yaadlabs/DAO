@@ -1,7 +1,5 @@
 module Spec.AlwaysSucceed.Script (
-  AlwaysSucceedScriptVoteMinterDynamicConfig,
   AlwaysSucceedScriptTallyDynamicConfig,
-  alwaysSucceedTypedValidator1,
   alwaysSucceedTypedValidator2,
   alwaysSucceedTypedMintingPolicy,
   alwaysSucceedCurrencySymbol,
@@ -22,14 +20,6 @@ import PlutusTx (compile)
 import PlutusTx.Prelude (Bool (True), BuiltinData)
 import Triphut.AlwaysSucceed (succeedValidator1)
 import Triphut.Tally (TallyDynamicConfigDatum)
-import Triphut.Vote (VoteMinterDynamicConfigDatum)
-
--- Vote dynamic config reference script
-type AlwaysSucceedScriptVoteMinterDynamicConfig = TypedValidator VoteMinterDynamicConfigDatum ()
-
-alwaysSucceedTypedValidator1 :: AlwaysSucceedScriptVoteMinterDynamicConfig
-alwaysSucceedTypedValidator1 =
-  mkTypedValidator $$(PlutusTx.compile [||toBuiltinValidator succeedValidator1||])
 
 -- Tally dynamic config reference script
 type AlwaysSucceedScriptTallyDynamicConfig = TypedValidator TallyDynamicConfigDatum ()

@@ -3,9 +3,8 @@ Module: Triphut.Vote
 Description: Contains all the voting specific types.
 -}
 module Triphut.Vote (
-  -- * Datums
+  -- * Datum
   VoteDatum (..),
-  VoteMinterDynamicConfigDatum (..),
 
   -- * Redeemers
   VoteMinterActionRedeemer (..),
@@ -20,12 +19,10 @@ module Triphut.Vote (
 ) where
 
 import Plutus.V1.Ledger.Address (Address)
-import Plutus.V1.Ledger.Scripts (ValidatorHash)
 import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
 import PlutusTx (makeLift, unstableMakeIsData)
 import PlutusTx.Prelude (
   Bool (False, True),
-  BuiltinData,
   Integer,
   (==),
  )
@@ -67,16 +64,6 @@ data VoteMinterActionRedeemer = Mint | Burn
 unstableMakeIsData ''VoteDirection
 unstableMakeIsData ''VoteMinterActionRedeemer
 unstableMakeIsData ''VoteDatum
-
--- | Vote minter config datum, representation mirrors the main 'Triphut.Types.DynamicConfigDatum'
-data VoteMinterDynamicConfigDatum = VoteMinterDynamicConfigDatum
-  { vmdcTallyNft :: CurrencySymbol
-  , vmdcVoteTokenName :: TokenName
-  , vmdcVoteValidator :: ValidatorHash
-  , vmdcVoteNft :: CurrencySymbol
-  }
-
-unstableMakeIsData ''VoteMinterDynamicConfigDatum
 
 -- | Redeemer for 'Triphut.Vote.Script.validateVote' validator
 data VoteActionRedeemer

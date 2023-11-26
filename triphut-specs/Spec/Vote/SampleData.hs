@@ -16,8 +16,6 @@ import Spec.Addresses (dummyVoterAddress)
 import Spec.Values (
   dummyConfigNftSymbol,
   dummyConfigNftTokenName,
-  dummyVoteConfigNftSymbol,
-  dummyVoteConfigNftTokenName,
  )
 import Triphut.Vote (
   VoteDatum (..),
@@ -48,4 +46,4 @@ sampleVoteValidatorConfig :: VoteValidatorConfig
 sampleVoteValidatorConfig = VoteValidatorConfig dummyConfigNftSymbol dummyConfigNftTokenName
 
 sampleVoteMinterConfig :: VoteMinterConfig
-sampleVoteMinterConfig = VoteMinterConfig dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName
+sampleVoteMinterConfig = VoteMinterConfig dummyConfigNftSymbol dummyConfigNftTokenName

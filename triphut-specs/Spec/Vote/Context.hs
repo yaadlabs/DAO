@@ -28,23 +28,19 @@ import Plutus.Model.V2 (
  )
 import Plutus.V1.Ledger.Interval (to)
 import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
+import Spec.ConfigurationNft.Transactions (runInitConfig)
+import Spec.ConfigurationNft.Utils (findConfig)
 import Spec.SpecUtils (minAda, oneSecond)
 import Spec.Tally.Transactions (runInitTallyWithEndTimeInFuture)
 import Spec.Tally.Utils (findTally)
-import Spec.Values (
-  dummyVoteConfigNftSymbol,
-  dummyVoteConfigNftTokenName,
- )
-import Spec.Vote.SampleData (sampleVoteDatum)
+import Spec.Vote.SampleData (sampleVoteDatum, sampleVoteMinterConfig)
 import Spec.Vote.Script (
   VoteMintingPolicy,
   voteCurrencySymbol,
   voteTypedMintingPolicy,
   voteTypedValidator,
  )
-import Spec.Vote.Transactions (runInitVoteMinterConfig)
-import Spec.Vote.Utils (findVoteMinterConfig)
-import Triphut.Vote (VoteMinterActionRedeemer (Mint), VoteMinterConfig (VoteMinterConfig))
+import Triphut.Vote (VoteMinterActionRedeemer (Mint), VoteMinterConfig)
 import Prelude (mconcat, mempty, (*), (+), (<>))
 
 validVoteConfigNftTest :: Run ()
@@ -89,45 +85,44 @@ mkVoteConfigNftTest ::
   ValidityRange ->
   Run ()
 mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
-  void runInitVoteMinterConfig
+  runInitConfig
   void runInitTallyWithEndTimeInFuture
 
-  (voteConfigOutRef, _, _voteDatum) <- findVoteMinterConfig
+  (configOutRef, _, _) <- findConfig
   (tallyOutRef, _, _tallyDatum) <- findTally
 
   user <- newUser minAda
   spend1 <- spend user (adaValue 2)
   theTimeNow <- currentTime
 
-  let config = VoteMinterConfig dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName
+  let
+    voteValue :: Value
+    voteValue = voteConfigValue sampleVoteMinterConfig
 
-      voteValue :: Value
-      voteValue = voteConfigValue config
+    votePolicy :: VoteMintingPolicy
+    votePolicy = voteTypedMintingPolicy sampleVoteMinterConfig
 
-      votePolicy :: VoteMintingPolicy
-      votePolicy = voteTypedMintingPolicy config
+    -- Set up the txs
+    baseTx =
+      mconcat
+        [ mintValue votePolicy Mint voteValue
+        , refInputInline tallyOutRef
+        , userSpend spend1
+        ]
 
-      -- Set up the txs
-      baseTx =
-        mconcat
-          [ mintValue votePolicy Mint voteValue
-          , refInputInline tallyOutRef
-          , userSpend spend1
-          ]
+    withVoteConfig = case voteConfigRef of
+      ConfigInRefInputs -> refInputInline configOutRef
+      NoConfigInRefInputs -> mempty
 
-      withVoteConfig = case voteConfigRef of
-        ConfigInRefInputs -> refInputInline voteConfigOutRef
-        NoConfigInRefInputs -> mempty
+    -- Pay the vote datum, and token,
+    -- to the vote validator
+    payToVoteValidator =
+      payToScript
+        voteTypedValidator
+        (InlineDatum sampleVoteDatum)
+        (adaValue 2 <> voteValue)
 
-      -- Pay the vote datum, and token,
-      -- to the vote validator
-      payToVoteValidator =
-        payToScript
-          voteTypedValidator
-          (InlineDatum sampleVoteDatum)
-          (adaValue 2 <> voteValue)
-
-      combinedTxs = mconcat [baseTx, payToVoteValidator, withVoteConfig]
+    combinedTxs = mconcat [baseTx, payToVoteValidator, withVoteConfig]
 
   finalTx <- validateIn (to (theTimeNow + 20 * oneSecond)) combinedTxs
 
