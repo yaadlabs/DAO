@@ -3,12 +3,10 @@ Module: Triphut.ConfigurationNft
 Description: Contains the configuration specific script argument types.
 -}
 module Triphut.ConfigurationNft (
-  -- * Script argument,containing relevant CurrenySymbol and TokenName
+  -- | Script argument,containing the CurrenySymbol and TokenName of the token
+  -- Token marks the UTXO that contains the 'Triphut.Types.DynamicConfigDatum' configuration
   ConfigurationValidatorConfig (..),
-
-  -- * Script argument,containing relevant TxOutRef and TokenName
-
-  -- for minting policy
+  -- | Script argument,containing relevant TxOutRef and TokenName for minting policy
   NftConfig (..),
 ) where
 

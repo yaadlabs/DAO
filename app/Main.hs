@@ -68,13 +68,6 @@ import Triphut.Tally.Script (
   tallyScript,
   tallyValidatorHash,
  )
-import Triphut.Treasury (
-  TreasuryValidatorConfig (
-    TreasuryValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
- )
 import Triphut.Treasury.Script (treasuryScript, treasuryValidatorHash)
 import Triphut.Vote.Script (
   voteMinter,
@@ -231,15 +224,9 @@ run Options {..} = do
 
   writeFile voteValidatorHashOutput $ show (voteValidatorHash configurationValidatorConfig)
 
-  let treasuryValidatorConfig =
-        TreasuryValidatorConfig
-          { tvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
-          , tvcConfigNftTokenName = configurationNftTokenName
-          }
+  writeSource treasuryValidatorOutput (treasuryScript configurationValidatorConfig)
 
-  writeSource treasuryValidatorOutput (treasuryScript treasuryValidatorConfig)
-
-  writeFile treasuryValidatorHashOutput $ show (treasuryValidatorHash treasuryValidatorConfig)
+  writeFile treasuryValidatorHashOutput $ show (treasuryValidatorHash configurationValidatorConfig)
 
   let indexValidatorConfig =
         IndexValidatorConfig

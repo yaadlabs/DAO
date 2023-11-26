@@ -51,7 +51,6 @@ library
     Triphut.Shared
     Triphut.Tally
     Triphut.Tally.Script
-    Triphut.Treasury
     Triphut.Treasury.Script
     Triphut.Types
     Triphut.Vote
@@ -107,7 +106,6 @@ library triphut-specs
     Spec.Tally.Utils
     Spec.Treasury
     Spec.Treasury.Context
-    Spec.Treasury.SampleData
     Spec.Treasury.Script
     Spec.Treasury.Transactions
     Spec.Treasury.Utils
