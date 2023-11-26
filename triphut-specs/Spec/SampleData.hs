@@ -1,16 +1,14 @@
 module Spec.SampleData (
   sampleDynamicConfig,
-  sampleTallyDynamicConfig,
   sampleHighRelativeMajorityHighTotalVotesDynamicConfig,
 ) where
 
-import Plutus.V1.Ledger.Value (TokenName (TokenName), adaSymbol, adaToken)
+import Plutus.V1.Ledger.Value (TokenName (TokenName), adaToken)
 import Plutus.V2.Ledger.Api (ValidatorHash (ValidatorHash))
 import Spec.Tally.Script (tallyValidatorHash')
 import Spec.Values (dummyTallySymbol, dummyVoteFungibleSymbol)
 import Spec.Vote.SampleData (sampleVoteMinterConfig)
 import Spec.Vote.Script (voteCurrencySymbol, voteValidatorHash')
-import Triphut.Tally (TallyDynamicConfigDatum (..))
 import Triphut.Types (DynamicConfigDatum (..))
 
 -- DynamicConfigDatum samples
@@ -31,7 +29,7 @@ sampleDynamicConfig =
     , dcTripMajorityPercent = 1
     , dcTripRelativeMajorityPercent = 1
     , dcVoteNft = voteCurrencySymbol sampleVoteMinterConfig
-    , dcVoteFungibleCurrencySymbol = adaSymbol
+    , dcVoteFungibleCurrencySymbol = dummyVoteFungibleSymbol
     , dcVoteFungibleTokenName = adaToken
     , dcTotalVotes = 1
     , dcProposalTallyEndOffset = 0
@@ -59,7 +57,7 @@ sampleHighRelativeMajorityHighTotalVotesDynamicConfig =
     , dcTripMajorityPercent = 1
     , dcTripRelativeMajorityPercent = 1
     , dcVoteNft = voteCurrencySymbol sampleVoteMinterConfig
-    , dcVoteFungibleCurrencySymbol = adaSymbol
+    , dcVoteFungibleCurrencySymbol = dummyVoteFungibleSymbol
     , dcVoteFungibleTokenName = adaToken
     , dcTotalVotes = 2000
     , -- \^ Set it high for negative test for upgrading config
@@ -68,15 +66,4 @@ sampleHighRelativeMajorityHighTotalVotesDynamicConfig =
     , dcMaxTripDisbursement = 1
     , dcAgentDisbursementPercent = 1
     , dcFungibleVotePercent = 1
-    }
-
-sampleTallyDynamicConfig :: TallyDynamicConfigDatum
-sampleTallyDynamicConfig =
-  TallyDynamicConfigDatum
-    { tdcTallyNft = dummyTallySymbol
-    , tdcVoteValidator = voteValidatorHash'
-    , tdcVoteNft = voteCurrencySymbol sampleVoteMinterConfig
-    , tdcVoteFungibleCurrencySymbol = dummyVoteFungibleSymbol
-    , tdcVoteFungibleTokenName = adaToken
-    , tdcFungibleVotePercent = 1
     }

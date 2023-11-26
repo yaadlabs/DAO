@@ -12,7 +12,6 @@ import Plutus.Model (
 import Spec.SpecUtils (amountOfAda, checkFails)
 import Spec.Values (
   dummyConfigNftValue,
-  dummyTallyConfigValue,
   dummyTallyValue,
   dummyVoteValue,
  )
@@ -98,7 +97,6 @@ nftSpec config =
       mconcat
         [ amountOfAda 20_000_000
         , dummyConfigNftValue
-        , dummyTallyConfigValue
         , dummyVoteValue
         , dummyTallyValue
         ]

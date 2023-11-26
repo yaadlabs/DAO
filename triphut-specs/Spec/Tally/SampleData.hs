@@ -22,7 +22,7 @@ import Spec.Addresses (
   dummyTravelerPaymentAddress,
  )
 import Spec.AlwaysSucceed.Script (alwaysSucceedCurrencySymbol)
-import Spec.Values (dummyTallyConfigSymbol, dummyTallyConfigTokenName)
+import Spec.Values (dummyConfigNftSymbol, dummyConfigNftTokenName)
 import Triphut.Tally (
   TallyValidatorConfig (
     TallyValidatorConfig,
@@ -36,8 +36,8 @@ import Triphut.Types (ProposalType (General, Trip, Upgrade), TallyStateDatum (..
 sampleTallyValidatorConfig :: TallyValidatorConfig
 sampleTallyValidatorConfig =
   TallyValidatorConfig
-    { tvcConfigNftCurrencySymbol = dummyTallyConfigSymbol
-    , tvcConfigNftTokenName = dummyTallyConfigTokenName
+    { tvcConfigNftCurrencySymbol = dummyConfigNftSymbol
+    , tvcConfigNftTokenName = dummyConfigNftTokenName
     }
 
 sampleUpgradeWithEndTimeInPastTallyStateDatum :: TallyStateDatum

@@ -5,18 +5,12 @@ module Spec.Values (
   dummyIndexConfigNftSymbol,
   dummyIndexConfigNftTokenName,
   dummyIndexConfigNftValue,
-  dummyVoteConfigNftValue,
-  dummyVoteConfigNftSymbol,
-  dummyVoteConfigNftTokenName,
   dummyTallySymbol,
   dummyTallyTokenName,
   dummyTallyValue,
   dummyVoteSymbol,
   dummyVoteTokenName,
   dummyVoteValue,
-  dummyTallyConfigSymbol,
-  dummyTallyConfigTokenName,
-  dummyTallyConfigValue,
   dummyVoteFungibleSymbol,
   dummyVoteFungibleToken,
   dummyVoteFungibleValue,
@@ -53,18 +47,6 @@ dummyIndexConfigNftSymbol =
 dummyIndexConfigNftTokenName :: TokenName
 dummyIndexConfigNftTokenName = TokenName "triphut_index"
 
--- | Dummy vote configuration
-dummyVoteConfigNftValue :: Value
-dummyVoteConfigNftValue = singleton dummyVoteConfigNftSymbol dummyVoteConfigNftTokenName 1
-
-dummyVoteConfigNftTokenName :: TokenName
-dummyVoteConfigNftTokenName = TokenName "vote_config"
-
-dummyVoteConfigNftSymbol :: CurrencySymbol
-dummyVoteConfigNftSymbol =
-  CurrencySymbol $
-    getLedgerBytes "22222222222222222222222222222222222222222222222222222222"
-
 -- | Dummy tally
 dummyTallyValue :: Value
 dummyTallyValue = singleton dummyTallySymbol dummyTallyTokenName 1
@@ -88,18 +70,6 @@ dummyVoteSymbol :: CurrencySymbol
 dummyVoteSymbol =
   CurrencySymbol $
     getLedgerBytes "44444444444444444444444444444444444444444444444444444444"
-
--- | Dummy tally config
-dummyTallyConfigValue :: Value
-dummyTallyConfigValue = singleton dummyTallyConfigSymbol dummyTallyConfigTokenName 1
-
-dummyTallyConfigTokenName :: TokenName
-dummyTallyConfigTokenName = TokenName "tally_config"
-
-dummyTallyConfigSymbol :: CurrencySymbol
-dummyTallyConfigSymbol =
-  CurrencySymbol $
-    getLedgerBytes "55555555555555555555555555555555555555555555555555555555"
 
 -- | Dummy vote fungible
 dummyVoteFungibleValue :: Value

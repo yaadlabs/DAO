@@ -39,11 +39,10 @@ import Spec.ConfigurationNft.Utils (findConfig)
 import Spec.SpecUtils (amountOfAda)
 import Spec.Tally.Script (tallyNftTypedValidator)
 import Spec.Tally.Transactions (
-  runInitTallyConfig,
   runInitTallyWithEndTimeInFuture,
   runInitTallyWithEndTimeInPast,
  )
-import Spec.Tally.Utils (findTally, findTallyConfig)
+import Spec.Tally.Utils (findTally)
 import Spec.Values (dummyTallyValue, dummyVoteValue)
 import Spec.Vote.Script (voteTypedValidator)
 import Spec.Vote.Transactions (runInitVote, runInitVoteWithUser)
@@ -58,7 +57,6 @@ validVoteValidatorCountRedeemerTest =
     HasConfigInReferenceInputs
     HasVoteValidatorInInputs
     HasTallyValidatorInInputs
-    HasTallyConfigInReferenceInputs
     TallyPeriodOver
 
 invalidVoteValidatorNoConfigInRefInputsTest :: Run ()
@@ -67,7 +65,6 @@ invalidVoteValidatorNoConfigInRefInputsTest =
     NoConfigInReferenceInputs
     HasVoteValidatorInInputs
     HasTallyValidatorInInputs
-    HasTallyConfigInReferenceInputs
     TallyPeriodOver
 
 invalidVoteValidatorNoTallyInInputsTest :: Run ()
@@ -76,7 +73,6 @@ invalidVoteValidatorNoTallyInInputsTest =
     HasConfigInReferenceInputs
     HasVoteValidatorInInputs
     NoTallyValidatorInInputs
-    HasTallyConfigInReferenceInputs
     TallyPeriodOver
 
 invalidVoteValidatorNoVoteInInputsTest :: Run ()
@@ -85,7 +81,6 @@ invalidVoteValidatorNoVoteInInputsTest =
     HasConfigInReferenceInputs
     NoVoteValidatorInInputs
     HasTallyValidatorInInputs
-    HasTallyConfigInReferenceInputs
     TallyPeriodOver
 
 invalidVoteValidatorNoTallyConfigInRefInputsTest :: Run ()
@@ -94,7 +89,6 @@ invalidVoteValidatorNoTallyConfigInRefInputsTest =
     HasConfigInReferenceInputs
     HasVoteValidatorInInputs
     NoTallyValidatorInInputs
-    HasTallyConfigInReferenceInputs
     TallyPeriodOver
 
 invalidVoteStillInTallyPeriodTest :: Run ()
@@ -103,7 +97,6 @@ invalidVoteStillInTallyPeriodTest =
     HasConfigInReferenceInputs
     HasVoteValidatorInInputs
     HasTallyValidatorInInputs
-    HasTallyConfigInReferenceInputs
     StillInTallyPeriod
 
 data VoteConfigReference
@@ -121,11 +114,6 @@ data VoteValidatorInput
   | NoVoteValidatorInInputs
   deriving stock (Eq)
 
-data TallyConfigReference
-  = HasTallyConfigInReferenceInputs
-  | NoTallyConfigInReferenceInputs
-  deriving stock (Eq)
-
 data TallyPeriod
   = TallyPeriodOver
   | StillInTallyPeriod
@@ -135,18 +123,15 @@ mkVoteValidatorCountRedeemerTest ::
   VoteConfigReference ->
   VoteValidatorInput ->
   TallyValidatorInput ->
-  TallyConfigReference ->
   TallyPeriod ->
   Run ()
-mkVoteValidatorCountRedeemerTest configRef voteValidator tallyValidator tallyConfigRef tallyPeriod = do
-  runInitVote
+mkVoteValidatorCountRedeemerTest configRef voteValidator tallyValidator tallyPeriod = do
   runInitConfig
-  runInitTallyConfig
+  runInitVote
 
   when (tallyPeriod == TallyPeriodOver) runInitTallyWithEndTimeInPast -- Valid
   when (tallyPeriod == StillInTallyPeriod) runInitTallyWithEndTimeInFuture -- Invalid
   (configOutRef, _, _) <- findConfig
-  (tallyConfigOutRef, _, _) <- findTallyConfig
   (tallyOutRef, _, tallyDatum) <- findTally
   (voteOutRef, _, voteDatum) <- findVote
 
@@ -162,13 +147,9 @@ mkVoteValidatorCountRedeemerTest configRef voteValidator tallyValidator tallyCon
           , userSpend spend2
           ]
 
-      withVoteConfigRef = case configRef of
+      withDynamicConfigRef = case configRef of
         HasConfigInReferenceInputs -> refInputInline configOutRef
         NoConfigInReferenceInputs -> mempty
-
-      withTallyRef = case tallyConfigRef of
-        HasTallyConfigInReferenceInputs -> refInputInline tallyConfigOutRef
-        NoTallyConfigInReferenceInputs -> mempty
 
       withVoteValidator = case voteValidator of
         HasVoteValidatorInInputs -> spendScript voteTypedValidator voteOutRef Count voteDatum
@@ -193,10 +174,9 @@ mkVoteValidatorCountRedeemerTest configRef voteValidator tallyValidator tallyCon
       combinedTxs =
         mconcat
           [ baseTx
-          , withVoteConfigRef
+          , withDynamicConfigRef
           , withVoteValidator
           , withTallyValidator
-          , withTallyRef
           , payToTallyValidator
           , payToVoteValidator
           ]
@@ -215,7 +195,6 @@ validVoteValidatorCancelRedeemerTest =
     HasConfigInReferenceInputs
     HasVoteValidatorInInputs
     HasTallyValidatorInInputs
-    HasTallyConfigInReferenceInputs
     TallyPeriodOver
     OwnerSignature
 
@@ -225,7 +204,6 @@ invalidNotSignedByOwnerVoteValidatorCancelRedeemerTest =
     HasConfigInReferenceInputs
     HasVoteValidatorInInputs
     HasTallyValidatorInInputs
-    HasTallyConfigInReferenceInputs
     TallyPeriodOver
     NoOwnerSignature
 
@@ -238,7 +216,6 @@ mkVoteValidatorCancelRedeemerTest ::
   VoteConfigReference ->
   VoteValidatorInput ->
   TallyValidatorInput ->
-  TallyConfigReference ->
   TallyPeriod ->
   VoteOwnerSignsTx ->
   Run ()
@@ -246,16 +223,13 @@ mkVoteValidatorCancelRedeemerTest
   configRef
   voteValidator
   tallyValidator
-  tallyConfigRef
   tallyPeriod
   ownerSigns = do
     runInitConfig
-    runInitTallyConfig
 
     when (tallyPeriod == TallyPeriodOver) runInitTallyWithEndTimeInPast -- Valid
     when (tallyPeriod == StillInTallyPeriod) runInitTallyWithEndTimeInFuture -- Invalid
     (configOutRef, _, _) <- findConfig
-    (tallyConfigOutRef, _, _) <- findTallyConfig
     (tallyOutRef, _, tallyDatum) <- findTally
 
     user <- newUser $ amountOfAda 4_000_000
@@ -276,13 +250,9 @@ mkVoteValidatorCancelRedeemerTest
             , userSpend spend2
             ]
 
-        withVoteConfigRef = case configRef of
+        withDynamicConfigRef = case configRef of
           HasConfigInReferenceInputs -> refInputInline configOutRef
           NoConfigInReferenceInputs -> mempty
-
-        withTallyRef = case tallyConfigRef of
-          HasTallyConfigInReferenceInputs -> refInputInline tallyConfigOutRef
-          NoTallyConfigInReferenceInputs -> mempty
 
         withVoteValidator = case voteValidator of
           HasVoteValidatorInInputs -> spendScript voteTypedValidator voteOutRef Cancel voteDatum
@@ -307,10 +277,9 @@ mkVoteValidatorCancelRedeemerTest
         combinedTxs =
           mconcat
             [ baseTx
-            , withVoteConfigRef
+            , withDynamicConfigRef
             , withVoteValidator
             , withTallyValidator
-            , withTallyRef
             , payToTallyValidator
             , payToVoteValidator
             ]
