@@ -7,7 +7,6 @@ module Triphut.Index (
   IndexNftDatum (..),
 
   -- * Script arguments, containing relevant CurrenySymbol and TokenName
-  IndexValidatorConfig (..),
   IndexNftConfig (..),
 ) where
 
@@ -29,10 +28,3 @@ data IndexNftConfig = IndexNftConfig
 
 unstableMakeIsData ''IndexNftDatum
 makeLift ''IndexNftConfig
-
-data IndexValidatorConfig = IndexValidatorConfig
-  { ivcConfigNftCurrencySymbol :: CurrencySymbol
-  , ivcConfigNftTokenName :: TokenName
-  }
-
-makeLift ''IndexValidatorConfig

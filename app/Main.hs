@@ -41,11 +41,6 @@ import Triphut.ConfigurationNft.Script (
  )
 import Triphut.Index (
   IndexNftConfig (IndexNftConfig, incIndexValidator, incInitialUtxo, incTokenName),
-  IndexValidatorConfig (
-    IndexValidatorConfig,
-    ivcConfigNftCurrencySymbol,
-    ivcConfigNftTokenName
-  ),
  )
 import Triphut.Index.Script (
   indexScript,
@@ -228,15 +223,9 @@ run Options {..} = do
 
   writeFile treasuryValidatorHashOutput $ show (treasuryValidatorHash configurationValidatorConfig)
 
-  let indexValidatorConfig =
-        IndexValidatorConfig
-          { ivcConfigNftCurrencySymbol = theConfigurationNftPolicyId
-          , ivcConfigNftTokenName = configurationNftTokenName
-          }
+  writeSource indexValidatorOutput indexScript
 
-  writeSource indexValidatorOutput (indexScript indexValidatorConfig)
-
-  let theIndexValidatorHash = indexValidatorHash indexValidatorConfig
+  let theIndexValidatorHash = indexValidatorHash
 
   writeFile indexValidatorHashOutput $ show theIndexValidatorHash
 

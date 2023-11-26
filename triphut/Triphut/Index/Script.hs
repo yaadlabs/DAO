@@ -60,7 +60,9 @@ import PlutusTx.Prelude (
   Maybe (Just, Nothing),
   any,
   check,
+  const,
   filter,
+  mempty,
   traceError,
   traceIfFalse,
   ($),
@@ -77,7 +79,6 @@ import Triphut.Index (
     incTokenName
   ),
   IndexNftDatum (IndexNftDatum, indIndex),
-  IndexValidatorConfig (IndexValidatorConfig),
  )
 import Triphut.Shared (
   WrappedMintingPolicyType,
@@ -101,13 +102,11 @@ import Triphut.Shared (
     - The index NFT stays at the validator
 -}
 validateIndex ::
-  IndexValidatorConfig ->
   IndexNftDatum ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateIndex
-  _indexValidatorConfig
   IndexNftDatum {indIndex = inputIndex}
   _
   ctx@ScriptContext
@@ -134,19 +133,22 @@ validateIndex
      in
       traceIfFalse "output datum is not incremented" outputDatumIsIncremented
         && traceIfFalse "script value is not returned" outputValueGreaterThanInputValue
-validateIndex _ _ _ _ = traceError "Wrong script purpose"
+validateIndex _ _ _ = traceError "Wrong script purpose"
 
-indexValidator :: IndexValidatorConfig -> Validator
-indexValidator config = mkValidatorWithSettings compiledCode True
+indexValidator :: Validator
+indexValidator = mkValidatorWithSettings compiledCode True
   where
-    wrapValidateIndex = wrapValidate validateIndex
-    compiledCode = $$(PlutusTx.compile [||wrapValidateIndex||]) `applyCode` liftCode config
+    -- 'mempty' in this case is in place of the config argument to wrapValidate that we
+    -- throw away here. And 'Value' is just an arbitrary legal type to satisfy the type checker
+    -- (Same for 'indexScript' below)
+    wrapValidateIndex = wrapValidate (const validateIndex) (mempty :: Value)
+    compiledCode = $$(PlutusTx.compile [||wrapValidateIndex||])
 
-indexValidatorHash :: IndexValidatorConfig -> ValidatorHash
-indexValidatorHash = validatorHash . indexValidator
+indexValidatorHash :: ValidatorHash
+indexValidatorHash = validatorHash indexValidator
 
-indexScript :: IndexValidatorConfig -> PlutusScript PlutusScriptV2
-indexScript = validatorToScript indexValidator
+indexScript :: PlutusScript PlutusScriptV2
+indexScript = validatorToScript (const indexValidator) (mempty :: Value)
 
 {- | Policy for minting index NFT.
 
