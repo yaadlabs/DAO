@@ -29,10 +29,10 @@ data IndexNftConfig = IndexNftConfig
   { incInitialUtxo :: TxOutRef
   -- ^ The UTXO to be spent in the transaction
   , incTokenName :: TokenName
-  , -- The expected token name of the newly minted config NFT
-    incIndexValidator :: ValidatorHash
-    -- The hash of the `Triphut.Index.Script.validateIndex` script,
-    -- the policy uses this to ensure the newly minted token is sent to this index validator
+  -- ^ The expected token name of the newly minted config NFT
+  , incIndexValidator :: ValidatorHash
+  -- ^ The hash of the `Triphut.Index.Script.validateIndex` script,
+  -- the policy uses this to ensure the newly minted token is sent to this index validator
   }
 
 unstableMakeIsData ''IndexNftDatum
