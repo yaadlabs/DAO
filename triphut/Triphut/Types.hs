@@ -118,9 +118,9 @@ data DynamicConfigDatum = DynamicConfigDatum
   , dcVoteTokenName :: TokenName
   -- ^ Token name for the vote value minted by `Triphut.Vote.Script.mkVoteMinter`
   , dcVoteNft :: CurrencySymbol
-  -- ^ Symbol of the Vote NFT (Where does this come from?)
+  -- ^ Symbol of the Vote NFT
   , dcVoteFungibleCurrencySymbol :: CurrencySymbol
-  -- ^ Symbol of the fungible vote value (Where does this come from?)
+  -- ^ Symbol of the fungible vote value
   , dcVoteFungibleTokenName :: TokenName
   -- ^ Token name for fungible vote value
   , dcFungibleVotePercent :: Integer
