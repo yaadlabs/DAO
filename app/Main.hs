@@ -24,8 +24,8 @@ import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Scripts (ValidatorHash)
 import Plutus.V1.Ledger.Tx (TxId (TxId), TxOutRef (TxOutRef))
 import Plutus.V1.Ledger.Value (TokenName)
-import Triphut.AlwaysSucceed (succeed, succeed1, succeedHash, succeedHash1)
-import Triphut.ConfigurationNft (
+import Dao.AlwaysSucceed (succeed, succeed1, succeedHash, succeedHash1)
+import Dao.ConfigurationNft (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
     cvcConfigNftCurrencySymbol,
@@ -33,13 +33,13 @@ import Triphut.ConfigurationNft (
   ),
   NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
  )
-import Triphut.ConfigurationNft.Script (
+import Dao.ConfigurationNft.Script (
   configurationNftCurrencySymbol,
   configurationNftMintingPolicy,
   configurationScript,
   configurationValidatorHash,
  )
-import Triphut.Index (
+import Dao.Index (
   IndexNftConfig (IndexNftConfig, incIndexValidator, incInitialUtxo, incTokenName),
   IndexValidatorConfig (
     IndexValidatorConfig,
@@ -47,13 +47,13 @@ import Triphut.Index (
     ivcConfigNftTokenName
   ),
  )
-import Triphut.Index.Script (
+import Dao.Index.Script (
   indexScript,
   indexValidatorHash,
   tallyIndexNftMinter,
   tallyIndexNftMinterPolicyId,
  )
-import Triphut.Tally (
+import Dao.Tally (
   TallyNftConfig (
     TallyNftConfig,
     tncConfigNftCurrencySymbol,
@@ -67,21 +67,21 @@ import Triphut.Tally (
     tvcConfigNftTokenName
   ),
  )
-import Triphut.Tally.Script (
+import Dao.Tally.Script (
   tallyNftMinter,
   tallyNftMinterPolicyId,
   tallyScript,
   tallyValidatorHash,
  )
-import Triphut.Treasury (
+import Dao.Treasury (
   TreasuryValidatorConfig (
     TreasuryValidatorConfig,
     tvcConfigNftCurrencySymbol,
     tvcConfigNftTokenName
   ),
  )
-import Triphut.Treasury.Script (treasuryScript, treasuryValidatorHash)
-import Triphut.Vote (
+import Dao.Treasury.Script (treasuryScript, treasuryValidatorHash)
+import Dao.Vote (
   VoteMinterConfig (
     VoteMinterConfig,
     vmcConfigNftCurrencySymbol,
@@ -93,7 +93,7 @@ import Triphut.Vote (
     vvcConfigNftTokenName
   ),
  )
-import Triphut.Vote.Script (
+import Dao.Vote.Script (
   voteMinter,
   voteMinterPolicyId,
   voteScript,
@@ -195,7 +195,7 @@ instance ParseRecord Options where
   parseRecord = parseRecordWithModifiers lispCaseModifiers
 
 main :: IO ()
-main = run =<< getRecord "Triphut compiler"
+main = run =<< getRecord "Dao compiler"
 
 writeSource :: FilePath -> PlutusScript PlutusScriptV2 -> IO ()
 writeSource outputPath source =
