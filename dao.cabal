@@ -1,0 +1,147 @@
+cabal-version: 2.4
+name:          dao
+version:       1.0.0.0
+license: MIT
+author:        Jonathan Fischoff
+maintainer:    jonathan@Canonicalllc.com
+build-type:    Simple
+copyright: 2021 Canonical LLC
+
+common common-lang
+  default-language: Haskell2010
+
+common common-extensions
+  default-extensions:
+    DataKinds
+    MultiParamTypeClasses
+    OverloadedStrings
+    ScopedTypeVariables
+    RecordWildCards
+    TemplateHaskell
+    TypeApplications
+    TypeFamilies
+    NamedFieldPuns
+    NumericUnderscores
+    LambdaCase
+    BangPatterns
+    NoImplicitPrelude
+    CPP
+    DeriveGeneric
+    DerivingStrategies
+    ImportQualifiedPost
+
+common common-options
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-record-updates -fexpose-all-unfoldings
+    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+    -Wunused-packages -Wmissing-deriving-strategies
+
+common common-depends
+  build-depends:
+    , base ^>=4.14
+
+library
+  import: common-lang, common-depends, common-options, common-extensions
+  exposed-modules:
+    Dao.AlwaysSucceed
+    Dao.ConfigurationNft
+    Dao.ConfigurationNft.Script
+    Dao.Index
+    Dao.Index.Script
+    Dao.Shared
+    Dao.Tally
+    Dao.Tally.Script
+    Dao.Treasury.Script
+    Dao.Types
+    Dao.Vote
+    Dao.Vote.Script
+
+  build-depends:
+    , aeson
+    , bytestring
+    , containers
+    , plutus-tx
+    , plutus-tx-plugin
+    , serialise
+    , plutonomy
+    , cardano-api
+    , plutus-ledger-api
+
+  hs-source-dirs:  dao
+  ghc-options:
+    -fobject-code -fno-ignore-interface-pragmas
+    -fno-omit-interface-pragmas -Wno-unused-packages
+
+library dao-specs
+  import: common-lang, common-depends, common-options, common-extensions
+  hs-source-dirs: dao-specs
+  build-depends:
+   , tasty-hunit
+   , plutus-simple-model
+   , plutus-ledger-api
+   , tasty
+   , plutus-tx
+  exposed-modules:
+    Spec.Addresses
+    Spec.AlwaysSucceed.Script
+    Spec.ConfigurationNft
+    Spec.ConfigurationNft.Context
+    Spec.ConfigurationNft.SampleData
+    Spec.ConfigurationNft.Script
+    Spec.ConfigurationNft.Transactions
+    Spec.ConfigurationNft.Utils
+    Spec.Index
+    Spec.Index.Context
+    Spec.Index.SampleData
+    Spec.Index.Script
+    Spec.Index.Transactions
+    Spec.Index.Utils
+    Spec.SampleData
+    Spec.SpecUtils
+    Spec.Tally
+    Spec.Tally.Context
+    Spec.Tally.Script
+    Spec.Tally.SampleData
+    Spec.Tally.Transactions
+    Spec.Tally.Utils
+    Spec.Treasury
+    Spec.Treasury.Context
+    Spec.Treasury.Script
+    Spec.Treasury.Transactions
+    Spec.Treasury.Utils
+    Spec.Utils
+    Spec.Utils.Unit
+    Spec.Upgrade
+    Spec.Upgrade.Context
+    Spec.Values
+    Spec.Vote
+    Spec.VoteValidator
+    Spec.Vote.Context
+    Spec.Vote.ContextValidator
+    Spec.Vote.SampleData
+    Spec.Vote.Script
+    Spec.Vote.Transactions
+    Spec.Vote.Utils
+  build-depends:
+    , dao
+    , plutus-tx-plugin
+
+executable create-sc
+  import: common-lang, common-depends, common-options, common-extensions
+  hs-source-dirs: app
+  main-is:        Main.hs
+  ghc-options:    -threaded -rtsopts -with-rtsopts=-T
+  build-depends:
+    , dao
+    , optparse-generic
+    , plutus-ledger-api
+    , cardano-api
+
+test-suite dao-test
+  import: common-lang, common-depends, common-options, common-extensions
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs: dao-test
+  build-depends:
+    , dao-specs
+    , tasty
