@@ -53,11 +53,6 @@
       flake = false;
     };
 
-    hw-aeson = {
-      url = "github:sevanspowell/hw-aeson/b5ef03a7d7443fcd6217ed88c335f0c411a05408";
-      flake = false;
-    };
-
     cardano-base = {
       url =
         "github:input-output-hk/cardano-base/0f3a867493059e650cda69e20a5cbf1ace289a57";
@@ -139,10 +134,6 @@
       flake = false;
     };
 
-    freer-extras = {
-      url = "github:mlabs-haskell/freer-extras";
-      flake = false;
-    };
   };
 
   outputs =
@@ -306,13 +297,7 @@
 
           "${inputs.optparse-applicative}"
 
-          "${inputs.freer-extras}"
-
           "${inputs.flat}"
-
-          "${inputs.freer-extras}"
-
-          "${inputs.hw-aeson}"
         ];
 
       projectFor = system:
@@ -331,11 +316,13 @@
 
                   # Workaround for duplicate modules error in moo library
                   moo.patches =
-                    [ ({ version }: if version == "1.2" then ./patches/0001-removed-duplicate-package.patch else null) ];
+                    [ ({ version }: 
+                        if version == "1.2" 
+                        then ./patches/0001-removed-duplicate-package.patch else null
+                    )];
                 };
               }
-            )
-          ];
+           )];
 
           # Workaround for haddock related bug in PSM at the commit we need.
           # Can't bump to newer commit in PSM with the fix for this as that leads
@@ -396,8 +383,5 @@
         // { formatCheck = preCommitCheckFor system; }
       );
 
-      # hydraJobs = {
-      #   inherit (self) checks packages devShells;
-      # };
     };
 }

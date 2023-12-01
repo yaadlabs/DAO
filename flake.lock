@@ -557,22 +557,6 @@
         "type": "github"
       }
     },
-    "freer-extras": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1678394791,
-        "narHash": "sha256-L92pzIA3uIrG8oDFdWYqDZ8ftBHvK5rm22Ir5/KP3rk=",
-        "owner": "mlabs-haskell",
-        "repo": "freer-extras",
-        "rev": "c3b6a914bca706ad3c9d2ef829988ca3f7b813d3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "mlabs-haskell",
-        "repo": "freer-extras",
-        "type": "github"
-      }
-    },
     "ghc-8.6.5-iohk": {
       "flake": false,
       "locked": {
@@ -1112,23 +1096,6 @@
       "original": {
         "owner": "sevanspowell",
         "repo": "hpc-coveralls",
-        "type": "github"
-      }
-    },
-    "hw-aeson": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1660113261,
-        "narHash": "sha256-v0SyVxeVBTtW1tuej4P+Kf4roO/rr2tBI7RthTlInbc=",
-        "owner": "sevanspowell",
-        "repo": "hw-aeson",
-        "rev": "b5ef03a7d7443fcd6217ed88c335f0c411a05408",
-        "type": "github"
-      },
-      "original": {
-        "owner": "sevanspowell",
-        "repo": "hw-aeson",
-        "rev": "b5ef03a7d7443fcd6217ed88c335f0c411a05408",
         "type": "github"
       }
     },
@@ -1905,11 +1872,9 @@
         "ekg-forward": "ekg-forward",
         "ekg-json": "ekg-json",
         "flat": "flat",
-        "freer-extras": "freer-extras",
         "goblins": "goblins",
         "haskell-nix": "haskell-nix",
         "haskell-nix-extra-hackage": "haskell-nix-extra-hackage",
-        "hw-aeson": "hw-aeson",
         "io-sim": "io-sim",
         "iohk-monitoring-framework": "iohk-monitoring-framework",
         "iohk-nix": "iohk-nix",
