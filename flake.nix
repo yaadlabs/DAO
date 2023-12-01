@@ -170,7 +170,6 @@
       perSystem = nixpkgs-upstream.lib.genAttrs supportedSystems;
 
       fourmoluFor = system: (plainNixpkgsFor system).haskellPackages.fourmolu;
-      hlintFor = system: (plainNixpkgsFor system).haskellPackages.hlint_3_4_1;
 
       preCommitCheckFor = system:
         pre-commit-hooks.lib.${system}.run
@@ -184,23 +183,16 @@
             };
 
             hooks = {
-              cabal-fmt.enable = false;
-              fourmolu.enable = false;
-              hlint.enable = false;
-              markdownlint.enable = false;
-              nixpkgs-fmt.enable = true;
-              shellcheck.enable = true;
-              statix.enable = true;
-              stylish-haskell.enable = true;
+              fourmolu.enable = true;
             };
 
             tools = {
               fourmolu = fourmoluFor system;
-              hlint = hlintFor system;
             };
           };
 
-      compiler-nix-name = "ghc8107";
+      ghcVersion = "8107";
+      compiler-nix-name = "ghc" + ghcVersion;
 
       hackagesFor = system: haskell-nix-extra-hackage.mkHackagesFor system compiler-nix-name
         [
@@ -323,26 +315,21 @@
           "${inputs.hw-aeson}"
         ];
 
-      cabalProjectLocal = ''
-        allow-newer: *:aeson, *:hedgehog, size-based:template-haskell, *:hw-aeson
-        constraints: aeson >= 2, hedgehog >= 1.1
-      '';
-
       projectFor = system:
         let
           pkgs = nixpkgsFor system;
           plainPkgs = plainNixpkgsFor system;
           hackages = hackagesFor system;
 
-          # hls = pkgs.haskell-language-server.override { supportedGhcVersions = [ ghcVersion ]; };
-
           moduleFixes = [
             ({ pkgs, ... }:
               {
                 packages = {
+                  # libsodium library workaround
                   cardano-crypto-praos.components.library.pkgconfig = pkgs.lib.mkForce [ [ pkgs.libsodium-vrf ] ];
                   cardano-crypto-class.components.library.pkgconfig = pkgs.lib.mkForce [ [ pkgs.libsodium-vrf ] ];
-                  # Workaround for duplicate modules error
+
+                  # Workaround for duplicate modules error in moo library
                   moo.patches =
                     [ ({ version }: if version == "1.2" then ./patches/0001-removed-duplicate-package.patch else null) ];
                 };
@@ -350,43 +337,36 @@
             )
           ];
 
+          # Workaround for haddock related bug in PSM at the commit we need.
+          # Can't bump to newer commit in PSM with the fix for this as that leads
+          # to incompatible compiler version issues
+          psmModulesFix = [
+            ({ config, ... }: {
+              packages.plutus-simple-model.doHaddock = false;
+            })];
+
         in
         pkgs.haskell-nix.cabalProject' {
           src = ./.;
           index-state = "2022-05-18T00:00:00Z";
-          inherit compiler-nix-name cabalProjectLocal;
+          inherit compiler-nix-name;
           inherit (hackages) extra-hackages extra-hackage-tarballs;
 
-          # Workaround for bug in PSM at the commit we need
-          # Can't bump to newer commit in PSM with the fix as this leads
-          # to incomapible compiler version issues
-          modules = [
-            ({ config, ... }: {
-              packages.plutus-simple-model.doHaddock = false;
-            })
-          ] ++ moduleFixes ++ hackages.modules;
+          modules = psmModulesFix ++ moduleFixes ++ hackages.modules;
 
           shell = {
             inherit (preCommitCheckFor system) shellHook;
-            # withHoogle = true;
+            withHoogle = true;
             exactDeps = true;
 
             nativeBuildInputs = [
-              plainPkgs.cabal-install
-              # plainPkgs.fd
-              # plainPkgs.haskellPackages.apply-refact
-              # plainPkgs.haskellPackages.cabal-fmt
-              # plainPkgs.nixpkgs-fmt
-
-              # (fourmoluFor system)
-              # (hlintFor system)
-              # hls
+              (fourmoluFor system)
             ];
           };
         };
     in
     {
-      inherit plainNixpkgsFor hackagesFor cabalProjectLocal;
+      inherit plainNixpkgsFor hackagesFor;
 
       project = perSystem projectFor;
       flake = perSystem (system: self.project.${system}.flake { });
@@ -406,21 +386,15 @@
             inherit (preCommitCheckFor system) shellHook;
 
             nativeBuildInputs = [
-              pkgs.cabal-install
-              pkgs.fd
-              pkgs.haskellPackages.apply-refact
-              # pkgs.haskellPackages.cabal-fmt
-              # pkgs.nixpkgs-fmt
-              # (hlintFor system)
-              # (fourmoluFor system)
+              (fourmoluFor system)
             ];
           };
       });
 
-      # checks = perSystem (system:
-      #   self.flake.${system}.checks
-      #   // { formatCheck = preCommitCheckFor system; }
-      # );
+      checks = perSystem (system:
+        self.flake.${system}.checks
+        // { formatCheck = preCommitCheckFor system; }
+      );
 
       # hydraJobs = {
       #   inherit (self) checks packages devShells;
