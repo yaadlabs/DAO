@@ -167,7 +167,7 @@ data VoteDynamicConfigDatum = VoteDynamicConfigDatum
 
 unstableMakeIsData ''VoteMinterDynamicConfigDatum
 
--- | Redeemer for 'Triphut.Vote.Script.validateVote' validator
+-- | Redeemer for 'Dao.Vote.Script.validateVote' validator
 data VoteAddress = VoteAddress
   { vAddressCredential :: Credential
   , vAddressStakingCredential :: BuiltinData
