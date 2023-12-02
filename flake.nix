@@ -28,7 +28,6 @@
 
     iohk-nix = {
       url = "github:input-output-hk/iohk-nix";
-      flake = false;
     };
 
     optparse-applicative = {
@@ -150,11 +149,7 @@
       plainNixpkgsFor = system: import nixpkgs-upstream { inherit system; };
       nixpkgsFor = system: import nixpkgs {
         inherit system;
-        overlays =
-          [
-            haskell-nix.overlay
-            (iohk-nix.overlays.crypto)
-          ];
+        overlays = [ haskell-nix.overlay (iohk-nix.overlays.crypto) ];
       };
 
       supportedSystems = [ "x86_64-linux" "aarch64-darwin" "x86_64-darwin" "aarch64-linux" ];
