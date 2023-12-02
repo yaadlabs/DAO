@@ -157,7 +157,7 @@
           ];
       };
 
-      supportedSystems = [ "x86_64-linux" "x86_64-darwin" ];
+      supportedSystems = [ "x86_64-linux" "aarch64-darwin" "x86_64-darwin" "aarch64-linux" ];
       perSystem = nixpkgs-upstream.lib.genAttrs supportedSystems;
 
       fourmoluFor = system: (plainNixpkgsFor system).haskellPackages.fourmolu;
@@ -316,8 +316,8 @@
 
                   # Workaround for duplicate modules error in moo library
                   moo.patches =
-                    [ ({ version }: 
-                        if version == "1.2" 
+                    [ ({ version }:
+                        if version == "1.2"
                         then ./patches/0001-removed-duplicate-package.patch else null
                     )];
                 };
