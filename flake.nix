@@ -158,6 +158,7 @@
       };
 
       supportedSystems = [ "x86_64-linux" "aarch64-darwin" "x86_64-darwin" "aarch64-linux" ];
+
       perSystem = nixpkgs-upstream.lib.genAttrs supportedSystems;
 
       fourmoluFor = system: (plainNixpkgsFor system).haskellPackages.fourmolu;
@@ -182,8 +183,7 @@
             };
           };
 
-      ghcVersion = "8107";
-      compiler-nix-name = "ghc" + ghcVersion;
+      compiler-nix-name = "ghc8107";
 
       hackagesFor = system: haskell-nix-extra-hackage.mkHackagesFor system compiler-nix-name
         [
@@ -303,7 +303,6 @@
       projectFor = system:
         let
           pkgs = nixpkgsFor system;
-          plainPkgs = plainNixpkgsFor system;
           hackages = hackagesFor system;
 
           moduleFixes = [
@@ -349,14 +348,14 @@
             nativeBuildInputs = [
               (fourmoluFor system)
             ];
-          };
+         };
         };
-    in
-    {
-      inherit plainNixpkgsFor hackagesFor;
 
       project = perSystem projectFor;
       flake = perSystem (system: self.project.${system}.flake { });
+    in
+    {
+      inherit flake project;
 
       packages = perSystem (system:
         self.flake.${system}.packages
@@ -364,24 +363,11 @@
 
       devShells = perSystem (system: {
         default = self.flake.${system}.devShell;
-
-        tooling =
-          let
-            pkgs = plainNixpkgsFor system;
-          in
-          pkgs.mkShell {
-            inherit (preCommitCheckFor system) shellHook;
-
-            nativeBuildInputs = [
-              (fourmoluFor system)
-            ];
-          };
       });
 
       checks = perSystem (system:
         self.flake.${system}.checks
         // { formatCheck = preCommitCheckFor system; }
       );
-
     };
 }
