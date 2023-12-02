@@ -14,13 +14,6 @@ module Spec.Tally.SampleData (
   sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum,
 ) where
 
-import Dao.Tally (
-  TallyValidatorConfig (
-    TallyValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
- )
 import Dao.Types (ProposalType (General, Trip, Upgrade), TallyStateDatum (..))
 import Plutus.V1.Ledger.Api (POSIXTime (POSIXTime))
 import Spec.Addresses (

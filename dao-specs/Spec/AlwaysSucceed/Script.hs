@@ -3,8 +3,6 @@ module Spec.AlwaysSucceed.Script (
   alwaysSucceedCurrencySymbol,
 ) where
 
-import Dao.AlwaysSucceed (succeedValidator1)
-import Dao.Tally (TallyDynamicConfigDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
   mkTypedPolicy,

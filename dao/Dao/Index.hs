@@ -20,18 +20,18 @@ import PlutusTx.Prelude (Integer)
 newtype IndexNftDatum = IndexNftDatum
   { indIndex :: Integer
   -- ^ Corresponds to the number of proposals
-  -- `Triphut.Index.Script.validateIndex` ensures that this value is
+  -- `Dao.Index.Script.validateIndex` ensures that this value is
   -- incremented by one during a create proposal transaction
   }
 
--- | Used as an argument to the `Triphut.Index.Script.mkIndexNftMinter` minting policy script
+-- | Used as an argument to the `Dao.Index.Script.mkIndexNftMinter` minting policy script
 data IndexNftConfig = IndexNftConfig
   { incInitialUtxo :: TxOutRef
   -- ^ The UTXO to be spent in the transaction
   , incTokenName :: TokenName
   -- ^ The expected token name of the newly minted config NFT
   , incIndexValidator :: ValidatorHash
-  -- ^ The hash of the `Triphut.Index.Script.validateIndex` script,
+  -- ^ The hash of the `Dao.Index.Script.validateIndex` script,
   -- the policy uses this to ensure the newly minted token is sent to this index validator
   }
 

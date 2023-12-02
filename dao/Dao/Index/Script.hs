@@ -17,27 +17,6 @@ module Dao.Index.Script (
 ) where
 
 import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
-import Dao.Index (
-  IndexNftConfig (
-    IndexNftConfig,
-    incIndexValidator,
-    incInitialUtxo,
-    incTokenName
-  ),
-  IndexNftDatum (IndexNftDatum, indIndex),
- )
-import Dao.Shared (
-  WrappedMintingPolicyType,
-  convertDatum,
-  hasSingleTokenWithSymbolAndTokenName,
-  hasTokenInValueNoErrors,
-  mintingPolicyHash,
-  mkValidatorWithSettings,
-  policyToScript,
-  validatorHash,
-  validatorToScript,
-  wrapValidate,
- )
 import Plutus.V1.Ledger.Address (Address (addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Scripts (
@@ -91,6 +70,27 @@ import PlutusTx.Prelude (
   (+),
   (.),
   (==),
+ )
+import Dao.Index (
+  IndexNftConfig (
+    IndexNftConfig,
+    incIndexValidator,
+    incInitialUtxo,
+    incTokenName
+  ),
+  IndexNftDatum (IndexNftDatum, indIndex),
+ )
+import Dao.Shared (
+  WrappedMintingPolicyType,
+  convertDatum,
+  hasSingleTokenWithSymbolAndTokenName,
+  hasTokenInValueNoErrors,
+  mintingPolicyHash,
+  mkValidatorWithSettings,
+  policyToScript,
+  validatorHash,
+  validatorToScript,
+  wrapValidate,
  )
 
 {- | Validator for index.

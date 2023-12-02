@@ -1,6 +1,5 @@
 module Spec.Tally.Utils (findTally) where
 
-import Dao.Tally (TallyDynamicConfigDatum)
 import Dao.Types (TallyStateDatum)
 import Plutus.Model (Run)
 import Plutus.V2.Ledger.Tx (TxOut, TxOutRef)

@@ -78,13 +78,13 @@ instance PlutusTx.Eq TallyStateDatum where
 -- | DynamicConfig Datum holds the main info needed for the contracts.
 data DynamicConfigDatum = DynamicConfigDatum
   { dcTallyValidator :: ValidatorHash
-  -- ^ Hash of the `Triphut.Types.Tally.Script.validateTally` validator
+  -- ^ Hash of the `Dao.Types.Tally.Script.validateTally` validator
   , dcTreasuryValidator :: ValidatorHash
-  -- ^ Hash of the `Triphut.Types.Treasury.Script.validateTreasury` validator
+  -- ^ Hash of the `Dao.Types.Treasury.Script.validateTreasury` validator
   , dcConfigurationValidator :: ValidatorHash
-  -- ^ Hash of the `Triphut.Types.ConfigurationNft.Script.validateConfiguration` validator
+  -- ^ Hash of the `Dao.Types.ConfigurationNft.Script.validateConfiguration` validator
   , dcVoteValidator :: ValidatorHash
-  -- ^ Hash of the `Triphut.Types.Vote.Script.validateVote` validator
+  -- ^ Hash of the `Dao.Types.Vote.Script.validateVote` validator
   , dcUpgradeMajorityPercent :: Integer
   , dcUpgradeRelativeMajorityPercent :: Integer
   , dcGeneralMajorityPercent :: Integer
@@ -100,23 +100,23 @@ data DynamicConfigDatum = DynamicConfigDatum
   , dcMaxGeneralDisbursement :: Integer
   , dcMaxTripDisbursement :: Integer
   -- ^ Disbursement allowable disbursement amounts, for general and trip proposals
-  -- Checked in the `Triphut.Treasury.Script.validateTreasury` validator
+  -- Checked in the `Dao.Treasury.Script.validateTreasury` validator
   , dcAgentDisbursementPercent :: Integer
   -- ^ The percentage of the total travel cost for the agent in trip proposals
-  -- Checked in the `Triphut.Treasury.Script.validateTreasury` validator
+  -- Checked in the `Dao.Treasury.Script.validateTreasury` validator
   -- (Agent disbursement percentage is times a 1000)
   , dcProposalTallyEndOffset :: Integer
   -- ^ Like a cool down period to be added to the proposal end time
-  -- specified in the `Triphut.Types.TallyStateDatum` datum.
+  -- specified in the `Dao.Types.TallyStateDatum` datum.
   -- The treasury cannot disburse funds until
   -- after the end time plus the offset has passed
   -- (Offset is in milliseconds)
   , dcTallyNft :: CurrencySymbol
-  -- ^ Symbol of the `Triphut.Tally.Script.mkTallyNftMinter` minting policy
+  -- ^ Symbol of the `Dao.Tally.Script.mkTallyNftMinter` minting policy
   , dcVoteCurrencySymbol :: CurrencySymbol
-  -- ^ Symbol of the `Triphut.Vote.Script.mkVoteMinter` minting policy
+  -- ^ Symbol of the `Dao.Vote.Script.mkVoteMinter` minting policy
   , dcVoteTokenName :: TokenName
-  -- ^ Token name for the vote value minted by `Triphut.Vote.Script.mkVoteMinter`
+  -- ^ Token name for the vote value minted by `Dao.Vote.Script.mkVoteMinter`
   , dcVoteNft :: CurrencySymbol
   -- ^ Symbol of the Vote NFT
   , dcVoteFungibleCurrencySymbol :: CurrencySymbol
