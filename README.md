@@ -2,9 +2,16 @@
 
 # Testing
 
-There is a full test suite contained in the `triphut-specs` directory, written with the `plutus-simple-model` framework. The suite covers all the scripts contained within the `triphut` directory.
+There is a full test suite contained in the `dao-specs` directory, written with the `plutus-simple-model` framework. The suite covers all the scripts contained within the `dao` directory.
 
-To run the test suite use the following command:
+To run the test suite:
+
+First run the following to enter the nix shell:
+```
+nix develop
+```
+
+Once inside the shell you can use the following command to run the tests:
 ```
 cabal test
 ```
