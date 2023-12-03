@@ -15,7 +15,6 @@ import Dao.Vote (
   VoteActionRedeemer,
   VoteDatum,
   VoteMinterActionRedeemer,
-  VoteMinterConfig (VoteMinterConfig),
  )
 import Dao.Vote.Script (voteValidator, voteValidatorHash, wrappedPolicy)
 import Plutus.Model.V2 (
@@ -40,15 +39,15 @@ type VoteMintingPolicy = TypedPolicy VoteMinterActionRedeemer
 
 voteTypedMintingPolicy :: ConfigurationValidatorConfig -> VoteMintingPolicy
 voteTypedMintingPolicy config =
-  mkTypedPolicy $
-    $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
-      `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkTypedPolicy
+    $ $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
+    `PlutusTx.applyCode` PlutusTx.liftCode config
 
 voteMintingPolicy :: ConfigurationValidatorConfig -> MintingPolicy
 voteMintingPolicy config =
-  mkMintingPolicyScript $
-    $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
-      `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkMintingPolicyScript
+    $ $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
+    `PlutusTx.applyCode` PlutusTx.liftCode config
 
 voteCurrencySymbol :: ConfigurationValidatorConfig -> CurrencySymbol
 voteCurrencySymbol = scriptCurrencySymbol . voteTypedMintingPolicy

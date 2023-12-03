@@ -65,7 +65,7 @@ checkFails cfg funds msg act =
 mkTypedValidator' :: config -> (config -> Validator) -> TypedValidator datum redeemer
 mkTypedValidator' config mkValidator = TypedValidator . toV2 $ mkValidator config
 
-initScriptRef :: IsValidator script => script -> Run ()
+initScriptRef :: (IsValidator script) => script -> Run ()
 initScriptRef script = do
   admin <- getMainUser
   sp <- spend admin minAda
@@ -80,7 +80,7 @@ data ScriptType = Reference | Script
   deriving stock (Eq)
 
 runInitScript ::
-  IsValidator script =>
+  (IsValidator script) =>
   script ->
   ScriptType ->
   DatumType script ->
@@ -97,7 +97,7 @@ runInitScript validatorScript scriptType datum token = do
   submitTx admin $ userSpend spend' <> payTx
 
 runInitPayToScript ::
-  IsValidator script =>
+  (IsValidator script) =>
   script ->
   DatumType script ->
   Value ->
@@ -105,14 +105,14 @@ runInitPayToScript ::
 runInitPayToScript script = runInitScript script Script
 
 runInitReferenceScript ::
-  IsValidator script =>
+  (IsValidator script) =>
   script ->
   DatumType script ->
   Value ->
   Run ()
 runInitReferenceScript script = runInitScript script Reference
 
-getFirstRefScript :: IsValidator script => script -> Run TxOutRef
+getFirstRefScript :: (IsValidator script) => script -> Run TxOutRef
 getFirstRefScript script =
   fst . head <$> refScriptAt script
 

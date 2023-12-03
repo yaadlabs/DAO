@@ -26,22 +26,22 @@ import PlutusTx.Prelude qualified as PlutusTx
 data ProposalType
   = -- | Upgrade a proposal
     Upgrade
+      -- | Symbol of the upgrade minting policy
       CurrencySymbol
-      -- ^ Symbol of the upgrade minting policy
   | -- | A general proposal
     General
+      -- | General payment address
       Address
-      -- ^ General payment address
+      -- | General payment amount
       Integer
-      -- ^ General payment amount
   | -- | A trip proposal
     Trip
+      -- | Travel agent address
       Address
-      -- ^ Travel agent address
+      -- | Traveller address
       Address
-      -- ^ Traveller address
+      -- | Total travel cost
       Integer
-      -- ^ Total travel cost
 
 instance PlutusTx.Eq ProposalType where
   Upgrade a == Upgrade b = a == b
@@ -52,9 +52,13 @@ instance PlutusTx.Eq ProposalType where
 -- | Tally state datum
 data TallyStateDatum = TallyStateDatum
   { tsProposal :: ProposalType
+  -- ^ The `Dao.Types.ProposalType` type of the proposal
   , tsProposalEndTime :: POSIXTime
+  -- ^ The end of the proposal period
   , tsFor :: Integer
+  -- ^ The count of votes for the proposal
   , tsAgainst :: Integer
+  -- ^ The count of votes against the proposal
   }
 
 instance PlutusTx.Eq TallyStateDatum where
@@ -70,10 +74,14 @@ instance PlutusTx.Eq TallyStateDatum where
       , tsFor = yFor
       , tsAgainst = yAgainst
       } =
-      xProposal == yProposal
-        && xProposalEndTime == yProposalEndTime
-        && xFor == yFor
-        && xAgainst == yAgainst
+      xProposal
+        == yProposal
+        && xProposalEndTime
+        == yProposalEndTime
+        && xFor
+        == yFor
+        && xAgainst
+        == yAgainst
 
 -- | DynamicConfig Datum holds the main info needed for the contracts.
 data DynamicConfigDatum = DynamicConfigDatum

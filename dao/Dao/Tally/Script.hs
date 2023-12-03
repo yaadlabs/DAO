@@ -236,9 +236,9 @@ wrappedPolicyTally config a b = check (mkTallyNftMinter config a (unsafeFromBuil
 
 tallyNftPolicy :: TallyNftConfig -> MintingPolicy
 tallyNftPolicy cfg =
-  mkMintingPolicyScript $
-    $$(compile [||\c -> wrappedPolicyTally c||])
-      `PlutusTx.applyCode` PlutusTx.liftCode cfg
+  mkMintingPolicyScript
+    $ $$(compile [||\c -> wrappedPolicyTally c||])
+    `PlutusTx.applyCode` PlutusTx.liftCode cfg
 
 tallyNftMinterPolicyId :: TallyNftConfig -> CurrencySymbol
 tallyNftMinterPolicyId = mpsSymbol . mintingPolicyHash . tallyNftPolicy
@@ -285,7 +285,7 @@ hasExpectedScripts theInputs theTallyValidator voteValidator =
     traceIfFalse "More than one tally input" onlyOneTallyScript
       && traceIfFalse "Invalid script inputs" onlyTallyOrVote
 
-mapInsertWith :: PlutusTx.Eq k => (a -> a -> a) -> k -> a -> Map k a -> Map k a
+mapInsertWith :: (PlutusTx.Eq k) => (a -> a -> a) -> k -> a -> Map k a -> Map k a
 mapInsertWith f k v xs = case M.lookup k xs of
   Nothing -> M.insert k v xs
   Just v' -> M.insert k (f v v') xs
@@ -401,8 +401,8 @@ validateTally
                   if fungibleTokens == 0
                     then Value (M.insert adaSymbol (M.singleton adaToken vReturnAda) (getValue voteNft))
                     else
-                      Value $
-                        M.insert
+                      Value
+                        $ M.insert
                           dcVoteFungibleCurrencySymbol
                           (M.singleton dcVoteFungibleTokenName fungibleTokens)
                           ( M.insert
