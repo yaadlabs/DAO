@@ -11,7 +11,7 @@ import Plutus.Model (
   testNoErrors,
  )
 import Spec.SpecUtils (checkFails)
-import Spec.Values (dummyConfigNftValue, dummyIndexConfigNftValue, dummyTallyValue, dummyVoteConfigNftValue)
+import Spec.Values (dummyConfigNftValue, dummyIndexConfigNftValue, dummyTallyValue)
 import Spec.Vote.Context (
   invalidMoreThanOneTokenVoteConfigNftTest,
   invalidNoConfigInRefInputsVoteConfigNftTest,
@@ -61,6 +61,5 @@ nftSpec config =
         [ adaValue 10_000_000
         , dummyConfigNftValue
         , dummyIndexConfigNftValue
-        , dummyVoteConfigNftValue
         , dummyTallyValue
         ]

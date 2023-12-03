@@ -51,7 +51,6 @@ library
     Dao.Shared
     Dao.Tally
     Dao.Tally.Script
-    Dao.Treasury
     Dao.Treasury.Script
     Dao.Types
     Dao.Vote
@@ -107,7 +106,6 @@ library dao-specs
     Spec.Tally.Utils
     Spec.Treasury
     Spec.Treasury.Context
-    Spec.Treasury.SampleData
     Spec.Treasury.Script
     Spec.Treasury.Transactions
     Spec.Treasury.Utils

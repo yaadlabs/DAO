@@ -77,29 +77,54 @@ instance PlutusTx.Eq TallyStateDatum where
 
 -- | DynamicConfig Datum holds the main info needed for the contracts.
 data DynamicConfigDatum = DynamicConfigDatum
-  { dcTallyIndexNft :: CurrencySymbol
-  , dcTallyNft :: CurrencySymbol
-  , dcTallyValidator :: ValidatorHash
+  { dcTallyValidator :: ValidatorHash
+  -- ^ Hash of the `Dao.Types.Tally.Script.validateTally` validator
   , dcTreasuryValidator :: ValidatorHash
+  -- ^ Hash of the `Dao.Types.Treasury.Script.validateTreasury` validator
   , dcConfigurationValidator :: ValidatorHash
-  , dcVoteCurrencySymbol :: CurrencySymbol
-  , dcVoteTokenName :: TokenName
+  -- ^ Hash of the `Dao.Types.ConfigurationNft.Script.validateConfiguration` validator
   , dcVoteValidator :: ValidatorHash
-  , dcUpgradeMajorityPercent :: Integer -- times a 1000
-  , dcUpgradeRelativeMajorityPercent :: Integer -- times a 1000
-  , dcGeneralMajorityPercent :: Integer -- times a 1000
-  , dcGeneralRelativeMajorityPercent :: Integer -- times a 1000
-  , dcTripMajorityPercent :: Integer -- times a 1000
-  , dcTripRelativeMajorityPercent :: Integer -- times a 1000
+  -- ^ Hash of the `Dao.Types.Vote.Script.validateVote` validator
+  , dcUpgradeMajorityPercent :: Integer
+  , dcUpgradeRelativeMajorityPercent :: Integer
+  , dcGeneralMajorityPercent :: Integer
+  , dcGeneralRelativeMajorityPercent :: Integer
+  , dcTripMajorityPercent :: Integer
+  , dcTripRelativeMajorityPercent :: Integer
+  -- ^ The majority and relative majority percentages used
+  -- in calculating whether a proposal has sufficient votes to pass
+  -- (All times a 1000)
   , dcTotalVotes :: Integer
-  , dcVoteNft :: CurrencySymbol
-  , dcVoteFungibleCurrencySymbol :: CurrencySymbol
-  , dcVoteFungibleTokenName :: TokenName
-  , dcProposalTallyEndOffset :: Integer -- in milliseconds
+  -- ^ A threshold that needs to be passed when checking in
+  -- the script if there is a sufficient relative majority
   , dcMaxGeneralDisbursement :: Integer
   , dcMaxTripDisbursement :: Integer
-  , dcAgentDisbursementPercent :: Integer -- times a 1000
-  , dcFungibleVotePercent :: Integer -- times a 1000
+  -- ^ Disbursement allowable disbursement amounts, for general and trip proposals
+  -- Checked in the `Dao.Treasury.Script.validateTreasury` validator
+  , dcAgentDisbursementPercent :: Integer
+  -- ^ The percentage of the total travel cost for the agent in trip proposals
+  -- Checked in the `Dao.Treasury.Script.validateTreasury` validator
+  -- (Agent disbursement percentage is times a 1000)
+  , dcProposalTallyEndOffset :: Integer
+  -- ^ Like a cool down period to be added to the proposal end time
+  -- specified in the `Dao.Types.TallyStateDatum` datum.
+  -- The treasury cannot disburse funds until
+  -- after the end time plus the offset has passed
+  -- (Offset is in milliseconds)
+  , dcTallyNft :: CurrencySymbol
+  -- ^ Symbol of the `Dao.Tally.Script.mkTallyNftMinter` minting policy
+  , dcVoteCurrencySymbol :: CurrencySymbol
+  -- ^ Symbol of the `Dao.Vote.Script.mkVoteMinter` minting policy
+  , dcVoteTokenName :: TokenName
+  -- ^ Token name for the vote value minted by `Dao.Vote.Script.mkVoteMinter`
+  , dcVoteNft :: CurrencySymbol
+  -- ^ Symbol of the Vote NFT
+  , dcVoteFungibleCurrencySymbol :: CurrencySymbol
+  -- ^ Symbol of the fungible vote value
+  , dcVoteFungibleTokenName :: TokenName
+  -- ^ Token name for fungible vote value
+  , dcFungibleVotePercent :: Integer
+  -- ^ Fungible token percentage (Percentage value is times a 1000)
   }
 
 unstableMakeIsData ''DynamicConfigDatum

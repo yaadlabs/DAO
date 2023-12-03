@@ -10,7 +10,6 @@ module Spec.SpecUtils (
   findUniqueUtxo,
   findConfigUtxo,
   oneSecond,
-  getPubKeyHashFromAddress,
 ) where
 
 import Control.Monad (unless, void)
@@ -51,9 +50,6 @@ import Plutus.Model.V2 (
   txBoxRef,
   txBoxValue,
  )
-import Plutus.V1.Ledger.Address (Address (Address))
-import Plutus.V1.Ledger.Credential (Credential (PubKeyCredential))
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Scripts (Validator)
 import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
 import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value)
@@ -61,12 +57,6 @@ import Plutus.V2.Ledger.Tx (TxOut, TxOutRef)
 import PlutusTx.Prelude (Bool, Integer, Maybe (Just, Nothing), fst, head, ($), (.), (>>=))
 import Test.Tasty (TestTree)
 import Prelude (Eq, String, error, mconcat, pure, show, (<$>), (<>), (==))
-
-getPubKeyHashFromAddress :: Address -> Maybe PubKeyHash
-getPubKeyHashFromAddress (Address addrCredential _) =
-  case addrCredential of
-    PubKeyCredential pubKeyHash -> Just pubKeyHash
-    _ -> Nothing
 
 checkFails :: MockConfig -> Value -> String -> Run () -> TestTree
 checkFails cfg funds msg act =

@@ -17,28 +17,6 @@ module Dao.Index.Script (
 ) where
 
 import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
-import Dao.Index (
-  IndexNftConfig (
-    IndexNftConfig,
-    incIndexValidator,
-    incInitialUtxo,
-    incTokenName
-  ),
-  IndexNftDatum (IndexNftDatum, indIndex),
-  IndexValidatorConfig (IndexValidatorConfig),
- )
-import Dao.Shared (
-  WrappedMintingPolicyType,
-  convertDatum,
-  hasSingleTokenWithSymbolAndTokenName,
-  hasTokenInValueNoErrors,
-  mintingPolicyHash,
-  mkValidatorWithSettings,
-  policyToScript,
-  validatorHash,
-  validatorToScript,
-  wrapValidate,
- )
 import Plutus.V1.Ledger.Address (Address (addressCredential))
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Scripts (
@@ -62,8 +40,7 @@ import Plutus.V2.Ledger.Contexts (
     txInfoData,
     txInfoInputs,
     txInfoMint,
-    txInfoOutputs,
-    txInfoReferenceInputs
+    txInfoOutputs
   ),
   findTxInByTxOutRef,
   getContinuingOutputs,
@@ -83,7 +60,9 @@ import PlutusTx.Prelude (
   Maybe (Just, Nothing),
   any,
   check,
+  const,
   filter,
+  mempty,
   traceError,
   traceIfFalse,
   ($),
@@ -91,6 +70,27 @@ import PlutusTx.Prelude (
   (+),
   (.),
   (==),
+ )
+import Dao.Index (
+  IndexNftConfig (
+    IndexNftConfig,
+    incIndexValidator,
+    incInitialUtxo,
+    incTokenName
+  ),
+  IndexNftDatum (IndexNftDatum, indIndex),
+ )
+import Dao.Shared (
+  WrappedMintingPolicyType,
+  convertDatum,
+  hasSingleTokenWithSymbolAndTokenName,
+  hasTokenInValueNoErrors,
+  mintingPolicyHash,
+  mkValidatorWithSettings,
+  policyToScript,
+  validatorHash,
+  validatorToScript,
+  wrapValidate,
  )
 
 {- | Validator for index.
@@ -102,13 +102,11 @@ import PlutusTx.Prelude (
     - The index NFT stays at the validator
 -}
 validateIndex ::
-  IndexValidatorConfig ->
   IndexNftDatum ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateIndex
-  IndexValidatorConfig {..}
   IndexNftDatum {indIndex = inputIndex}
   _
   ctx@ScriptContext
@@ -135,19 +133,22 @@ validateIndex
      in
       traceIfFalse "output datum is not incremented" outputDatumIsIncremented
         && traceIfFalse "script value is not returned" outputValueGreaterThanInputValue
-validateIndex _ _ _ _ = traceError "Wrong script purpose"
+validateIndex _ _ _ = traceError "Wrong script purpose"
 
-indexValidator :: IndexValidatorConfig -> Validator
-indexValidator config = mkValidatorWithSettings compiledCode True
+indexValidator :: Validator
+indexValidator = mkValidatorWithSettings compiledCode True
   where
-    wrapValidateIndex = wrapValidate validateIndex
-    compiledCode = $$(PlutusTx.compile [||wrapValidateIndex||]) `applyCode` liftCode config
+    -- 'mempty' in this case is in place of the config argument to wrapValidate that we
+    -- throw away here. And 'Value' is just an arbitrary legal type to satisfy the type checker
+    -- (Same for 'indexScript' below)
+    wrapValidateIndex = wrapValidate (const validateIndex) (mempty :: Value)
+    compiledCode = $$(PlutusTx.compile [||wrapValidateIndex||])
 
-indexValidatorHash :: IndexValidatorConfig -> ValidatorHash
-indexValidatorHash = validatorHash . indexValidator
+indexValidatorHash :: ValidatorHash
+indexValidatorHash = validatorHash indexValidator
 
-indexScript :: IndexValidatorConfig -> PlutusScript PlutusScriptV2
-indexScript = validatorToScript indexValidator
+indexScript :: PlutusScript PlutusScriptV2
+indexScript = validatorToScript (const indexValidator) (mempty :: Value)
 
 {- | Policy for minting index NFT.
 

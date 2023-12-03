@@ -41,11 +41,6 @@ import Dao.ConfigurationNft.Script (
  )
 import Dao.Index (
   IndexNftConfig (IndexNftConfig, incIndexValidator, incInitialUtxo, incTokenName),
-  IndexValidatorConfig (
-    IndexValidatorConfig,
-    ivcConfigNftCurrencySymbol,
-    ivcConfigNftTokenName
-  ),
  )
 import Dao.Index.Script (
   indexScript,
@@ -61,11 +56,6 @@ import Dao.Tally (
     tncIndexNftPolicyId,
     tncIndexNftTokenName
   ),
-  TallyValidatorConfig (
-    TallyValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
  )
 import Dao.Tally.Script (
   tallyNftMinter,
@@ -73,26 +63,7 @@ import Dao.Tally.Script (
   tallyScript,
   tallyValidatorHash,
  )
-import Dao.Treasury (
-  TreasuryValidatorConfig (
-    TreasuryValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
- )
 import Dao.Treasury.Script (treasuryScript, treasuryValidatorHash)
-import Dao.Vote (
-  VoteMinterConfig (
-    VoteMinterConfig,
-    vmcConfigNftCurrencySymbol,
-    vmcConfigNftTokenName
-  ),
-  VoteValidatorConfig (
-    VoteValidatorConfig,
-    vvcConfigNftCurrencySymbol,
-    vvcConfigNftTokenName
-  ),
- )
 import Dao.Vote.Script (
   voteMinter,
   voteMinterPolicyId,
@@ -237,47 +208,24 @@ run Options {..} = do
   writeFile configurationValidatorHashOutput $ show (configurationValidatorHash configurationValidatorConfig)
 
   ---
-  let voteMinterConfig =
-        VoteMinterConfig
-          { vmcConfigNftCurrencySymbol = theConfigurationNftPolicyId
-          , vmcConfigNftTokenName = configurationNftTokenName
-          }
 
-  writeSource voteMinterOutput (voteMinter voteMinterConfig)
+  writeSource voteMinterOutput (voteMinter configurationValidatorConfig)
 
-  let theVoteMinterCurrencySymbol = voteMinterPolicyId voteMinterConfig
+  let theVoteMinterCurrencySymbol = voteMinterPolicyId configurationValidatorConfig
 
   writeFile voteMinterPolicyIdOutput $ show theVoteMinterCurrencySymbol
 
-  let voteValidatorConfig =
-        VoteValidatorConfig
-          { vvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
-          , vvcConfigNftTokenName = configurationNftTokenName
-          }
+  writeSource voteValidatorOutput (voteScript configurationValidatorConfig)
 
-  writeSource voteValidatorOutput (voteScript voteValidatorConfig)
+  writeFile voteValidatorHashOutput $ show (voteValidatorHash configurationValidatorConfig)
 
-  writeFile voteValidatorHashOutput $ show (voteValidatorHash voteValidatorConfig)
+  writeSource treasuryValidatorOutput (treasuryScript configurationValidatorConfig)
 
-  let treasuryValidatorConfig =
-        TreasuryValidatorConfig
-          { tvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
-          , tvcConfigNftTokenName = configurationNftTokenName
-          }
+  writeFile treasuryValidatorHashOutput $ show (treasuryValidatorHash configurationValidatorConfig)
 
-  writeSource treasuryValidatorOutput (treasuryScript treasuryValidatorConfig)
+  writeSource indexValidatorOutput indexScript
 
-  writeFile treasuryValidatorHashOutput $ show (treasuryValidatorHash treasuryValidatorConfig)
-
-  let indexValidatorConfig =
-        IndexValidatorConfig
-          { ivcConfigNftCurrencySymbol = theConfigurationNftPolicyId
-          , ivcConfigNftTokenName = configurationNftTokenName
-          }
-
-  writeSource indexValidatorOutput (indexScript indexValidatorConfig)
-
-  let theIndexValidatorHash = indexValidatorHash indexValidatorConfig
+  let theIndexValidatorHash = indexValidatorHash
 
   writeFile indexValidatorHashOutput $ show theIndexValidatorHash
 
@@ -308,14 +256,8 @@ run Options {..} = do
 
   writeFile tallyNftPolicyIdOutput $ show theTallyNftPolicyId
 
-  let tallyValidatorConfig =
-        TallyValidatorConfig
-          { tvcConfigNftCurrencySymbol = theConfigurationNftPolicyId
-          , tvcConfigNftTokenName = configurationNftTokenName
-          }
+  writeSource tallyValidatorOutput (tallyScript configurationValidatorConfig)
 
-  writeSource tallyValidatorOutput (tallyScript tallyValidatorConfig)
-
-  let theTallyValidatorHash = tallyValidatorHash tallyValidatorConfig
+  let theTallyValidatorHash = tallyValidatorHash configurationValidatorConfig
 
   writeFile tallyValidatorHashOutput $ show theTallyValidatorHash

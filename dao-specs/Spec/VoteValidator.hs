@@ -11,9 +11,8 @@ import Plutus.Model (
  )
 import Spec.SpecUtils (amountOfAda, checkFails)
 import Spec.Values (
-  dummyTallyConfigValue,
+  dummyConfigNftValue,
   dummyTallyValue,
-  dummyVoteConfigNftValue,
   dummyVoteValue,
  )
 import Spec.Vote.ContextValidator (
@@ -47,7 +46,8 @@ nftSpec config =
     ]
   where
     -- Count redeemer tests
-    positiveCountRedeemerTest = good "Valid vote validator, Cancel redeemer, test" validVoteValidatorCountRedeemerTest
+    positiveCountRedeemerTest =
+      good "Valid vote validator, Count redeemer, test" validVoteValidatorCountRedeemerTest
     negativeCountRedeemerTest1 =
       bad
         ( mconcat
@@ -96,8 +96,7 @@ nftSpec config =
     initialFunds =
       mconcat
         [ amountOfAda 20_000_000
-        , dummyVoteConfigNftValue
-        , dummyTallyConfigValue
+        , dummyConfigNftValue
         , dummyVoteValue
         , dummyTallyValue
         ]

@@ -7,13 +7,10 @@ module Spec.Tally.Transactions (
   runInitUpgradeWithVotesWithEndTimeInFutureTallyStateDatum,
   runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes,
   runInitTripTallyWithEndTimeInFutureNotEnoughVotes,
-  runInitTallyConfig,
 ) where
 
 import Plutus.Model (Run)
-import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator2)
-import Spec.SampleData (sampleTallyDynamicConfig)
-import Spec.SpecUtils (minAda, runInitPayToScript, runInitReferenceScript)
+import Spec.SpecUtils (runInitPayToScript)
 import Spec.Tally.SampleData (
   sampleGeneralWithEndTimeInFutureTallyStateDatum,
   sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum,
@@ -25,8 +22,7 @@ import Spec.Tally.SampleData (
   sampleUpgradeWithVotesEndTimeInPastTallyStateDatum,
  )
 import Spec.Tally.Script (tallyNftTypedValidator)
-import Spec.Values (dummyTallyConfigValue, dummyTallyValue)
-import Prelude ((<>))
+import Spec.Values (dummyTallyValue)
 
 runInitTripTallyWithEndTimeInFutureNotEnoughVotes :: Run ()
 runInitTripTallyWithEndTimeInFutureNotEnoughVotes =
@@ -83,10 +79,3 @@ runInitTallyWithEndTimeInFuture =
     tallyNftTypedValidator
     sampleUpgradeWithEndTimeInFutureTallyStateDatum
     dummyTallyValue
-
-runInitTallyConfig :: Run ()
-runInitTallyConfig =
-  runInitReferenceScript
-    alwaysSucceedTypedValidator2
-    sampleTallyDynamicConfig
-    (dummyTallyConfigValue <> minAda)
