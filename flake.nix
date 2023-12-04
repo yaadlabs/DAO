@@ -16,6 +16,10 @@
       url = "github:mlabs-haskell/plutus-simple-model/31a18e5dc28ae7620c06adfad061f06ec176346b";
     };
 
+    lbf = {
+      url = "github:mlabs-haskell/lambda-buffers";
+    };
+
     pre-commit-hooks = {
       url = "github:cachix/pre-commit-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -152,7 +156,7 @@
         overlays = [ haskell-nix.overlay (iohk-nix.overlays.crypto) ];
       };
 
-      supportedSystems = [ "x86_64-linux" "aarch64-darwin" "x86_64-darwin" "aarch64-linux" ];
+      supportedSystems = [ "x86_64-linux" ]; # [ "x86_64-linux" "aarch64-darwin" "x86_64-darwin" "aarch64-linux" ];
 
       perSystem = nixpkgs-upstream.lib.genAttrs supportedSystems;
 
@@ -184,6 +188,12 @@
         [
           "${inputs.psm}"
           "${inputs.plutonomy}"
+
+          "${inputs.lbf.packages.${system}.lbf-plutus-haskell}"
+          "${inputs.lbf.packages.${system}.lbr-plutus-haskell-src}"
+
+          "${inputs.lbf.packages.${system}.lbf-prelude-haskell}"
+          "${inputs.lbf.packages.${system}.lbr-prelude-haskell-src}"
 
           "${inputs.plutus}/plutus-core"
           "${inputs.plutus}/plutus-ledger-api"
