@@ -5,9 +5,9 @@ Description: Contains helper functions used across the other modules.
 module Dao.Shared (
   WrappedMintingPolicyType,
   hasTokenInValueNoErrors,
-  validatorToScript,
-  policyToScript,
-  mkValidatorWithSettings,
+  -- validatorToScript,
+  -- policyToScript,
+  -- mkValidatorWithSettings,
   wrapValidate,
   hasBurnedTokens,
   hasTokenInValue,
@@ -20,34 +20,47 @@ module Dao.Shared (
   integerToByteString,
   isScriptCredential,
   lovelacesOf,
-  mintingPolicyHash,
-  plutonomyMintingPolicyHash,
-  validatorHash,
+  -- mintingPolicyHash,
+  -- plutonomyMintingPolicyHash,
+  -- validatorHash,
 ) where
 
-import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
-import Cardano.Api.Shelley qualified as Shelly
-import Codec.Serialise (serialise)
+-- import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
+-- import Cardano.Api.Shelley qualified as Shelly
+-- import Codec.Serialise (serialise)
+
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as BSS
-import Plutonomy qualified
-import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
-import Plutus.V1.Ledger.Scripts (
+
+--
+-- import Plutonomy qualified
+-- import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
+
+import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
+
+-- import Plutus.V1.Ledger.Scripts (
+--   Datum (Datum),
+--   DatumHash,
+--   MintingPolicy,
+--   MintingPolicyHash (MintingPolicyHash),
+--   Script,
+--   ScriptHash (ScriptHash),
+--   Validator (Validator),
+--   ValidatorHash (ValidatorHash),
+--   getMintingPolicy,
+--   getScriptHash,
+--   getValidator,
+--   unMintingPolicyScript,
+--  )
+
+import PlutusLedgerApi.V1 (CurrencySymbol)
+import PlutusLedgerApi.V1.Value (TokenName, Value (Value, getValue), adaSymbol, adaToken)
+import PlutusLedgerApi.V2 (
   Datum (Datum),
   DatumHash,
-  MintingPolicy,
-  MintingPolicyHash (MintingPolicyHash),
-  Script,
-  ScriptHash (ScriptHash),
-  Validator (Validator),
-  ValidatorHash (ValidatorHash),
-  getMintingPolicy,
-  getScriptHash,
-  getValidator,
-  unMintingPolicyScript,
+  OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash),
  )
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value (Value, getValue), adaSymbol, adaToken)
-import Plutus.V2.Ledger.Tx (OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash))
+
 import PlutusTx (UnsafeFromData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as Map
@@ -207,7 +220,7 @@ wrapValidate validate config x y z =
         (unsafeFromBuiltinData z)
     )
 
--- | Make Validator with given Plutonomy optimisations
+{- | Make Validator with given Plutonomy optimisations
 mkValidatorWithSettings ::
   CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ()) ->
   Bool ->
@@ -225,8 +238,9 @@ mkValidatorWithSettings
       Plutonomy.optimizeUPLCWith optimizerSettings
         $ Plutonomy.validatorToPlutus
         $ Plutonomy.mkValidatorScript compiledCode
+-}
 
--- | Convert validator with a config to Plutus script
+{- | Convert validator with a config to Plutus script
 validatorToScript :: (config -> Validator) -> config -> PlutusScript PlutusScriptV2
 validatorToScript f config =
   PlutusScriptSerialised
@@ -234,8 +248,9 @@ validatorToScript f config =
     . BSL.toStrict
     . serialise
     $ f config
+-}
 
--- | Convert policy with a config to Plutus script
+{- | Convert policy with a config to Plutus script
 policyToScript :: (config -> MintingPolicy) -> config -> PlutusScript PlutusScriptV2
 policyToScript f =
   PlutusScriptSerialised
@@ -245,48 +260,49 @@ policyToScript f =
     . Validator
     . unMintingPolicyScript
     . f
+-}
 
-toCardanoApiScript :: Script -> Shelly.Script Shelly.PlutusScriptV2
-toCardanoApiScript =
-  Shelly.PlutusScript Shelly.PlutusScriptV2
-    . Shelly.PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . serialise
-
-scriptHash :: Script -> ScriptHash
-scriptHash =
-  ScriptHash
-    . toBuiltin
-    . Shelly.serialiseToRawBytes
-    . Shelly.hashScript
-    . toCardanoApiScript
-
-mintingPolicyHash :: MintingPolicy -> MintingPolicyHash
-mintingPolicyHash =
-  MintingPolicyHash
-    . getScriptHash
-    . scriptHash
-    . getValidator
-    . Validator
-    . getMintingPolicy
-
-plutonomyMintingPolicyHash :: MintingPolicy -> MintingPolicyHash
-plutonomyMintingPolicyHash =
-  let
-    optimizerSettings =
-      Plutonomy.defaultOptimizerOptions
-        { Plutonomy.ooSplitDelay = False
-        , Plutonomy.ooFloatOutLambda = False
-        }
-   in
-    MintingPolicyHash
-      . getScriptHash
-      . scriptHash
-      . getValidator
-      . Plutonomy.optimizeUPLCWith optimizerSettings
-      . Validator
-      . getMintingPolicy
-
-validatorHash :: Validator -> ValidatorHash
-validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator
+-- toCardanoApiScript :: Script -> Shelly.Script Shelly.PlutusScriptV2
+-- toCardanoApiScript =
+--   Shelly.PlutusScript Shelly.PlutusScriptV2
+--     . Shelly.PlutusScriptSerialised
+--     . BSS.toShort
+--     . BSL.toStrict
+--     . serialise
+--
+-- scriptHash :: Script -> ScriptHash
+-- scriptHash =
+--   ScriptHash
+--     . toBuiltin
+--     . Shelly.serialiseToRawBytes
+--     . Shelly.hashScript
+--     . toCardanoApiScript
+--
+-- mintingPolicyHash :: MintingPolicy -> MintingPolicyHash
+-- mintingPolicyHash =
+--   MintingPolicyHash
+--     . getScriptHash
+--     . scriptHash
+--     . getValidator
+--     . Validator
+--     . getMintingPolicy
+--
+-- plutonomyMintingPolicyHash :: MintingPolicy -> MintingPolicyHash
+-- plutonomyMintingPolicyHash =
+--   let
+--     optimizerSettings =
+--       Plutonomy.defaultOptimizerOptions
+--         { Plutonomy.ooSplitDelay = False
+--         , Plutonomy.ooFloatOutLambda = False
+--         }
+--    in
+--     MintingPolicyHash
+--       . getScriptHash
+--       . scriptHash
+--       . getValidator
+--       . Plutonomy.optimizeUPLCWith optimizerSettings
+--       . Validator
+--       . getMintingPolicy
+--
+-- validatorHash :: Validator -> ValidatorHash
+-- validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator

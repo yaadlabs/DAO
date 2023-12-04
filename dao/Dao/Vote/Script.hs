@@ -6,19 +6,21 @@ Description: Dao vote related scripts. It includes:
 -}
 module Dao.Vote.Script (
   -- * Minting policy
-  voteMinter,
-  voteMinterPolicyId,
+
+  -- voteMinter,
+  -- voteMinterPolicyId,
   mkVoteMinter,
-  wrappedPolicy,
+  -- wrappedPolicy,
 
   -- * Validator
-  voteScript,
-  voteValidator,
-  voteValidatorHash,
 ) where
 
-import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
-import Codec.Serialise (serialise)
+-- voteScript,
+-- voteValidator,
+-- voteValidatorHash,
+
+-- import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
+-- import Codec.Serialise (serialise)
 import Dao.ConfigurationNft (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
@@ -34,11 +36,11 @@ import Dao.Shared (
   hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
-  mkValidatorWithSettings,
-  plutonomyMintingPolicyHash,
-  validatorHash,
-  validatorToScript,
-  wrapValidate,
+  -- mkValidatorWithSettings,
+  -- plutonomyMintingPolicyHash,
+  -- validatorHash,
+  -- validatorToScript,
+  -- wrapValidate,
  )
 import Dao.Types (
   DynamicConfigDatum (
@@ -62,29 +64,35 @@ import Dao.Vote (
  )
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as BSS
-import Plutonomy qualified
-import Plutus.V1.Ledger.Address (addressCredential)
-import Plutus.V1.Ledger.Credential (Credential (PubKeyCredential, ScriptCredential))
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
-import Plutus.V1.Ledger.Interval (after)
-import Plutus.V1.Ledger.Scripts (
+
+-- import Plutonomy qualified
+import PlutusLedgerApi.V1.Address (addressCredential)
+import PlutusLedgerApi.V1.Credential (Credential (PubKeyCredential, ScriptCredential))
+import PlutusLedgerApi.V1.Crypto (PubKeyHash)
+import PlutusLedgerApi.V1.Interval (after)
+import PlutusLedgerApi.V2 (
   Datum,
   DatumHash,
-  MintingPolicy,
-  Validator (Validator),
-  ValidatorHash,
-  mkMintingPolicyScript,
-  unMintingPolicyScript,
  )
-import Plutus.V1.Ledger.Value (
+
+-- import Plutus.V1.Ledger.Scripts (
+--   Datum,
+--   DatumHash,
+--   MintingPolicy,
+--   Validator (Validator),
+--   ValidatorHash,
+--   mkMintingPolicyScript,
+--   unMintingPolicyScript,
+--  )
+import PlutusLedgerApi.V1.Value (
   CurrencySymbol,
   Value,
   adaSymbol,
   adaToken,
-  mpsSymbol,
+  -- mpsSymbol,
   valueOf,
  )
-import Plutus.V2.Ledger.Contexts (
+import PlutusLedgerApi.V2.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
   ScriptPurpose (Minting),
   TxInInfo (TxInInfo, txInInfoResolved),
@@ -99,7 +107,16 @@ import Plutus.V2.Ledger.Contexts (
     txInfoValidRange
   ),
  )
-import Plutus.V2.Ledger.Tx hiding (Mint)
+import PlutusLedgerApi.V2.Tx (
+  TxOut (
+    TxOut,
+    txOutAddress,
+    txOutDatum,
+    txOutValue
+  ),
+ )
+
+-- import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (applyCode, compile, liftCode, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (
@@ -228,39 +245,39 @@ mkVoteMinter
           && traceIfFalse "Total ada is not high enough" totalAdaIsGreaterThanReturnAda
 mkVoteMinter _ _ _ = traceError "Wrong type of script purpose!"
 
-wrappedPolicy :: ConfigurationValidatorConfig -> WrappedMintingPolicyType
-wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) (unsafeFromBuiltinData b))
+-- wrappedPolicy :: ConfigurationValidatorConfig -> WrappedMintingPolicyType
+-- wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) (unsafeFromBuiltinData b))
 
-policy :: ConfigurationValidatorConfig -> MintingPolicy
-policy cfg =
-  mkMintingPolicyScript
-    $ $$(compile [||\c -> wrappedPolicy c||])
-    `PlutusTx.applyCode` PlutusTx.liftCode cfg
-
-voteMinterPolicyId :: ConfigurationValidatorConfig -> CurrencySymbol
-voteMinterPolicyId = mpsSymbol . plutonomyMintingPolicyHash . policy
-
-scriptAsCbor :: ConfigurationValidatorConfig -> BSL.ByteString
-scriptAsCbor =
-  let
-    optimizerSettings =
-      Plutonomy.defaultOptimizerOptions
-        { Plutonomy.ooSplitDelay = False
-        , Plutonomy.ooFloatOutLambda = False
-        }
-   in
-    serialise
-      . Plutonomy.optimizeUPLCWith optimizerSettings
-      . Validator
-      . unMintingPolicyScript
-      . policy
-
-voteMinter :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
-voteMinter =
-  PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . scriptAsCbor
+-- policy :: ConfigurationValidatorConfig -> MintingPolicy
+-- policy cfg =
+--   mkMintingPolicyScript
+--     $ $$(compile [||\c -> wrappedPolicy c||])
+--     `PlutusTx.applyCode` PlutusTx.liftCode cfg
+--
+-- voteMinterPolicyId :: ConfigurationValidatorConfig -> CurrencySymbol
+-- voteMinterPolicyId = mpsSymbol . plutonomyMintingPolicyHash . policy
+--
+-- scriptAsCbor :: ConfigurationValidatorConfig -> BSL.ByteString
+-- scriptAsCbor =
+--   let
+--     optimizerSettings =
+--       Plutonomy.defaultOptimizerOptions
+--         { Plutonomy.ooSplitDelay = False
+--         , Plutonomy.ooFloatOutLambda = False
+--         }
+--    in
+--     serialise
+--       . Plutonomy.optimizeUPLCWith optimizerSettings
+--       . Validator
+--       . unMintingPolicyScript
+--       . policy
+--
+-- voteMinter :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
+-- voteMinter =
+--   PlutusScriptSerialised
+--     . BSS.toShort
+--     . BSL.toStrict
+--     . scriptAsCbor
 
 {- | Validator for votes.
 
@@ -350,14 +367,14 @@ validateVote
             traceIfFalse "Transaction should be signed by the vote owner" isSignedByOwner
               && traceIfFalse "All vote tokens should be burned" voteTokenAreAllBurned
 
-voteValidator :: ConfigurationValidatorConfig -> Validator
-voteValidator config = mkValidatorWithSettings compiledCode False
-  where
-    wrapValidateVote = wrapValidate validateVote
-    compiledCode = $$(PlutusTx.compile [||wrapValidateVote||]) `applyCode` liftCode config
-
-voteValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
-voteValidatorHash = validatorHash . voteValidator
-
-voteScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
-voteScript = validatorToScript voteValidator
+-- voteValidator :: ConfigurationValidatorConfig -> Validator
+-- voteValidator config = mkValidatorWithSettings compiledCode False
+--   where
+--     wrapValidateVote = wrapValidate validateVote
+--     compiledCode = $$(PlutusTx.compile [||wrapValidateVote||]) `applyCode` liftCode config
+--
+-- voteValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
+-- voteValidatorHash = validatorHash . voteValidator
+--
+-- voteScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
+-- voteScript = validatorToScript voteValidator

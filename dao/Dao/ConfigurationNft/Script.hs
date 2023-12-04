@@ -7,13 +7,14 @@ Description: Dao configuration related scripts. It includes:
 module Dao.ConfigurationNft.Script (
   -- * Minting policy
   mkConfigurationNftPolicy,
-  configurationNftMintingPolicy,
-  configurationNftCurrencySymbol,
+  -- configurationNftMintingPolicy,
+  -- configurationNftCurrencySymbol,
 
   -- * Validator
-  configurationScript,
-  configurationValidator,
-  configurationValidatorHash,
+  validateConfiguration,
+  -- configurationScript,
+  -- configurationValidator,
+  -- configurationValidatorHash,
 ) where
 
 import Dao.ConfigurationNft (
@@ -25,7 +26,7 @@ import Dao.ConfigurationNft (
   NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
  )
 
-import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
+-- import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
 import Dao.Shared (
   WrappedMintingPolicyType,
   convertDatum,
@@ -34,12 +35,12 @@ import Dao.Shared (
   hasSymbolInValue,
   hasTokenInValue,
   hasTokenInValueNoErrors,
-  mintingPolicyHash,
-  mkValidatorWithSettings,
-  policyToScript,
-  validatorHash,
-  validatorToScript,
-  wrapValidate,
+  -- mintingPolicyHash,
+  -- mkValidatorWithSettings,
+  -- policyToScript,
+  -- validatorHash,
+  -- validatorToScript,
+  -- wrapValidate,
  )
 import Dao.Types (
   DynamicConfigDatum (
@@ -53,20 +54,21 @@ import Dao.Types (
   ProposalType (Upgrade),
   TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
-import Plutus.V1.Ledger.Interval (before)
-import Plutus.V1.Ledger.Scripts (
-  MintingPolicy,
-  Validator,
-  ValidatorHash,
-  mkMintingPolicyScript,
- )
-import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
-import Plutus.V1.Ledger.Value (
-  CurrencySymbol,
+import PlutusLedgerApi.V1.Interval (before)
+
+-- import Plutus.V1.Ledger.Scripts (
+--   MintingPolicy,
+--   Validator,
+--   ValidatorHash,
+--   mkMintingPolicyScript,
+--  )
+import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
+import PlutusLedgerApi.V1.Value (
   Value,
-  mpsSymbol,
+  -- mpsSymbol,
  )
-import Plutus.V2.Ledger.Contexts (
+import PlutusLedgerApi.V2 (CurrencySymbol)
+import PlutusLedgerApi.V2.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
   ScriptPurpose (Minting, Spending),
   TxInInfo (TxInInfo, txInInfoOutRef, txInInfoResolved),
@@ -80,7 +82,7 @@ import Plutus.V2.Ledger.Contexts (
     txInfoValidRange
   ),
  )
-import Plutus.V2.Ledger.Tx (
+import PlutusLedgerApi.V2.Tx (
   TxOut (TxOut, txOutDatum, txOutValue),
   TxOutRef,
  )
@@ -160,24 +162,26 @@ mkConfigurationNftPolicy _ _ _ = traceError "Wrong type of script purpose!"
 {- | The `configurationNftMintingPolicy` script built from `mkConfigurationNftPolicy`
  Takes an `NftConfig` as its argument
 -}
-configurationNftMintingPolicy :: NftConfig -> PlutusScript PlutusScriptV2
-configurationNftMintingPolicy = policyToScript policy
+
+-- configurationNftMintingPolicy :: NftConfig -> PlutusScript PlutusScriptV2
+-- configurationNftMintingPolicy = policyToScript policy
 
 {- | Currency symbol for the `configurationNftMintingPolicy` script
  Takes an `NftConfig` as its argument
 -}
-configurationNftCurrencySymbol :: NftConfig -> CurrencySymbol
-configurationNftCurrencySymbol = mpsSymbol . mintingPolicyHash . policy
 
--- Build the policy
-policy :: NftConfig -> MintingPolicy
-policy cfg =
-  mkMintingPolicyScript
-    $ $$(compile [||\c -> wrappedPolicy c||])
-    `PlutusTx.applyCode` PlutusTx.liftCode cfg
-
-wrappedPolicy :: NftConfig -> WrappedMintingPolicyType
-wrappedPolicy config a b = check (mkConfigurationNftPolicy config a (unsafeFromBuiltinData b))
+-- configurationNftCurrencySymbol :: NftConfig -> CurrencySymbol
+-- configurationNftCurrencySymbol = mpsSymbol . mintingPolicyHash . policy
+--
+-- -- Build the policy
+-- policy :: NftConfig -> MintingPolicy
+-- policy cfg =
+--   mkMintingPolicyScript
+--     $ $$(compile [||\c -> wrappedPolicy c||])
+--     `PlutusTx.applyCode` PlutusTx.liftCode cfg
+--
+-- wrappedPolicy :: NftConfig -> WrappedMintingPolicyType
+-- wrappedPolicy config a b = check (mkConfigurationNftPolicy config a (unsafeFromBuiltinData b))
 
 -------------------------------------------------------------------------------
 -- Validator
@@ -286,19 +290,19 @@ validateConfiguration
         && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 validateConfiguration _ _ _ _ = traceError "Wrong script purpose"
 
-configurationValidator :: ConfigurationValidatorConfig -> Validator
-configurationValidator config = mkValidatorWithSettings compiledCode True
-  where
-    compiledCode = $$(PlutusTx.compile [||wrapValidateConfiguration||]) `applyCode` liftCode config
-
-wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-wrapValidateConfiguration = wrapValidate validateConfiguration
-
-configurationValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
-configurationValidatorHash = validatorHash . configurationValidator
-
-configurationScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
-configurationScript = validatorToScript configurationValidator
+-- configurationValidator :: ConfigurationValidatorConfig -> Validator
+-- configurationValidator config = mkValidatorWithSettings compiledCode True
+--   where
+--     compiledCode = $$(PlutusTx.compile [||wrapValidateConfiguration||]) `applyCode` liftCode config
+--
+-- wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+-- wrapValidateConfiguration = wrapValidate validateConfiguration
+--
+-- configurationValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
+-- configurationValidatorHash = validatorHash . configurationValidator
+--
+-- configurationScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
+-- configurationScript = validatorToScript configurationValidator
 
 ownValue :: [TxInInfo] -> TxOutRef -> Value
 ownValue ins txOutRef = go ins

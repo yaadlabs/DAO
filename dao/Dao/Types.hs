@@ -12,10 +12,11 @@ module Dao.Types (
 )
 where
 
-import Plutus.V1.Ledger.Address (Address)
-import Plutus.V1.Ledger.Scripts (ValidatorHash)
-import Plutus.V1.Ledger.Time (POSIXTime)
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
+import PlutusLedgerApi.V1.Address (Address)
+import PlutusLedgerApi.V1.Scripts (ScriptHash)
+import PlutusLedgerApi.V1.Time (POSIXTime)
+import PlutusLedgerApi.V1.Value (TokenName)
+import PlutusLedgerApi.V2 (CurrencySymbol)
 import PlutusTx (unstableMakeIsData)
 import PlutusTx.Prelude (Bool (False), Integer, (&&), (==))
 import PlutusTx.Prelude qualified as PlutusTx
@@ -43,6 +44,8 @@ data ProposalType
       -- | Total travel cost
       Integer
 
+unstableMakeIsData ''ProposalType
+
 instance PlutusTx.Eq ProposalType where
   Upgrade a == Upgrade b = a == b
   General a b == General c d = a == c && b == d
@@ -60,6 +63,8 @@ data TallyStateDatum = TallyStateDatum
   , tsAgainst :: Integer
   -- ^ The count of votes against the proposal
   }
+
+unstableMakeIsData ''TallyStateDatum
 
 instance PlutusTx.Eq TallyStateDatum where
   TallyStateDatum
@@ -85,13 +90,13 @@ instance PlutusTx.Eq TallyStateDatum where
 
 -- | DynamicConfig Datum holds the main info needed for the contracts.
 data DynamicConfigDatum = DynamicConfigDatum
-  { dcTallyValidator :: ValidatorHash
+  { dcTallyValidator :: ScriptHash
   -- ^ Hash of the `Dao.Types.Tally.Script.validateTally` validator
-  , dcTreasuryValidator :: ValidatorHash
+  , dcTreasuryValidator :: ScriptHash
   -- ^ Hash of the `Dao.Types.Treasury.Script.validateTreasury` validator
-  , dcConfigurationValidator :: ValidatorHash
+  , dcConfigurationValidator :: ScriptHash
   -- ^ Hash of the `Dao.Types.ConfigurationNft.Script.validateConfiguration` validator
-  , dcVoteValidator :: ValidatorHash
+  , dcVoteValidator :: ScriptHash
   -- ^ Hash of the `Dao.Types.Vote.Script.validateVote` validator
   , dcUpgradeMajorityPercent :: Integer
   , dcUpgradeRelativeMajorityPercent :: Integer
@@ -136,5 +141,3 @@ data DynamicConfigDatum = DynamicConfigDatum
   }
 
 unstableMakeIsData ''DynamicConfigDatum
-unstableMakeIsData ''TallyStateDatum
-unstableMakeIsData ''ProposalType

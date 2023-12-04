@@ -24,7 +24,8 @@ import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Scripts (ValidatorHash)
 import Plutus.V1.Ledger.Tx (TxId (TxId), TxOutRef (TxOutRef))
 import Plutus.V1.Ledger.Value (TokenName)
-import Dao.AlwaysSucceed (succeed, succeed1, succeedHash, succeedHash1)
+
+-- import Dao.AlwaysSucceed (succeed, succeed1, succeedHash, succeedHash1)
 import Dao.ConfigurationNft (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
@@ -176,13 +177,13 @@ writeSource outputPath source =
 
 run :: Options -> IO ()
 run Options {..} = do
-  writeSource alwaysSucceedOutput succeed
+  -- writeSource alwaysSucceedOutput succeed
 
-  writeFile alwaysSucceedHashOutput $ show succeedHash
+  -- writeFile alwaysSucceedHashOutput $ show succeedHash
 
-  writeSource alwaysSucceed1Output succeed1
+  -- writeSource alwaysSucceed1Output succeed1
 
-  writeFile alwaysSucceed1HashOutput $ show succeedHash1
+  -- writeFile alwaysSucceed1HashOutput $ show succeedHash1
 
   let nftConfig =
         NftConfig

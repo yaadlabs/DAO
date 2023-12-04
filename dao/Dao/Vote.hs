@@ -14,8 +14,8 @@ module Dao.Vote (
   VoteDirection (..),
 ) where
 
-import Plutus.V1.Ledger.Address (Address)
-import Plutus.V1.Ledger.Value (TokenName)
+import PlutusLedgerApi.V1.Address (Address)
+import PlutusLedgerApi.V1.Value (TokenName)
 import PlutusTx (unstableMakeIsData)
 import PlutusTx.Prelude (
   Bool (False, True),
