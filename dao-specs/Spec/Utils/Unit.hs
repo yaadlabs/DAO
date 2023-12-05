@@ -1,7 +1,7 @@
 module Spec.Utils.Unit (unitSpec) where
 
 import Dao.Shared (hasSingleTokenWithSymbolAndTokenName)
-import Plutus.V1.Ledger.Value (
+import PlutusLedgerApi.V1.Value (
   CurrencySymbol (CurrencySymbol),
   TokenName (TokenName),
   Value (Value),

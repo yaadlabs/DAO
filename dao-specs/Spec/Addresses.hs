@@ -5,9 +5,9 @@ module Spec.Addresses (
   dummyGeneralPaymentAddress,
 ) where
 
-import Plutus.V1.Ledger.Address (Address, pubKeyHashAddress)
-import Plutus.V1.Ledger.Bytes (getLedgerBytes)
-import Plutus.V1.Ledger.Crypto (PubKeyHash (PubKeyHash))
+import PlutusLedgerApi.V1.Address (Address, pubKeyHashAddress)
+import PlutusLedgerApi.V1.Bytes (getLedgerBytes)
+import PlutusLedgerApi.V1.Crypto (PubKeyHash (PubKeyHash))
 import PlutusTx.Prelude (($))
 
 -- | Sample voter address

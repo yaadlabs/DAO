@@ -3,17 +3,22 @@ Module      : Spec.Index.Script
 Description : Index scripts
 -}
 module Spec.Index.Script (
+  -- * Validator
   IndexValidatorScript,
+  -- indexNftTypedValidator,
+  -- indexValidatorHash',
+
+  -- * Minting policy
   indexConfigNftTypedMintingPolicy,
-  indexNftTypedValidator,
   indexConfigNftValue,
   indexConfigNftCurrencySymbol,
-  indexValidatorHash',
 )
 where
 
 import Dao.Index (IndexNftConfig (IndexNftConfig), IndexNftDatum)
-import Dao.Index.Script (indexValidator, indexValidatorHash, mkIndexNftMinter)
+import Dao.Index.Script (mkIndexNftMinter)
+
+-- import Dao.Index.Script (indexValidator, indexValidatorHash, mkIndexNftMinter)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
@@ -21,11 +26,12 @@ import Plutus.Model.V2 (
   scriptCurrencySymbol,
   toBuiltinPolicy,
  )
-import Plutus.V1.Ledger.Scripts (ValidatorHash)
-import Plutus.V1.Ledger.Value (CurrencySymbol, Value, singleton)
+import PlutusLedgerApi.V1.Scripts (ScriptHash)
+import PlutusLedgerApi.V1.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (const, id, ($), (.))
-import Spec.SpecUtils (mkTypedValidator')
+
+-- import Spec.SpecUtils (mkTypedValidator')
 
 -- Policy script and info
 indexConfigNftTypedMintingPolicy :: IndexNftConfig -> TypedPolicy ()
@@ -44,8 +50,8 @@ indexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
 -- Validator script and info
 type IndexValidatorScript = TypedValidator IndexNftDatum ()
 
-indexNftTypedValidator :: IndexValidatorScript
-indexNftTypedValidator = mkTypedValidator' id (const indexValidator)
-
-indexValidatorHash' :: ValidatorHash
-indexValidatorHash' = indexValidatorHash
+-- indexNftTypedValidator :: IndexValidatorScript
+-- indexNftTypedValidator = mkTypedValidator' id (const indexValidator)
+--
+-- indexValidatorHash' :: ScriptHash
+-- indexValidatorHash' = indexValidatorHash

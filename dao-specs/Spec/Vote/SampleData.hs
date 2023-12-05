@@ -11,9 +11,9 @@ import Dao.Vote (
   VoteDatum (..),
   VoteDirection (For),
  )
-import Plutus.V1.Ledger.Address (pubKeyHashAddress)
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
-import Plutus.V1.Ledger.Value (adaToken)
+import PlutusLedgerApi.V1.Address (pubKeyHashAddress)
+import PlutusLedgerApi.V1.Crypto (PubKeyHash)
+import PlutusLedgerApi.V1.Value (adaToken)
 import Spec.Addresses (dummyVoterAddress)
 
 sampleVoteDatum :: VoteDatum

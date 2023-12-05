@@ -80,7 +80,7 @@ library dao-specs
   hs-source-dirs: dao-specs
   build-depends:
       , tasty-hunit
-   -- , plutus-simple-model
+      , plutus-simple-model
       , plutus-ledger-api
       , tasty
       , plutus-tx

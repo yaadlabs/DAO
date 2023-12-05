@@ -2,7 +2,7 @@ module Spec.SpecUtils (
   runInitPayToScript,
   runInitReferenceScript,
   checkFails,
-  mkTypedValidator',
+  -- mkTypedValidator',
   initScriptRef,
   getFirstRefScript,
   minAda,
@@ -38,6 +38,7 @@ import Plutus.Model.V2 (
   DatumType,
   HasAddress,
   HasDatum,
+  HasRedeemer,
   TxBox,
   TypedValidator (TypedValidator),
   boxAt,
@@ -50,10 +51,11 @@ import Plutus.Model.V2 (
   txBoxRef,
   txBoxValue,
  )
-import Plutus.V1.Ledger.Scripts (Validator)
-import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value)
-import Plutus.V2.Ledger.Tx (TxOut, TxOutRef)
+
+-- import Plutus.V1.Ledger.Scripts (Validator)
+import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
+import PlutusLedgerApi.V1.Value (CurrencySymbol, TokenName, Value)
+import PlutusLedgerApi.V2.Tx (TxOut, TxOutRef)
 import PlutusTx.Prelude (Bool, Integer, Maybe (Just, Nothing), fst, head, ($), (.), (>>=))
 import Test.Tasty (TestTree)
 import Prelude (Eq, String, error, mconcat, pure, show, (<$>), (<>), (==))
@@ -62,8 +64,8 @@ checkFails :: MockConfig -> Value -> String -> Run () -> TestTree
 checkFails cfg funds msg act =
   testNoErrors funds (skipLimits cfg) msg (mustFail act)
 
-mkTypedValidator' :: config -> (config -> Validator) -> TypedValidator datum redeemer
-mkTypedValidator' config mkValidator = TypedValidator . toV2 $ mkValidator config
+-- mkTypedValidator' :: config -> (config -> Validator) -> TypedValidator datum redeemer
+-- mkTypedValidator' config mkValidator = TypedValidator . toV2 $ mkValidator config
 
 initScriptRef :: (IsValidator script) => script -> Run ()
 initScriptRef script = do
@@ -72,7 +74,7 @@ initScriptRef script = do
   let tx =
         mconcat
           [ userSpend sp
-          , loadRefScript script minAda
+          , loadRefScript script admin minAda
           ]
   void $ signTx admin tx >>= sendTx
 
@@ -123,7 +125,7 @@ amountOfAda :: Integer -> Value
 amountOfAda amount = ada $ Lovelace amount
 
 findConfigUtxo ::
-  (HasDatum script, HasAddress script) =>
+  (IsValidator script) =>
   script ->
   CurrencySymbol ->
   TokenName ->
@@ -134,7 +136,7 @@ findConfigUtxo validatorScript symbol tokenName = findUniqueUtxo validatorScript
     check box = hasOneOfToken symbol tokenName (txBoxValue box)
 
 findUniqueUtxo ::
-  (HasCallStack, HasDatum script, HasAddress script) =>
+  (IsValidator script) =>
   script ->
   (TxBox script -> Bool) ->
   Run (TxOutRef, TxOut, DatumType script)
@@ -148,7 +150,7 @@ findUniqueUtxo validator selector =
         )
 
 findUniqueUtxo' ::
-  (HasDatum script, HasAddress script) =>
+  (IsValidator script) =>
   script ->
   (TxBox script -> Bool) ->
   Run (Maybe (TxOutRef, TxOut, DatumType script))
