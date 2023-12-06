@@ -65,10 +65,9 @@ library
        , plutus-tx
        , plutus-tx-plugin
        , serialise
-       --, plutonomy
-       -- , cardano-api
+       , plutonomy
        , plutus-ledger-api
-    -- , lbr-plutus
+       --, cardano-api
 
   hs-source-dirs:  dao
   ghc-options:

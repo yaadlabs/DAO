@@ -3,20 +3,30 @@
 
   inputs = {
     tooling.url = "github:mlabs-haskell/mlabs-tooling.nix";
+
     plutarch.url = "github:plutonomicon/plutarch-plutus";
     lbf.url = "github:mlabs-haskell/lambda-buffers";
-    psm.url = "github:mlabs-haskell/plutus-simple-model";
+    # psm.url = "github:mlabs-haskell/plutus-simple-model";
+    psm.url = "/home/nini/dev/triphut-repos/plutus-simple-model?rev=2050af6750b4a2343bb5a549e90150fcf0fc167b";
+    
+    plutonomy = {
+      url = "github:well-typed/plutonomy";
+      flake = false;
+    };
+
   };
 
-  outputs = inputs@{ self, tooling, plutarch, nixpkgs, ... }:
+  outputs = inputs@{ self, tooling, ... }:
     tooling.lib.mkFlake { inherit self; }
       {
         imports = [
           (tooling.lib.mkHaskellFlakeModule1 {
             project.src = ./.;
             project.extraHackage = [
-              "${plutarch}"
-              "${plutarch}/plutarch-extra"
+              "${inputs.plutarch}"
+              "${inputs.plutarch}/plutarch-extra"
+
+              "${inputs.plutonomy}"
 
               "${inputs.lbf.packages.x86_64-linux.lbf-plutus-haskell}"
               "${inputs.lbf.packages.x86_64-linux.lbr-plutus-haskell-src}"
@@ -29,5 +39,7 @@
             ];
           })
         ];
+        
       };
+
 }

@@ -12,6 +12,7 @@ module Dao.ConfigurationNft.Script (
 
   -- * Validator
   validateConfiguration,
+  configurationValidatorCompiledCode,
   -- configurationScript,
   -- configurationValidator,
   -- configurationValidatorHash,
@@ -40,7 +41,7 @@ import Dao.Shared (
   -- policyToScript,
   -- validatorHash,
   -- validatorToScript,
-  -- wrapValidate,
+  wrapValidate,
  )
 import Dao.Types (
   DynamicConfigDatum (
@@ -87,6 +88,7 @@ import PlutusLedgerApi.V2.Tx (
   TxOutRef,
  )
 import PlutusTx (
+  CompiledCode,
   applyCode,
   compile,
   liftCode,
@@ -290,17 +292,21 @@ validateConfiguration
         && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 validateConfiguration _ _ _ _ = traceError "Wrong script purpose"
 
+configurationValidatorCompiledCode ::
+  ConfigurationValidatorConfig ->
+  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+configurationValidatorCompiledCode config =
+  $$(PlutusTx.compile [||wrapValidateConfiguration||]) `applyCode` liftCode config
+
+wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+wrapValidateConfiguration = wrapValidate validateConfiguration
+
 -- configurationValidator :: ConfigurationValidatorConfig -> Validator
--- configurationValidator config = mkValidatorWithSettings compiledCode True
---   where
---     compiledCode = $$(PlutusTx.compile [||wrapValidateConfiguration||]) `applyCode` liftCode config
---
--- wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
--- wrapValidateConfiguration = wrapValidate validateConfiguration
---
+-- configurationValidator config = mkValidatorWithSettings conifgurationCompiledCode True
+
 -- configurationValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 -- configurationValidatorHash = validatorHash . configurationValidator
---
+
 -- configurationScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
 -- configurationScript = validatorToScript configurationValidator
 

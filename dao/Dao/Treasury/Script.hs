@@ -6,6 +6,7 @@ Description: Dao treasury related scripts. It includes:
 module Dao.Treasury.Script (
   -- * Validator
   validateTreasury,
+  treasuryValidatorCompiledCode,
   -- treasuryScript,
   -- treasuryValidator,
   -- treasuryValidatorHash,
@@ -29,7 +30,7 @@ import Dao.Shared (
   -- mkValidatorWithSettings,
   -- validatorHash,
   -- validatorToScript,
-  -- wrapValidate,
+  wrapValidate,
  )
 import Dao.Types (
   DynamicConfigDatum (
@@ -94,6 +95,7 @@ import PlutusLedgerApi.V2.Contexts (
 
 -- import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (
+  CompiledCode,
   applyCode,
   compile,
   liftCode,
@@ -373,11 +375,14 @@ onlyOneOfThisScript ins vh expectedRef = go ins
           else go xs
 
 -- treasuryValidator :: ConfigurationValidatorConfig -> Validator
--- treasuryValidator config = mkValidatorWithSettings compiledCode False
---   where
---     wrapValidateTreasury = wrapValidate validateTreasury
---     compiledCode = $$(PlutusTx.compile [||wrapValidateTreasury||]) `applyCode` liftCode config
---
+-- treasuryValidator config = mkValidatorWithSettings treasuryValidatorCompiledCode False
+
+treasuryValidatorCompiledCode ::
+  ConfigurationValidatorConfig ->
+  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+treasuryValidatorCompiledCode config =
+  $$(PlutusTx.compile [||wrapValidate validateTreasury||]) `applyCode` liftCode config
+
 -- treasuryValidatorHash :: ConfigurationValidatorConfig -> ScriptHash
 -- treasuryValidatorHash = validatorHash . treasuryValidator
 --

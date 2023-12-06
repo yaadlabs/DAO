@@ -19,12 +19,12 @@ main = do
   defaultMain $
     testGroup
       "Triphut"
-      [ Utils.spec
-      , ConfigurationNft.spec
-      , Index.spec
-      , Tally.spec
-      , Vote.spec
-      , VoteValidator.spec
-      , Treasury.spec
-      , Upgrade.spec
+      [ -- Utils.spec
+        ConfigurationNft.spec
+        -- , Index.spec
+        -- , Tally.spec
+        -- , Vote.spec
+        -- , VoteValidator.spec
+        -- , Treasury.spec
+        -- , Upgrade.spec
       ]

@@ -10,9 +10,10 @@ module Dao.Vote.Script (
   -- voteMinter,
   -- voteMinterPolicyId,
   mkVoteMinter,
-  -- wrappedPolicy,
+  wrappedPolicy,
 
   -- * Validator
+  voteValidatorCompiledCode,
 ) where
 
 -- voteScript,
@@ -40,7 +41,7 @@ import Dao.Shared (
   -- plutonomyMintingPolicyHash,
   -- validatorHash,
   -- validatorToScript,
-  -- wrapValidate,
+  wrapValidate,
  )
 import Dao.Types (
   DynamicConfigDatum (
@@ -117,10 +118,11 @@ import PlutusLedgerApi.V2.Tx (
  )
 
 -- import Plutus.V2.Ledger.Tx hiding (Mint)
-import PlutusTx (applyCode, compile, liftCode, unsafeFromBuiltinData)
+import PlutusTx (CompiledCode, applyCode, compile, liftCode, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (
   Bool (False),
+  BuiltinData,
   any,
   check,
   filter,
@@ -245,8 +247,8 @@ mkVoteMinter
           && traceIfFalse "Total ada is not high enough" totalAdaIsGreaterThanReturnAda
 mkVoteMinter _ _ _ = traceError "Wrong type of script purpose!"
 
--- wrappedPolicy :: ConfigurationValidatorConfig -> WrappedMintingPolicyType
--- wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) (unsafeFromBuiltinData b))
+wrappedPolicy :: ConfigurationValidatorConfig -> WrappedMintingPolicyType
+wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) (unsafeFromBuiltinData b))
 
 -- policy :: ConfigurationValidatorConfig -> MintingPolicy
 -- policy cfg =
@@ -369,10 +371,13 @@ validateVote
 
 -- voteValidator :: ConfigurationValidatorConfig -> Validator
 -- voteValidator config = mkValidatorWithSettings compiledCode False
---   where
---     wrapValidateVote = wrapValidate validateVote
---     compiledCode = $$(PlutusTx.compile [||wrapValidateVote||]) `applyCode` liftCode config
---
+
+voteValidatorCompiledCode ::
+  ConfigurationValidatorConfig ->
+  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+voteValidatorCompiledCode config =
+  $$(PlutusTx.compile [||wrapValidate validateVote||]) `applyCode` liftCode config
+
 -- voteValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 -- voteValidatorHash = validatorHash . voteValidator
 --

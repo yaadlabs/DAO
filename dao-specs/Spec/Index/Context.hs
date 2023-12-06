@@ -2,11 +2,11 @@
 Module      : Spec.Index.Context
 Description : Index policy unit tests
 -}
-module Spec.Index.Context where -- (
---   validIndexConfigNftTest,
---   invalidMoreThanOneTokenMintedIndexConfigNftTest,
---   invalidNoDatumSentToValidadtorIndexConfigNftTest,
--- ) where
+module Spec.Index.Context (
+  validIndexConfigNftTest,
+  invalidMoreThanOneTokenMintedIndexConfigNftTest,
+  invalidNoDatumSentToValidadtorIndexConfigNftTest,
+) where
 
 import Dao.Index (IndexNftConfig (IndexNftConfig))
 import Plutus.Model (
@@ -33,14 +33,14 @@ import Spec.Index.SampleData (validSampleIndexNftDatum)
 import Spec.Index.Script (
   indexConfigNftCurrencySymbol,
   indexConfigNftTypedMintingPolicy,
-  -- indexNftTypedValidator,
-  -- indexValidatorHash',
+  indexNftTypedValidator,
+  indexValidatorScriptHash,
  )
 import Spec.SpecUtils (minAda)
 import Spec.Values (dummyIndexConfigNftTokenName)
 import Prelude (mconcat, (<>))
 
-{- | Valid test
+-- | Valid test
 validIndexConfigNftTest :: Run ()
 validIndexConfigNftTest = mkIndexConfigNftTest validIndexNftTx
 
@@ -63,40 +63,37 @@ invalidMoreThanOneTokenMintedIndexNftTx =
 
 invalidNftNoDatumSentToValidatorTx :: IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
 invalidNftNoDatumSentToValidatorTx = mkIndexConfigNftTx False validIndexConfigNftValue
--}
 
-{- | Helper function for making tests
+-- | Helper function for making tests
 mkIndexConfigNftTest :: (IndexNftConfig -> UserSpend -> PubKeyHash -> Tx) -> Run ()
 mkIndexConfigNftTest tx = do
   user <- newUser minAda
   spend' <- spend user (adaValue 2)
-  let config = IndexNftConfig (getHeadRef spend') dummyIndexConfigNftTokenName indexValidatorHash'
+  let config = IndexNftConfig (getHeadRef spend') dummyIndexConfigNftTokenName indexValidatorScriptHash
   submitTx user $ tx config spend' user
--}
 
 {- | Helper function for building txs
  Set the `hasDatum` flag to False to create an invalid tx that
  doesn't pay the datum to the validator script
 -}
+mkIndexConfigNftTx :: Bool -> (IndexNftConfig -> Value) -> IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
+mkIndexConfigNftTx hasDatum configValue config spend' user =
+  let
+    -- Set up the value and scripts
+    mintVal = configValue config
+    policy = indexConfigNftTypedMintingPolicy config
+    validator = indexNftTypedValidator
 
--- mkIndexConfigNftTx :: Bool -> (IndexNftConfig -> Value) -> IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
--- mkIndexConfigNftTx hasDatum configValue config spend' user =
---   let
---     -- Set up the value and scripts
---     mintVal = configValue config
---     policy = indexConfigNftTypedMintingPolicy config
---     validator = indexNftTypedValidator
---
---     -- Set up the txs
---     baseTx = mconcat [mintValue policy () mintVal, userSpend spend']
---     withDatum = payToScript validator (InlineDatum validSampleIndexNftDatum) (adaValue 2 <> mintVal)
---     withNoDatumToUser = payToKey user (adaValue 2 <> mintVal)
---    in
---     -- If hasDatum is set to False we want the withNoDatumToUser tx
---     -- in order to trigger the negative test
---     if hasDatum then baseTx <> withDatum else baseTx <> withNoDatumToUser
+    -- Set up the txs
+    baseTx = mconcat [mintValue policy () mintVal, userSpend spend']
+    withDatum = payToScript validator (InlineDatum validSampleIndexNftDatum) (adaValue 2 <> mintVal)
+    withNoDatumToUser = payToKey user (adaValue 2 <> mintVal)
+   in
+    -- If hasDatum is set to False we want the withNoDatumToUser tx
+    -- in order to trigger the negative test
+    if hasDatum then baseTx <> withDatum else baseTx <> withNoDatumToUser
 
-{- | Valid value to be used in valid tx
+-- | Valid value to be used in valid tx
 validIndexConfigNftValue :: IndexNftConfig -> Value
 validIndexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
   singleton (indexConfigNftCurrencySymbol nftCfg) tokenName 1
@@ -104,4 +101,3 @@ validIndexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
 invalidMoreThanOneTokenMintedIndexConfigNftValue :: IndexNftConfig -> Value
 invalidMoreThanOneTokenMintedIndexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
   singleton (indexConfigNftCurrencySymbol nftCfg) tokenName 2
--}

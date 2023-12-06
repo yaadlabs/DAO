@@ -12,6 +12,7 @@ module Dao.Index.Script (
 
   -- * Validator
   validateIndex,
+  indexValidatorCompiledCode,
   -- indexScript,
   -- indexValidator,
   -- indexValidatorHash,
@@ -37,7 +38,7 @@ import Dao.Shared (
   -- policyToScript,
   -- validatorHash,
   -- validatorToScript,
-  -- wrapValidate,
+  wrapValidate,
  )
 import PlutusLedgerApi.V1.Address (Address (addressCredential))
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
@@ -73,6 +74,7 @@ import PlutusLedgerApi.V2.Contexts (
   getContinuingOutputs,
  )
 import PlutusTx (
+  CompiledCode,
   applyCode,
   compile,
   liftCode,
@@ -140,12 +142,14 @@ validateIndex _ _ _ = traceError "Wrong script purpose"
 
 -- indexValidator :: Validator
 -- indexValidator = mkValidatorWithSettings compiledCode True
---   where
---     -- 'mempty' in this case is in place of the config argument to wrapValidate that we
---     -- throw away here. And 'Value' is just an arbitrary legal type to satisfy the type checker
---     -- (Same for 'indexScript' below)
---     wrapValidateIndex = wrapValidate (const validateIndex) (mempty :: Value)
---     compiledCode = $$(PlutusTx.compile [||wrapValidateIndex||])
+
+indexValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+indexValidatorCompiledCode =
+  -- 'mempty' in this case is in place of the config argument to wrapValidate that we
+  -- throw away here. And 'Value' is just an arbitrary legal type to satisfy the type checker
+  -- (Same for 'indexScript' below)
+  let wrapValidateIndex = wrapValidate (const validateIndex) (mempty :: Value)
+   in $$(PlutusTx.compile [||wrapValidateIndex||])
 
 -- indexValidatorHash :: ValidatorHash
 -- indexValidatorHash = validatorHash indexValidator

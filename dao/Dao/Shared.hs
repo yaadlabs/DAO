@@ -27,15 +27,13 @@ module Dao.Shared (
 
 -- import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
 -- import Cardano.Api.Shelley qualified as Shelly
--- import Codec.Serialise (serialise)
+import Codec.Serialise (serialise)
 
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as BSS
 
 --
--- import Plutonomy qualified
--- import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
-
+import Plutonomy qualified
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
 
 -- import Plutus.V1.Ledger.Scripts (
@@ -237,6 +235,7 @@ mkValidatorWithSettings
      in
       Plutonomy.optimizeUPLCWith optimizerSettings
         $ Plutonomy.validatorToPlutus
+        $ Plutonomy.validatorToRaw
         $ Plutonomy.mkValidatorScript compiledCode
 -}
 

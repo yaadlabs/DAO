@@ -12,6 +12,7 @@ module Dao.Tally.Script (
   mkTallyNftMinter,
 
   -- * Validator
+  tallyValidatorCompiledCode,
 ) where
 
 -- tallyScript,
@@ -42,7 +43,7 @@ import Dao.Shared (
   -- policyToScript,
   -- validatorHash,
   -- validatorToScript,
-  -- wrapValidate,
+  wrapValidate,
  )
 import Dao.Tally (
   TallyNftConfig (
@@ -110,6 +111,7 @@ import PlutusLedgerApi.V2.Tx (
   TxOutRef,
  )
 import PlutusTx (
+  CompiledCode,
   applyCode,
   compile,
   liftCode,
@@ -483,10 +485,14 @@ validateTally _ _ _ _ = traceError "Wrong script purpose"
 
 -- tallyValidator :: ConfigurationValidatorConfig -> Validator
 -- tallyValidator config = mkValidatorWithSettings compiledCode False
---   where
---     wrapValidateTally = wrapValidate validateTally
---     compiledCode = $$(PlutusTx.compile [||wrapValidateTally||]) `applyCode` liftCode config
---
+
+tallyValidatorCompiledCode ::
+  ConfigurationValidatorConfig ->
+  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+tallyValidatorCompiledCode config =
+  let wrapValidateTally = wrapValidate validateTally
+   in $$(PlutusTx.compile [||wrapValidateTally||]) `applyCode` liftCode config
+
 -- tallyValidatorHash :: ConfigurationValidatorConfig -> ScriptHash
 -- tallyValidatorHash = validatorHash . tallyValidator
 --
