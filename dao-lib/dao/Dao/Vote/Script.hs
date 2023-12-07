@@ -155,7 +155,7 @@ import PlutusTx.Prelude (
         - The proposal is still active.
           Checked by ensuring the proposal end time provided by
           the 'TallyStateDatum' is after the validity range of the transaction
-        - The total ada is greater than the return ada specificed by the 'vReturnAda' field of the 'VoteDatum'
+        - The total ada is greater than the return ada specified by the 'vReturnAda' field of the 'VoteDatum'
 
    == Burning Vote Token
 

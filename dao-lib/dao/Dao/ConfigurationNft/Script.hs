@@ -55,6 +55,7 @@ import Dao.Types (
   ProposalType (Upgrade),
   TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
+import LambdaBuffers.Types.ApplicationTypes (ProposalType (ProposalType'Upgrade))
 import PlutusLedgerApi.V1.Interval (before)
 
 -- import Plutus.V1.Ledger.Scripts (
@@ -302,7 +303,7 @@ wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> Buil
 wrapValidateConfiguration = wrapValidate validateConfiguration
 
 -- configurationValidator :: ConfigurationValidatorConfig -> Validator
--- configurationValidator config = mkValidatorWithSettings conifgurationCompiledCode True
+-- configurationValidator config = mkValidatorWithSettings configurationCompiledCode True
 
 -- configurationValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 -- configurationValidatorHash = validatorHash . configurationValidator

@@ -32,7 +32,6 @@ import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as BSS
 
---
 import Plutonomy qualified
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
 
@@ -100,7 +99,7 @@ hasSymbolInValue :: CurrencySymbol -> Value -> Bool
 hasSymbolInValue symbol = isJust . Map.lookup symbol . getValue
 
 {- | Checks that the given `Value` contains exactly one token
-    with the given `CurrenySymbol` and `TokenName`
+    with the given `CurrencySymbol` and `TokenName`
 -}
 {-# INLINEABLE hasSingleTokenWithSymbolAndTokenName #-}
 hasSingleTokenWithSymbolAndTokenName :: Value -> CurrencySymbol -> TokenName -> Bool
@@ -139,7 +138,7 @@ getTokenNameOfNftMaybe symbol errorMessage (Value value) = case Map.lookup symbo
 hasTokenInValue :: CurrencySymbol -> BuiltinString -> Value -> Bool
 hasTokenInValue symbol errorMessage = isJust . getTokenNameOfNftMaybe symbol errorMessage
 
--- | Retrive the token name of corresponding symbol from value
+-- | Retrieve the token name of corresponding symbol from value
 getTokenNameOfNft :: CurrencySymbol -> Value -> BuiltinString -> TokenName
 getTokenNameOfNft symbol value errorMessage =
   fromMaybe (traceError $ errorMessage <> ": not found") (getTokenNameOfNftMaybe symbol errorMessage value)
@@ -200,7 +199,7 @@ integerToByteString n
       integerToByteString (n `divide` 10)
         <> integerToByteString (n `modulo` 10)
 
--- | Transforms a validator function `validate` to its lower level representaion
+-- | Transforms a validator function `validate` to its lower level representation
 wrapValidate ::
   (UnsafeFromData b, UnsafeFromData c, UnsafeFromData d) =>
   (config -> b -> c -> d -> Bool) ->

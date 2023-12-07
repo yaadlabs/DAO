@@ -1,0 +1,7 @@
+tests: true
+
+packages:
+  ./.
+
+package plutonomy
+  flags: +chap

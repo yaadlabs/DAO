@@ -3,7 +3,7 @@ Module: Dao.ConfigurationNft
 Description: Contains all the configuration specific types.
 -}
 module Dao.ConfigurationNft (
-  -- * Script argument,containing relevant CurrenySymbol and TokenName
+  -- * Script argument,containing relevant CurrencySymbol and TokenName
   ConfigurationValidatorConfig (..),
   -- | Script argument,containing relevant TxOutRef and TokenName for minting policy
   NftConfig (..),

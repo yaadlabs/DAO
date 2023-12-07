@@ -27,22 +27,22 @@ import PlutusTx.Prelude qualified as PlutusTx
 data ProposalType
   = -- | Upgrade a proposal
     Upgrade
-      -- | Symbol of the upgrade minting policy
       CurrencySymbol
+      -- ^ Symbol of the upgrade minting policy
   | -- | A general proposal
     General
-      -- | General payment address
       Address
-      -- | General payment amount
+      -- ^ General payment address
       Integer
+      -- ^ General payment amount
   | -- | A trip proposal
     Trip
-      -- | Travel agent address
       Address
-      -- | Traveller address
+      -- ^ Travel agent address
       Address
-      -- | Total travel cost
+      -- ^ Traveller address
       Integer
+      -- ^ Total travel cost
 
 unstableMakeIsData ''ProposalType
 
@@ -82,11 +82,11 @@ instance PlutusTx.Eq TallyStateDatum where
       xProposal
         == yProposal
         && xProposalEndTime
-        == yProposalEndTime
+          == yProposalEndTime
         && xFor
-        == yFor
+          == yFor
         && xAgainst
-        == yAgainst
+          == yAgainst
 
 -- | DynamicConfig Datum holds the main info needed for the contracts.
 data DynamicConfigDatum = DynamicConfigDatum

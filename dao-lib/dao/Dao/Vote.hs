@@ -36,7 +36,7 @@ instance PlutusTx.Eq VoteDirection where
   Against == Against = True
   _ == _ = False
 
--- | The vote datum, represnting a vote cast by a user on a specific proposal
+-- | The vote datum, representing a vote cast by a user on a specific proposal
 data VoteDatum = VoteDatum
   { vProposalTokenName :: TokenName
   -- ^ The name of the proposal for which this vote relates to.

@@ -149,7 +149,7 @@ import PlutusTx.Prelude (
 
         - The correct amount is paid to the traveler's address, specified by the
           corresponding 'Trip' field in the 'ProposalType'. The traveler's amount should
-          be greater than or equal to the total cose of the travel minus the payment to
+          be greater than or equal to the total case of the travel minus the payment to
           the travel agent.
 
         - The correct amount is paid to the travel agent's address, specified by the

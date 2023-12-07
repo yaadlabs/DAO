@@ -320,7 +320,7 @@ valuePaidTo' outs addr = go mempty outs
 
     - There is exactly one 'Dao.Tally.TallyStateDatum' in the outputs.
 
-    - This 'Dao.Tally.TallyStateDatum' in the outpus has been updated accordingly.
+    - This 'Dao.Tally.TallyStateDatum' in the outputs has been updated accordingly.
       We check this by ensuring the the new votes have been added to the 'tsFor' and 'tsAgainst'
       vote count fields of the new tally datum at the output.
 
@@ -407,8 +407,8 @@ validateTally
                   if fungibleTokens == 0
                     then Value (M.insert adaSymbol (M.singleton adaToken vReturnAda) (getValue voteNft))
                     else
-                      Value
-                        $ M.insert
+                      Value $
+                        M.insert
                           dcVoteFungibleCurrencySymbol
                           (M.singleton dcVoteFungibleTokenName fungibleTokens)
                           ( M.insert

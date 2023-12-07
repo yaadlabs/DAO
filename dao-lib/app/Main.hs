@@ -1,5 +1,5 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+-- {-# LANGUAGE RecordWildCards #-}
+-- {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Main (main) where
 

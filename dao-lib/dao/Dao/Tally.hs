@@ -3,7 +3,7 @@ Module: Dao.Tally
 Description: Contains all the tally specific types.
 -}
 module Dao.Tally (
-  -- * Script arguments, containing relevant CurrenySymbol and TokenName
+  -- * Script arguments, containing relevant CurrencySymbol and TokenName
   TallyNftConfig (..),
 ) where
 
