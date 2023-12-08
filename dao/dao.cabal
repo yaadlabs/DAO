@@ -72,7 +72,7 @@ library
 
   --, cardano-api
 
-  hs-source-dirs:  dao
+  hs-source-dirs:  dao-lib
   ghc-options:
     -fobject-code -fno-ignore-interface-pragmas
     -fno-omit-interface-pragmas -Wno-unused-packages

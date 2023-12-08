@@ -45,13 +45,6 @@
         dao-app = hsFlake.packages."dao:exe:create-sc";
 
         dao-test = hsFlake.packages."dao:test:dao-test";
-
-        # dao-lib-src = pkgs.stdenv.mkDerivation {
-        #   name = "dao-lib-src";
-        #   src = ./.;
-        #   phases = "installPhase";
-        #   installPhase = "ln -s ${./.} $out";
-        # };
       };
 
       inherit (hsFlake) checks;
