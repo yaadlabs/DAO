@@ -24,7 +24,7 @@
         ./nix/settings.nix
         ./nix/pre-commit.nix
         ./types/build.nix
-        ./dao-lib/build.nix
+        ./dao/build.nix
       ];
 
       debug = true;

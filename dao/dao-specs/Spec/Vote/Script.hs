@@ -38,9 +38,9 @@ type VoteMintingPolicy = TypedPolicy VoteMinterActionRedeemer
 
 voteTypedMintingPolicy :: ConfigurationValidatorConfig -> VoteMintingPolicy
 voteTypedMintingPolicy config =
-  mkTypedPolicy
-    $ $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
-    `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkTypedPolicy $
+    $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
+      `PlutusTx.applyCode` PlutusTx.liftCode config
 
 voteCurrencySymbol :: ConfigurationValidatorConfig -> CurrencySymbol
 voteCurrencySymbol = scriptCurrencySymbol . voteTypedMintingPolicy

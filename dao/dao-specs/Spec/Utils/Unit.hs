@@ -52,22 +52,22 @@ tokenName2 = TokenName "tok2"
 
 unitSpec :: [TestTree]
 unitSpec =
-  [ testCase "hasSingleTokenWithSymbolAndTokenName: Empty Value, should fail"
-      $ assertBool "Should be False"
-      $ hasSingleTokenWithSymbolAndTokenName testValue1 adaSymbol adaToken
-      == False
-  , testCase "hasSingletoken: One Symbol, more than 1 of token, should fail"
-      $ assertBool "Should be False"
-      $ hasSingleTokenWithSymbolAndTokenName testValue3 symbol1 tokenName1
-      == False
-  , testCase "hasSingleTokenWithSymbolAndTokenName: Correct CurrencySymbol wrong TokenName, should fail"
-      $ assertBool "Should Fail at traceError"
-      $ hasSingleTokenWithSymbolAndTokenName testValue4 symbol1 tokenName2
-      == False
-  , testCase "hasSingletoken: One Symbol, should succeed"
-      $ assertBool "Should be True"
-      $ hasSingleTokenWithSymbolAndTokenName testValue2 symbol1 tokenName1
-  , testCase "hasSingletoken: two Symbols, one valid, should succeed"
-      $ assertBool "Should be True"
-      $ hasSingleTokenWithSymbolAndTokenName testValue4 symbol1 tokenName1
+  [ testCase "hasSingleTokenWithSymbolAndTokenName: Empty Value, should fail" $
+      assertBool "Should be False" $
+        hasSingleTokenWithSymbolAndTokenName testValue1 adaSymbol adaToken
+          == False
+  , testCase "hasSingletoken: One Symbol, more than 1 of token, should fail" $
+      assertBool "Should be False" $
+        hasSingleTokenWithSymbolAndTokenName testValue3 symbol1 tokenName1
+          == False
+  , testCase "hasSingleTokenWithSymbolAndTokenName: Correct CurrencySymbol wrong TokenName, should fail" $
+      assertBool "Should Fail at traceError" $
+        hasSingleTokenWithSymbolAndTokenName testValue4 symbol1 tokenName2
+          == False
+  , testCase "hasSingletoken: One Symbol, should succeed" $
+      assertBool "Should be True" $
+        hasSingleTokenWithSymbolAndTokenName testValue2 symbol1 tokenName1
+  , testCase "hasSingletoken: two Symbols, one valid, should succeed" $
+      assertBool "Should be True" $
+        hasSingleTokenWithSymbolAndTokenName testValue4 symbol1 tokenName1
   ]

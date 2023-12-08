@@ -1,6 +1,6 @@
 { inputs, ... }:
 {
-  perSystem = { config, system, inputs', ... }:
+  perSystem = { config, system, inputs', pkgs, ... }:
     let
       hsFlake = inputs.lbf.lib.${system}.haskellPlutusFlake {
         src = ./.;
@@ -43,6 +43,15 @@
         dao-lib = hsFlake.packages."dao:lib:dao";
 
         dao-app = hsFlake.packages."dao:exe:create-sc";
+
+        dao-test = hsFlake.packages."dao:test:dao-test";
+
+        # dao-lib-src = pkgs.stdenv.mkDerivation {
+        #   name = "dao-lib-src";
+        #   src = ./.;
+        #   phases = "installPhase";
+        #   installPhase = "ln -s ${./.} $out";
+        # };
       };
 
       inherit (hsFlake) checks;

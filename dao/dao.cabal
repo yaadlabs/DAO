@@ -63,6 +63,7 @@ library
     , containers
     , dao-lb-types
     , lbr-plutus
+    , lbr-prelude
     , plutonomy
     , plutus-ledger-api
     , plutus-tx
@@ -76,60 +77,63 @@ library
     -fobject-code -fno-ignore-interface-pragmas
     -fno-omit-interface-pragmas -Wno-unused-packages
 
--- library dao-specs
---   import: common-lang, common-depends, common-options, common-extensions
---   hs-source-dirs: dao-specs
---   build-depends:
---       , tasty-hunit
---       , plutus-simple-model
---       , plutus-ledger-api
---       , tasty
---       , plutus-tx
--- 
---   exposed-modules:
---     Spec.Addresses
---     Spec.AlwaysSucceed.Script
---     Spec.ConfigurationNft
---     Spec.ConfigurationNft.Context
---     Spec.ConfigurationNft.SampleData
---     Spec.ConfigurationNft.Script
---     Spec.ConfigurationNft.Transactions
---     Spec.ConfigurationNft.Utils
---     Spec.Index
---     Spec.Index.Context
---     Spec.Index.SampleData
---     Spec.Index.Script
---     Spec.Index.Transactions
---     Spec.Index.Utils
---     Spec.SampleData
---     Spec.SpecUtils
---     Spec.Tally
---     Spec.Tally.Context
---     Spec.Tally.Script
---     Spec.Tally.SampleData
---     Spec.Tally.Transactions
---     Spec.Tally.Utils
---     Spec.Treasury
---     Spec.Treasury.Context
---     Spec.Treasury.Script
---     Spec.Treasury.Transactions
---     Spec.Treasury.Utils
---     Spec.Utils
---     Spec.Utils.Unit
---     Spec.Upgrade
---     Spec.Upgrade.Context
---     Spec.Values
---     Spec.Vote
---     Spec.VoteValidator
---     Spec.Vote.Context
---     Spec.Vote.ContextValidator
---     Spec.Vote.SampleData
---     Spec.Vote.Script
---     Spec.Vote.Transactions
---     Spec.Vote.Utils
---   build-depends:
---        , dao
---        , plutus-tx-plugin
+library dao-specs
+  import:
+    common-lang, common-depends, common-options, common-extensions
+
+  hs-source-dirs:  dao-specs
+  build-depends:
+    , plutus-ledger-api
+    , plutus-simple-model
+    , plutus-tx
+    , tasty
+    , tasty-hunit
+
+  exposed-modules:
+    Spec.Addresses
+    Spec.AlwaysSucceed.Script
+    Spec.ConfigurationNft
+    Spec.ConfigurationNft.Context
+    Spec.ConfigurationNft.SampleData
+    Spec.ConfigurationNft.Script
+    Spec.ConfigurationNft.Transactions
+    Spec.ConfigurationNft.Utils
+    Spec.Index
+    Spec.Index.Context
+    Spec.Index.SampleData
+    Spec.Index.Script
+    Spec.Index.Transactions
+    Spec.Index.Utils
+    Spec.SampleData
+    Spec.SpecUtils
+    Spec.Tally
+    Spec.Tally.Context
+    Spec.Tally.SampleData
+    Spec.Tally.Script
+    Spec.Tally.Transactions
+    Spec.Tally.Utils
+    Spec.Treasury
+    Spec.Treasury.Context
+    Spec.Treasury.Script
+    Spec.Treasury.Transactions
+    Spec.Treasury.Utils
+    Spec.Upgrade
+    Spec.Upgrade.Context
+    Spec.Utils
+    Spec.Utils.Unit
+    Spec.Values
+    Spec.Vote
+    Spec.Vote.Context
+    Spec.Vote.ContextValidator
+    Spec.Vote.SampleData
+    Spec.Vote.Script
+    Spec.Vote.Transactions
+    Spec.Vote.Utils
+    Spec.VoteValidator
+
+  build-depends:
+    , dao
+    , plutus-tx-plugin
 
 executable create-sc
   import:
@@ -145,11 +149,13 @@ executable create-sc
 -- , optparse-generic
 -- , cardano-api
 
--- test-suite dao-test
---   import: common-lang, common-depends, common-options, common-extensions
---   type: exitcode-stdio-1.0
---   main-is: Spec.hs
---   hs-source-dirs: dao-test
---   build-depends:
---        , dao-specs
---        , tasty
+test-suite dao-test
+  import:
+    common-lang, common-depends, common-options, common-extensions
+
+  type:           exitcode-stdio-1.0
+  main-is:        Spec.hs
+  hs-source-dirs: dao-test
+  build-depends:
+    , dao-specs
+    , tasty
