@@ -30,8 +30,7 @@ data IndexNftConfig = IndexNftConfig
   -- ^ The UTXO to be spent in the transaction
   , incTokenName :: TokenName
   -- ^ The expected token name of the newly minted config NFT
-  , incIndexValidator :: ScriptHash -- ValidatorHash
-
+  , incIndexValidator :: ScriptHash
   -- ^ The hash of the `Dao.Index.Script.validateIndex` script,
   -- the policy uses this to ensure the newly minted token is sent to this index validator
   }

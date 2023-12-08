@@ -71,6 +71,7 @@ import Dao.Vote (
   VoteDatum (VoteDatum, vDirection, vOwner, vProposalTokenName, vReturnAda),
   VoteDirection (For),
  )
+import LambdaBuffers.Types.Vote (VoteDirection)
 import PlutusLedgerApi.V1.Address (Address (Address, addressCredential))
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
 import PlutusLedgerApi.V1.Interval (before)

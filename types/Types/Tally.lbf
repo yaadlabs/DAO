@@ -1,0 +1,14 @@
+module Types.Tally
+
+import Prelude (Eq)
+import Plutus.V1 (CurrencySymbol, PlutusData, TokenName)
+
+-- | Tally policy configuration
+record TallyNftConfig = {
+    tncIndexNftPolicyId : CurrencySymbol
+  , tncIndexNftTokenName : TokenName
+  , tncConfigNftCurrencySymbol : CurrencySymbol
+  , tncConfigNftTokenName : TokenName
+  }
+derive Eq TallyNftConfig
+derive PlutusData TallyNftConfig
