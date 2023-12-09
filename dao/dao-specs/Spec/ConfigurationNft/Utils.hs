@@ -1,6 +1,7 @@
 module Spec.ConfigurationNft.Utils (findConfig) where
 
-import Dao.Types (DynamicConfigDatum)
+-- import Dao.Types (DynamicConfigDatum)
+import LambdaBuffers.Types.Configuration (DynamicConfigDatum)
 import Plutus.Model (Run)
 import PlutusLedgerApi.V2.Tx (TxOut, TxOutRef)
 import Spec.ConfigurationNft.Script (upgradeConfigNftTypedValidator)

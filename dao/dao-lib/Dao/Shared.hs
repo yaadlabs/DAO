@@ -9,6 +9,7 @@ module Dao.Shared (
   -- policyToScript,
   -- mkValidatorWithSettings,
   wrapValidate,
+  wrapValidate',
   hasBurnedTokens,
   hasTokenInValue,
   getTokenNameOfNft,
@@ -20,6 +21,7 @@ module Dao.Shared (
   integerToByteString,
   isScriptCredential,
   lovelacesOf,
+  convertDatum',
   -- mintingPolicyHash,
   -- plutonomyMintingPolicyHash,
   -- validatorHash,
@@ -58,10 +60,11 @@ import PlutusLedgerApi.V2 (
   OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash),
  )
 
-import PlutusTx (UnsafeFromData, unsafeFromBuiltinData)
+import PlutusTx (UnsafeFromData, FromData, fromBuiltinData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as Map
 import PlutusTx.Code (CompiledCode)
+import Data.Maybe (fromJust)
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinByteString,
@@ -182,6 +185,19 @@ convertDatum infoData datum = unsafeFromBuiltinData $ case datum of
     _ -> traceError "Missing datum"
   NoOutputDatum -> traceError "Missing datum hash or datum"
 
+{-# INLINEABLE convertDatum' #-}
+convertDatum' :: (FromData a) => Map DatumHash Datum -> OutputDatum -> a
+convertDatum' infoData datum = case datum of
+  OutputDatum (Datum dbs) -> case fromBuiltinData dbs of
+                               Just dbs' -> dbs'
+                               Nothing -> traceError "fromData error"
+  OutputDatumHash dh -> case Map.lookup dh infoData of
+    Just (Datum dbs) -> case fromBuiltinData dbs of
+                          Just dbs' -> dbs'
+                          Nothing -> traceError "fromData error"
+    _ -> traceError "Missing datum"
+  NoOutputDatum -> traceError "Missing datum hash or datum"
+
 {-# INLINEABLE integerToByteString #-}
 integerToByteString :: Integer -> BuiltinByteString
 integerToByteString n
@@ -200,6 +216,27 @@ integerToByteString n
         <> integerToByteString (n `modulo` 10)
 
 -- | Transforms a validator function `validate` to its lower level representation
+wrapValidate' ::
+  (FromData dynamicConfig, UnsafeFromData c, UnsafeFromData d) =>
+  (config -> dynamicConfig -> c -> d -> Bool) ->
+  config ->
+  BuiltinData ->
+  BuiltinData ->
+  BuiltinData ->
+  ()
+wrapValidate' validate config dynamicConfig y z =
+  let maybeDynamicConfigData = fromBuiltinData dynamicConfig
+   in case maybeDynamicConfigData of
+        Nothing -> traceError "fromData error"
+        Just dynamicConfig' ->
+          check
+            ( validate
+                config
+                dynamicConfig'
+                (unsafeFromBuiltinData y)
+                (unsafeFromBuiltinData z)
+            )
+
 wrapValidate ::
   (UnsafeFromData b, UnsafeFromData c, UnsafeFromData d) =>
   (config -> b -> c -> d -> Bool) ->

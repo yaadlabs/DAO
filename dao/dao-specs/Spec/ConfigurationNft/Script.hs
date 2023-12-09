@@ -13,7 +13,8 @@ module Spec.ConfigurationNft.Script (
 
 import Dao.ConfigurationNft (NftConfig)
 import Dao.ConfigurationNft.Script (configurationValidatorCompiledCode, mkConfigurationNftPolicy)
-import Dao.Types (DynamicConfigDatum)
+-- import Dao.Types (DynamicConfigDatum)
+import LambdaBuffers.Types.Configuration (DynamicConfigDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,

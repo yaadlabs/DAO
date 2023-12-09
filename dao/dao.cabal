@@ -87,6 +87,7 @@ library dao-specs
     , plutus-tx
     , tasty
     , tasty-hunit
+    , dao-lb-types
 
   exposed-modules:
     Spec.Addresses

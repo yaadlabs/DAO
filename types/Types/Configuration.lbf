@@ -1,7 +1,61 @@
-module Configuration
+module Types.Configuration
 
-import Prelude (Eq)
-import Plutus.V1 (CurrencySymbol, PlutusData, TokenName, TxOutRef)
+import Prelude (Eq, Integer)
+import Plutus.V1 (CurrencySymbol, PlutusData, ScriptHash, TokenName, TxOutRef)
+
+-- | DynamicConfig Datum holds the main info needed for the contracts.
+record DynamicConfigDatum = {
+  -- | Hash of the `Dao.Types.Tally.Script.validateTally` validator
+  tallyValidator : ScriptHash
+  -- | Hash of the `Dao.Types.Treasury.Script.validateTreasury` validator
+  , treasuryValidator : ScriptHash
+  -- | Hash of the `Dao.Types.ConfigurationNft.Script.validateConfiguration` validator
+  , configurationValidator : ScriptHash
+  -- | Hash of the `Dao.Types.Vote.Script.validateVote` validator
+  , voteValidator : ScriptHash
+  -- | The majority and relative majority percentages used
+  -- in calculating whether a proposal has sufficient votes to pass
+  -- (All times a 1000)
+  , upgradeMajorityPercent : Integer
+  , upgradeRelativeMajorityPercent : Integer
+  , generalMajorityPercent : Integer
+  , generalRelativeMajorityPercent : Integer
+  , tripMajorityPercent : Integer
+  , tripRelativeMajorityPercent : Integer
+  -- | A threshold that needs to be passed when checking in
+  -- the script if there is a sufficient relative majority
+  , totalVotes : Integer
+  -- | Disbursement allowable disbursement amounts, for general and trip proposals
+  -- Checked in the `Dao.Treasury.Script.validateTreasury` validator
+  , maxGeneralDisbursement : Integer
+  , maxTripDisbursement : Integer
+  -- | The percentage of the total travel cost for the agent in trip proposals
+  -- Checked in the `Dao.Treasury.Script.validateTreasury` validator
+  -- (Agent disbursement percentage is times a 1000)
+  , agentDisbursementPercent : Integer
+  -- | Like a cool down period to be added to the proposal end time
+  -- specified in the `Dao.Types.TallyStateDatum` datum.
+  -- The treasury cannot disburse funds until
+  -- after the end time plus the offset has passed
+  -- (Offset is in milliseconds)
+  , proposalTallyEndOffset : Integer
+  -- | Symbol of the `Dao.Tally.Script.mkTallyNftMinter` minting policy
+  , tallyNft : CurrencySymbol
+  -- | Symbol of the `Dao.Vote.Script.mkVoteMinter` minting policy
+  , voteCurrencySymbol : CurrencySymbol
+  -- | Token name for the vote value minted by `Dao.Vote.Script.mkVoteMinter`
+  , voteTokenName : TokenName
+  -- | Symbol of the Vote NFT
+  , voteNft : CurrencySymbol
+  -- | Symbol of the fungible vote value
+  , voteFungibleCurrencySymbol : CurrencySymbol
+  -- | Token name for fungible vote value
+  , voteFungibleTokenName : TokenName
+  -- | Fungible token percentage (Percentage value is times a 1000)
+  , fungibleVotePercent : Integer
+  }
+derive Eq DynamicConfigDatum
+derive PlutusData DynamicConfigDatum 
 
 -- | Used as an argument to the `Dao.ConfigurationNft.Script.mkConfigurationNftPolicy` minting policy script
 record NftConfig = {

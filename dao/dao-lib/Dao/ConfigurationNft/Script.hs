@@ -7,15 +7,10 @@ Description: Dao configuration related scripts. It includes:
 module Dao.ConfigurationNft.Script (
   -- * Minting policy
   mkConfigurationNftPolicy,
-  -- configurationNftMintingPolicy,
-  -- configurationNftCurrencySymbol,
 
   -- * Validator
   validateConfiguration,
   configurationValidatorCompiledCode,
-  -- configurationScript,
-  -- configurationValidator,
-  -- configurationValidatorHash,
 ) where
 
 import Dao.ConfigurationNft (
@@ -31,44 +26,29 @@ import Dao.ConfigurationNft (
 import Dao.Shared (
   WrappedMintingPolicyType,
   convertDatum,
+  convertDatum',
   hasOneOfToken,
   hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
   hasTokenInValueNoErrors,
-  -- mintingPolicyHash,
-  -- mkValidatorWithSettings,
-  -- policyToScript,
-  -- validatorHash,
-  -- validatorToScript,
   wrapValidate,
+  wrapValidate',
  )
-import Dao.Types (
-  DynamicConfigDatum (
-    DynamicConfigDatum,
-    dcProposalTallyEndOffset,
-    dcTallyNft,
-    dcTotalVotes,
-    dcUpgradeMajorityPercent,
-    dcUpgradeRelativeMajorityPercent
-  ),
-  ProposalType (Upgrade),
-  TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
- )
-import LambdaBuffers.Types.ApplicationTypes (ProposalType (ProposalType'Upgrade))
+import LambdaBuffers.Types.Proposal (ProposalType (ProposalType'Upgrade))
+import LambdaBuffers.Types.Configuration (DynamicConfigDatum(..))
+import LambdaBuffers.Types.Tally 
+  ( TallyStateDatum
+      ( TallyStateDatum 
+      , tallyStateDatum'proposal
+      , tallyStateDatum'proposalEndTime
+      , tallyStateDatum'for
+      , tallyStateDatum'against
+      )
+  )
 import PlutusLedgerApi.V1.Interval (before)
-
--- import Plutus.V1.Ledger.Scripts (
---   MintingPolicy,
---   Validator,
---   ValidatorHash,
---   mkMintingPolicyScript,
---  )
 import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
-import PlutusLedgerApi.V1.Value (
-  Value,
-  -- mpsSymbol,
- )
+import PlutusLedgerApi.V1.Value ( Value )
 import PlutusLedgerApi.V2 (CurrencySymbol)
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
@@ -142,7 +122,7 @@ mkConfigurationNftPolicy
       -- The `convertDatum` helper will throw an error if the output datum is not found
       _newOutput :: DynamicConfigDatum
       !_newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
-        [TxOut {txOutDatum}] -> convertDatum txInfoData txOutDatum
+        [TxOut {txOutDatum}] -> convertDatum' txInfoData txOutDatum
         _ -> traceError "Should be exactly one valid minted output."
 
       -- Ensure that the reference UTXO is spent
@@ -161,43 +141,6 @@ mkConfigurationNftPolicy
       traceIfFalse "Referenced UTXO should be spent" hasUTxO
         && traceIfFalse "Exactly one valid token should be minted" onlyOneTokenMinted
 mkConfigurationNftPolicy _ _ _ = traceError "Wrong type of script purpose!"
-
-{- | The `configurationNftMintingPolicy` script built from `mkConfigurationNftPolicy`
- Takes an `NftConfig` as its argument
--}
-
--- configurationNftMintingPolicy :: NftConfig -> PlutusScript PlutusScriptV2
--- configurationNftMintingPolicy = policyToScript policy
-
-{- | Currency symbol for the `configurationNftMintingPolicy` script
- Takes an `NftConfig` as its argument
--}
-
--- configurationNftCurrencySymbol :: NftConfig -> CurrencySymbol
--- configurationNftCurrencySymbol = mpsSymbol . mintingPolicyHash . policy
---
--- -- Build the policy
--- policy :: NftConfig -> MintingPolicy
--- policy cfg =
---   mkMintingPolicyScript
---     $ $$(compile [||\c -> wrappedPolicy c||])
---     `PlutusTx.applyCode` PlutusTx.liftCode cfg
---
--- wrappedPolicy :: NftConfig -> WrappedMintingPolicyType
--- wrappedPolicy config a b = check (mkConfigurationNftPolicy config a (unsafeFromBuiltinData b))
-
--------------------------------------------------------------------------------
--- Validator
--- The validator makes sure the config cannot be changed unless an upgrade
--- request is present
--- The idea is that
--- I need to get a reference to a tally nft
--- That includes datum that has a reference utxo
--- That Utxo includes an upgrade proposal
--- The upgrade proposal has a datum that includes a minter
--- That if everything is good unlocks the treasury
--- and makes sure a token is minted to validate the upgrade
--------------------------------------------------------------------------------
 
 {- | Validator for proposal upgrades.
 
@@ -243,41 +186,45 @@ validateConfiguration
 
       -- Helper for filtering for tally UTXO in the reference inputs
       hasTallyNft :: Value -> Bool
-      hasTallyNft = hasSymbolInValue dcTallyNft
+      hasTallyNft = hasSymbolInValue dynamicConfigDatum'tallyNft
 
       -- Ensure there is exactly one output that contains the 'TallyStateDatum' datum
       -- The `convertDatum` helper will throw an error if the output datum is not found
-      TallyStateDatum {tsProposal = proposal, ..} =
+      TallyStateDatum {tallyStateDatum'proposal = proposal, ..} =
         case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [] -> traceError "Should be exactly one tally NFT in the reference inputs. None found."
           [TxInInfo {txInInfoResolved = TxOut {..}}] ->
-            convertDatum txInfoData txOutDatum
+            convertDatum' txInfoData txOutDatum
           _ -> traceError "Should be exactly one tally NFT in the reference inputs. More than one found."
 
       -- Ensure that the 'ProposalType' set in the 'tsProposal' field
       -- of the 'TallyStateDatum' is 'Upgrade', and retrieve the upgrade symbol
       upgradeMinter :: CurrencySymbol
       upgradeMinter = case proposal of
-        Upgrade u -> u
+        ProposalType'Upgrade u -> u
         _ -> traceError "Not an upgrade proposal"
 
       -- The total votes, for and against, in the 'TallyStateDatum'
       totalVotes :: Integer
-      !totalVotes = tsFor + tsAgainst
+      !totalVotes = tallyStateDatum'for + tallyStateDatum'against
 
       -- Calculate the majorities
       relativeMajority :: Integer
-      !relativeMajority = (totalVotes * 1000) `divide` dcTotalVotes
+      !relativeMajority = (totalVotes * 1000) `divide` dynamicConfigDatum'totalVotes
 
       majorityPercent :: Integer
-      !majorityPercent = (tsFor * 1000) `divide` totalVotes
+      !majorityPercent = (tallyStateDatum'for * 1000) `divide` totalVotes
 
       -- Ensure the upgrade proposal has sufficient votes by checking
       -- the majorities against the required amounts specified in the 'DynamicConfigDatum'
       hasEnoughVotes :: Bool
       !hasEnoughVotes =
-        traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradeRelativeMajorityPercent)
-          && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
+        traceIfFalse 
+          "relative majority is too low" 
+          (relativeMajority >= dynamicConfigDatum'upgradeRelativeMajorityPercent)
+          && traceIfFalse 
+               "majority is too small" 
+               (majorityPercent >= dynamicConfigDatum'upgradeMajorityPercent)
 
       -- Make sure the upgrade token was minted
       hasUpgradeMinterToken :: Bool
@@ -285,7 +232,10 @@ validateConfiguration
 
       -- Ensure the proposal has finished
       isAfterTallyEndTime :: Bool
-      isAfterTallyEndTime = (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` txInfoValidRange
+      isAfterTallyEndTime = 
+        (tallyStateDatum'proposalEndTime + POSIXTime dynamicConfigDatum'proposalTallyEndOffset) 
+          `before` 
+          txInfoValidRange
      in
       traceIfFalse "Should be exactly one configuration NFT in the inputs" hasConfigurationNft
         && traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
@@ -300,7 +250,7 @@ configurationValidatorCompiledCode config =
   $$(PlutusTx.compile [||wrapValidateConfiguration||]) `applyCode` liftCode config
 
 wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-wrapValidateConfiguration = wrapValidate validateConfiguration
+wrapValidateConfiguration = wrapValidate' validateConfiguration
 
 -- configurationValidator :: ConfigurationValidatorConfig -> Validator
 -- configurationValidator config = mkValidatorWithSettings configurationCompiledCode True

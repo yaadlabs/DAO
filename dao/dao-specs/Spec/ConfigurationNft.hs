@@ -30,8 +30,8 @@ nftSpec :: MockConfig -> TestTree
 nftSpec config =
   testGroup
     "Configuration NFT policy tests"
-    [ -- positiveTest
-      positiveTest1
+    [ positiveTest
+    , positiveTest1
       -- , negativeTest
       -- , negativeTest1
       -- , negativeTest2

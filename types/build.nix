@@ -5,7 +5,7 @@
         name = "dao-lb-types";
         src = ./.;
         files =
-          [ "Types/ApplicationTypes.lbf"
+          [ "Types/Proposal.lbf"
             "Types/Vote.lbf"
             "Types/Configuration.lbf"
             "Types/Index.lbf"

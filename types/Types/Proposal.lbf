@@ -1,0 +1,32 @@
+module Types.Proposal
+
+import Prelude (Eq, Integer)
+import Plutus.V1 
+  ( Address
+  , CurrencySymbol
+  , PlutusData
+  )
+
+-- | This represents the three possible types of proposals.
+-- A `Trip` proposal, a `General` proposal or an `Upgrade` proposal.
+sum ProposalType =
+    -- | Upgrade a proposal
+    Upgrade 
+      -- | Symbol of the upgrade minting policy
+      CurrencySymbol
+  | -- | A general proposal
+    General 
+      -- | General payment address
+      Address 
+      -- | General payment amount
+      Integer
+  | -- | A trip proposal
+    Trip 
+      -- | Travel agent address
+      Address 
+      -- | Traveller address
+      Address 
+      -- | Total travel cost
+      Integer
+derive Eq ProposalType
+derive PlutusData ProposalType

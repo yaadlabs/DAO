@@ -21,8 +21,8 @@ main = do
       "Triphut"
       [ -- Utils.spec
         ConfigurationNft.spec
-        -- , Index.spec
-        -- , Tally.spec
+      -- , Index.spec
+      -- , Tally.spec
         -- , Vote.spec
         -- , VoteValidator.spec
         -- , Treasury.spec

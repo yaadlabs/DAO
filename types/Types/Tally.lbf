@@ -1,7 +1,22 @@
 module Types.Tally
 
-import Prelude (Eq)
-import Plutus.V1 (CurrencySymbol, PlutusData, TokenName)
+import Prelude (Eq, Integer)
+import Plutus.V1 (CurrencySymbol, PlutusData, POSIXTime, TokenName)
+import Types.Proposal (ProposalType)
+
+-- | Tally state datum
+record TallyStateDatum = {
+  -- | The `ProposalType` type of the proposal
+  proposal : ProposalType
+  -- | The end of the proposal period
+  , proposalEndTime : POSIXTime
+  -- | The count of votes for the proposal
+  , for : Integer
+  -- | The count of votes against the proposal
+  , against : Integer
+  }
+derive Eq TallyStateDatum
+derive PlutusData TallyStateDatum
 
 -- | Tally policy configuration
 record TallyNftConfig = {
