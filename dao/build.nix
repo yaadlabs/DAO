@@ -47,6 +47,6 @@
         dao-test = hsFlake.packages."dao:test:dao-test";
       };
 
-      inherit (hsFlake) checks;
+      checks.check-dao-lib = hsFlake.checks."dao:test:tests";
     };
 }

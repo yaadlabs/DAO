@@ -44,7 +44,6 @@ library
     common-lang, common-depends, common-options, common-extensions
 
   exposed-modules:
-    Dao.AlwaysSucceed
     Dao.ConfigurationNft
     Dao.ConfigurationNft.Script
     Dao.Index
