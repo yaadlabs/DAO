@@ -12,8 +12,8 @@ module Spec.Tally.Context (
 ) where
 
 import Control.Monad (void)
-import Dao.Index (IndexNftDatum (IndexNftDatum))
-import Dao.Tally (TallyNftConfig (TallyNftConfig))
+import Dao.ScriptArgument (TallyNftConfig (TallyNftConfig))
+import LambdaBuffers.ApplicationTypes.Index (IndexNftDatum (IndexNftDatum))
 import Plutus.Model (
   Run,
   TypedPolicy,
@@ -147,8 +147,8 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
 
     -- Valid output index datum should have index field incremented by one
     updateIndexDatum :: IndexNftDatum -> IndexNftDatum
-    updateIndexDatum oldDatum@(IndexNftDatum index) = case incrementIndex of
-      ValidIncrement -> IndexNftDatum $ index + 1
+    updateIndexDatum oldDatum@(IndexNftDatum indexNftDatum'index) = case incrementIndex of
+      ValidIncrement -> IndexNftDatum $ indexNftDatum'index + 1
       DoNotIncrement -> oldDatum
 
     -- Set up the txs

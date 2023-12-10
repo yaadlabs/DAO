@@ -12,13 +12,13 @@ module Spec.Vote.Script (
 )
 where
 
-import Dao.ConfigurationNft (ConfigurationValidatorConfig (ConfigurationValidatorConfig))
-import Dao.Vote (
+import Dao.ScriptArgument (ConfigurationValidatorConfig (ConfigurationValidatorConfig))
+import Dao.Vote.Script (voteValidatorCompiledCode, wrappedPolicy)
+import LambdaBuffers.ApplicationTypes.Vote (
   VoteActionRedeemer,
   VoteDatum,
   VoteMinterActionRedeemer,
  )
-import Dao.Vote.Script (voteValidatorCompiledCode, wrappedPolicy)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
@@ -38,9 +38,9 @@ type VoteMintingPolicy = TypedPolicy VoteMinterActionRedeemer
 
 voteTypedMintingPolicy :: ConfigurationValidatorConfig -> VoteMintingPolicy
 voteTypedMintingPolicy config =
-  mkTypedPolicy $
-    $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
-      `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkTypedPolicy
+    $ $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
+    `PlutusTx.applyCode` PlutusTx.liftCode config
 
 voteCurrencySymbol :: ConfigurationValidatorConfig -> CurrencySymbol
 voteCurrencySymbol = scriptCurrencySymbol . voteTypedMintingPolicy

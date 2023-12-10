@@ -1,6 +1,6 @@
 module Spec.Tally.Utils (findTally) where
 
-import Dao.Types (TallyStateDatum)
+import LambdaBuffers.ApplicationTypes.Tally (TallyStateDatum)
 import Plutus.Model (Run)
 import PlutusLedgerApi.V2.Tx (TxOut, TxOutRef)
 import Spec.SpecUtils (findConfigUtxo)

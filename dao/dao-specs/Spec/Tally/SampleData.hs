@@ -14,7 +14,22 @@ module Spec.Tally.SampleData (
   sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum,
 ) where
 
-import Dao.Types (ProposalType (General, Trip, Upgrade), TallyStateDatum (..))
+import LambdaBuffers.ApplicationTypes.Proposal (
+  ProposalType (
+    ProposalType'General,
+    ProposalType'Trip,
+    ProposalType'Upgrade
+  ),
+ )
+import LambdaBuffers.ApplicationTypes.Tally (
+  TallyStateDatum (
+    TallyStateDatum,
+    tallyStateDatum'against,
+    tallyStateDatum'for,
+    tallyStateDatum'proposal,
+    tallyStateDatum'proposalEndTime
+  ),
+ )
 import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
 import Spec.Addresses (
   dummyGeneralPaymentAddress,
@@ -26,89 +41,89 @@ import Spec.AlwaysSucceed.Script (alwaysSucceedCurrencySymbol)
 sampleUpgradeWithEndTimeInPastTallyStateDatum :: TallyStateDatum
 sampleUpgradeWithEndTimeInPastTallyStateDatum =
   TallyStateDatum
-    { tsProposal = sampleUpgradeProposalType
-    , tsProposalEndTime = sampleEndTimeInPast
-    , tsFor = 0
-    , tsAgainst = 0
+    { tallyStateDatum'proposal = sampleUpgradeProposalType
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInPast
+    , tallyStateDatum'for = 0
+    , tallyStateDatum'against = 0
     }
 
 sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum :: TallyStateDatum
 sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum =
   TallyStateDatum
-    { tsProposal = Trip dummyTravelAgentAddress dummyTravelerPaymentAddress 2
-    , tsProposalEndTime = sampleEndTimeInFuture
-    , tsFor = 1
-    , tsAgainst = 100
+    { tallyStateDatum'proposal = ProposalType'Trip dummyTravelAgentAddress dummyTravelerPaymentAddress 2
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInFuture
+    , tallyStateDatum'for = 1
+    , tallyStateDatum'against = 100
     }
 
 sampleUpgradeNotEnoughVotesEndTimeInFutureTallyStateDatum :: TallyStateDatum
 sampleUpgradeNotEnoughVotesEndTimeInFutureTallyStateDatum =
   TallyStateDatum
-    { tsProposal = sampleUpgradeProposalType
-    , tsProposalEndTime = sampleEndTimeInFuture
-    , tsFor = 1
-    , tsAgainst = 100
+    { tallyStateDatum'proposal = sampleUpgradeProposalType
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInFuture
+    , tallyStateDatum'for = 1
+    , tallyStateDatum'against = 100
     }
 
 sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum :: TallyStateDatum
 sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum =
   TallyStateDatum
-    { tsProposal = sampleUpgradeProposalType
-    , tsProposalEndTime = sampleEndTimeInPast
-    , tsFor = 1
-    , tsAgainst = 100
+    { tallyStateDatum'proposal = sampleUpgradeProposalType
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInPast
+    , tallyStateDatum'for = 1
+    , tallyStateDatum'against = 100
     }
 
 sampleUpgradeWithEndTimeInFutureTallyStateDatum :: TallyStateDatum
 sampleUpgradeWithEndTimeInFutureTallyStateDatum =
   TallyStateDatum
-    { tsProposal = sampleUpgradeProposalType
-    , tsProposalEndTime = sampleEndTimeInFuture
-    , tsFor = 0
-    , tsAgainst = 0
+    { tallyStateDatum'proposal = sampleUpgradeProposalType
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInFuture
+    , tallyStateDatum'for = 0
+    , tallyStateDatum'against = 0
     }
 
 sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum :: TallyStateDatum
 sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum =
   TallyStateDatum
-    { tsProposal = sampleUpgradeProposalType
-    , tsProposalEndTime = sampleEndTimeInFuture
-    , tsFor = 8
-    , tsAgainst = 4
+    { tallyStateDatum'proposal = sampleUpgradeProposalType
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInFuture
+    , tallyStateDatum'for = 8
+    , tallyStateDatum'against = 4
     }
 
 sampleTripWithEndTimeInFutureTallyStateDatum :: TallyStateDatum
 sampleTripWithEndTimeInFutureTallyStateDatum =
   TallyStateDatum
-    { tsProposal = Trip dummyTravelAgentAddress dummyTravelerPaymentAddress 2
-    , tsProposalEndTime = sampleEndTimeInFuture
-    , tsFor = 5
-    , tsAgainst = 3
+    { tallyStateDatum'proposal = ProposalType'Trip dummyTravelAgentAddress dummyTravelerPaymentAddress 2
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInFuture
+    , tallyStateDatum'for = 5
+    , tallyStateDatum'against = 3
     }
 
 sampleUpgradeWithVotesEndTimeInPastTallyStateDatum :: TallyStateDatum
 sampleUpgradeWithVotesEndTimeInPastTallyStateDatum =
   TallyStateDatum
-    { tsProposal = sampleUpgradeProposalType
-    , tsProposalEndTime = sampleEndTimeInPast
-    , tsFor = 5
-    , tsAgainst = 3
+    { tallyStateDatum'proposal = sampleUpgradeProposalType
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInPast
+    , tallyStateDatum'for = 5
+    , tallyStateDatum'against = 3
     }
 
 sampleGeneralWithEndTimeInFutureTallyStateDatum :: TallyStateDatum
 sampleGeneralWithEndTimeInFutureTallyStateDatum =
   TallyStateDatum
-    { tsProposal = sampleGeneralProposalType
-    , tsProposalEndTime = sampleEndTimeInFuture
-    , tsFor = 5
-    , tsAgainst = 3
+    { tallyStateDatum'proposal = sampleGeneralProposalType
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInFuture
+    , tallyStateDatum'for = 5
+    , tallyStateDatum'against = 3
     }
 
 sampleUpgradeProposalType :: ProposalType
-sampleUpgradeProposalType = Upgrade alwaysSucceedCurrencySymbol
+sampleUpgradeProposalType = ProposalType'Upgrade alwaysSucceedCurrencySymbol
 
 sampleGeneralProposalType :: ProposalType
-sampleGeneralProposalType = General dummyGeneralPaymentAddress 1
+sampleGeneralProposalType = ProposalType'General dummyGeneralPaymentAddress 1
 
 -- Some arbitrary time way in the future
 sampleEndTimeInFuture :: POSIXTime

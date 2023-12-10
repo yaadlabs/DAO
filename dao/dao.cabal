@@ -44,16 +44,12 @@ library
     common-lang, common-depends, common-options, common-extensions
 
   exposed-modules:
-    Dao.ConfigurationNft
     Dao.ConfigurationNft.Script
-    Dao.Index
     Dao.Index.Script
+    Dao.ScriptArgument
     Dao.Shared
-    Dao.Tally
     Dao.Tally.Script
     Dao.Treasury.Script
-    Dao.Types
-    Dao.Vote
     Dao.Vote.Script
 
   build-depends:
@@ -68,7 +64,6 @@ library
     , plutus-tx
     , plutus-tx-plugin
     , serialise
-
   --, cardano-api
 
   hs-source-dirs:  dao-lib

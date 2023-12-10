@@ -7,13 +7,9 @@ module Dao.Treasury.Script (
   -- * Validator
   validateTreasury,
   treasuryValidatorCompiledCode,
-  -- treasuryScript,
-  -- treasuryValidator,
-  -- treasuryValidatorHash,
 ) where
 
--- import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
-import Dao.ConfigurationNft (
+import Dao.ScriptArgument (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
     cvcConfigNftCurrencySymbol,
@@ -27,29 +23,40 @@ import Dao.Shared (
   hasTokenInValue,
   isScriptCredential,
   lovelacesOf,
-  -- mkValidatorWithSettings,
-  -- validatorHash,
-  -- validatorToScript,
   wrapValidate,
  )
-import Dao.Types (
+import LambdaBuffers.ApplicationTypes.Configuration (
   DynamicConfigDatum (
     DynamicConfigDatum,
-    dcAgentDisbursementPercent,
-    dcGeneralMajorityPercent,
-    dcGeneralRelativeMajorityPercent,
-    dcMaxGeneralDisbursement,
-    dcMaxTripDisbursement,
-    dcProposalTallyEndOffset,
-    dcTallyNft,
-    dcTotalVotes,
-    dcTripMajorityPercent,
-    dcTripRelativeMajorityPercent,
-    dcUpgradeMajorityPercent,
-    dcUpgradeRelativeMajorityPercent
+    dynamicConfigDatum'agentDisbursementPercent,
+    dynamicConfigDatum'generalMajorityPercent,
+    dynamicConfigDatum'generalRelativeMajorityPercent,
+    dynamicConfigDatum'maxGeneralDisbursement,
+    dynamicConfigDatum'maxTripDisbursement,
+    dynamicConfigDatum'proposalTallyEndOffset,
+    dynamicConfigDatum'tallyNft,
+    dynamicConfigDatum'totalVotes,
+    dynamicConfigDatum'tripMajorityPercent,
+    dynamicConfigDatum'tripRelativeMajorityPercent,
+    dynamicConfigDatum'upgradeMajorityPercent,
+    dynamicConfigDatum'upgradeRelativeMajorityPercent
   ),
-  ProposalType (General, Trip, Upgrade),
-  TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
+ )
+import LambdaBuffers.ApplicationTypes.Proposal (
+  ProposalType (
+    ProposalType'General,
+    ProposalType'Trip,
+    ProposalType'Upgrade
+  ),
+ )
+import LambdaBuffers.ApplicationTypes.Tally (
+  TallyStateDatum (
+    TallyStateDatum,
+    tallyStateDatum'against,
+    tallyStateDatum'for,
+    tallyStateDatum'proposal,
+    tallyStateDatum'proposalEndTime
+  ),
  )
 import PlutusLedgerApi.V1.Address (Address (Address, addressCredential))
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
@@ -132,12 +139,12 @@ import PlutusTx.Prelude (
       - There is exactly one of this script contained in the transaction's inputs.
         This check is carried out using the 'Dao.Treasury.Script.ownValueAndValidator' helper.
 
-      - It uses the 'tsProposal' field of 'Dao.Types.TallyStateDatum' like a redeemer,
+      - It uses the 'tallyStateDatum'proposal' field of 'Dao.Types.TallyStateDatum' like a redeemer,
         choosing which branch to follow based on the value of this field. (Trip, General, or Upgrade)
 
    == Trip proposal
 
-      When the 'tsProposal' field of 'Dao.Types.TallyStateDatum'
+      When the 'tallyStateDatum'proposal' field of 'Dao.Types.TallyStateDatum'
       is set to 'Trip', this validator performs the following checks:
 
         - The proposal has enough votes. The vote counts equal or exceed the values specified in
@@ -157,7 +164,7 @@ import PlutusTx.Prelude (
 
    == General proposal
 
-      When the 'tsProposal' field of 'Dao.Types.TallyStateDatum'
+      When the 'tallyStateDatum'proposal' field of 'Dao.Types.TallyStateDatum'
       is set to 'General', this validator performs the following checks:
 
         - The proposal has enough votes. The vote counts equal or exceed the values specified in
@@ -172,14 +179,14 @@ import PlutusTx.Prelude (
 
    == Upgrade proposal
 
-      When the 'tsProposal' field of 'Dao.Types.TallyStateDatum'
+      When the 'tallyStateDatum'proposal' field of 'Dao.Types.TallyStateDatum'
       is set to 'Upgrade', this validator performs the following checks:
 
         - The proposal has enough votes. The vote counts equal or exceed the values specified in
           the 'dcUpgradeRelativeMajorityPercent' and 'dcUpgradeMajorityPercent' fields of the
           'Dao.Types.DynamicConfigDatum'.
 
-        - That the proposal end time has passed. We do this by checking that the sum of the 'tsProposalEndtime'
+        - That the proposal end time has passed. We do this by checking that the sum of the 'tallyStateDatum'proposalEndtime'
           field of the 'Dao.Types.TallyStateDatum' and the 'dcProposalTallyEndOffset' of the
           'Dao.Types.DynamicConfigDatum' against the validity range of the transaction.
           Ensuring the sum of these values is less than the range.
@@ -217,7 +224,7 @@ validateTreasury
 
       -- Helper for filtering for tally UTXO
       hasTallyNft :: Value -> Bool
-      hasTallyNft = hasSymbolInValue dcTallyNft
+      hasTallyNft = hasSymbolInValue dynamicConfigDatum'tallyNft
 
       -- Get the TallyStateDatum from the reference inputs, should be exactly one
       TallyStateDatum {..} =
@@ -228,33 +235,37 @@ validateTreasury
 
       -- Calculate the values needed for the corresponding checks
       totalVotes :: Integer
-      !totalVotes = tsFor + tsAgainst
+      !totalVotes = tallyStateDatum'for + tallyStateDatum'against
 
       relativeMajority :: Integer
-      !relativeMajority = (totalVotes * 1000) `divide` dcTotalVotes
+      !relativeMajority = (totalVotes * 1000) `divide` dynamicConfigDatum'totalVotes
 
       majorityPercent :: Integer
-      !majorityPercent = (tsFor * 1000) `divide` totalVotes
+      !majorityPercent = (tallyStateDatum'for * 1000) `divide` totalVotes
 
       isAfterTallyEndTime :: Bool
       !isAfterTallyEndTime =
-        (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` txInfoValidRange
+        (tallyStateDatum'proposalEndTime + POSIXTime dynamicConfigDatum'proposalTallyEndOffset) `before` txInfoValidRange
      in
       onlyOneOfThisScript txInfoInputs thisValidator thisTxRef
-        && case tsProposal of
-          Trip travelAgentAddress travelerAddress totalTravelCost ->
+        && case tallyStateDatum'proposal of
+          ProposalType'Trip travelAgentAddress travelerAddress totalTravelCost ->
             let
               hasEnoughVotes :: Bool
               !hasEnoughVotes =
-                traceIfFalse "relative majority is too low" (relativeMajority >= dcTripRelativeMajorityPercent)
-                  && traceIfFalse "majority is too small" (majorityPercent >= dcTripMajorityPercent)
+                traceIfFalse
+                  "relative majority is too low"
+                  (relativeMajority >= dynamicConfigDatum'tripRelativeMajorityPercent)
+                  && traceIfFalse
+                    "majority is too small"
+                    (majorityPercent >= dynamicConfigDatum'tripMajorityPercent)
 
               -- Get the disbursed amount
               disbursedAmount :: Value
-              !disbursedAmount = singleton adaSymbol adaToken (min dcMaxTripDisbursement totalTravelCost)
+              !disbursedAmount = singleton adaSymbol adaToken (min dynamicConfigDatum'maxTripDisbursement totalTravelCost)
 
               travelAgentLovelaces :: Integer
-              !travelAgentLovelaces = (totalTravelCost * dcAgentDisbursementPercent) `divide` 1000
+              !travelAgentLovelaces = (totalTravelCost * dynamicConfigDatum'agentDisbursementPercent) `divide` 1000
 
               travelerLovelaces :: Integer
               !travelerLovelaces = totalTravelCost - travelAgentLovelaces
@@ -282,16 +293,24 @@ validateTreasury
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
                 && traceIfFalse "Not paying enough to the travel agent address" paidToTravelAgentAddress
                 && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
-          General generalPaymentAddress generalPaymentValue ->
+          ProposalType'General generalPaymentAddress generalPaymentValue ->
             let
               hasEnoughVotes :: Bool
               !hasEnoughVotes =
-                traceIfFalse "relative majority is too low" (relativeMajority >= dcGeneralRelativeMajorityPercent)
-                  && traceIfFalse "majority is too small" (majorityPercent >= dcGeneralMajorityPercent)
+                traceIfFalse
+                  "relative majority is too low"
+                  (relativeMajority >= dynamicConfigDatum'generalRelativeMajorityPercent)
+                  && traceIfFalse
+                    "majority is too small"
+                    (majorityPercent >= dynamicConfigDatum'generalMajorityPercent)
 
               -- Get the disbursed amount
               disbursedAmount :: Value
-              !disbursedAmount = singleton adaSymbol adaToken (min dcMaxGeneralDisbursement generalPaymentValue)
+              !disbursedAmount =
+                singleton
+                  adaSymbol
+                  adaToken
+                  (min dynamicConfigDatum'maxGeneralDisbursement generalPaymentValue)
 
               -- Make sure the disbursed amount is less than the max
               -- Find the total value returned to the script address
@@ -311,12 +330,16 @@ validateTreasury
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
                 && traceIfFalse "Not paying to the correct address" paidToAddress
-          Upgrade upgradeMinter ->
+          ProposalType'Upgrade upgradeMinter ->
             let
               hasEnoughVotes :: Bool
               !hasEnoughVotes =
-                traceIfFalse "relative majority is too low" (relativeMajority >= dcUpgradeRelativeMajorityPercent)
-                  && traceIfFalse "majority is too small" (majorityPercent >= dcUpgradeMajorityPercent)
+                traceIfFalse
+                  "relative majority is too low"
+                  (relativeMajority >= dynamicConfigDatum'upgradeRelativeMajorityPercent)
+                  && traceIfFalse
+                    "majority is too small"
+                    (majorityPercent >= dynamicConfigDatum'upgradeMajorityPercent)
 
               -- Make sure the upgrade token was minted
               hasUpgradeMinterToken :: Bool
@@ -374,17 +397,8 @@ onlyOneOfThisScript ins vh expectedRef = go ins
             _ -> go xs
           else go xs
 
--- treasuryValidator :: ConfigurationValidatorConfig -> Validator
--- treasuryValidator config = mkValidatorWithSettings treasuryValidatorCompiledCode False
-
 treasuryValidatorCompiledCode ::
   ConfigurationValidatorConfig ->
   CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 treasuryValidatorCompiledCode config =
   $$(PlutusTx.compile [||wrapValidate validateTreasury||]) `applyCode` liftCode config
-
--- treasuryValidatorHash :: ConfigurationValidatorConfig -> ScriptHash
--- treasuryValidatorHash = validatorHash . treasuryValidator
---
--- treasuryScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
--- treasuryScript = validatorToScript treasuryValidator

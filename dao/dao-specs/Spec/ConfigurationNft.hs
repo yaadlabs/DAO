@@ -32,9 +32,9 @@ nftSpec config =
     "Configuration NFT policy tests"
     [ positiveTest
     , positiveTest1
-      -- , negativeTest
-      -- , negativeTest1
-      -- , negativeTest2
+    , negativeTest
+    , negativeTest1
+    , negativeTest2
     ]
   where
     good = testNoErrors initialFunds config

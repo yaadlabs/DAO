@@ -1,6 +1,6 @@
-module Spec.Index.Utils where -- (findIndex) where
+module Spec.Index.Utils (findIndex) where
 
-import Dao.Index (IndexNftDatum)
+import LambdaBuffers.ApplicationTypes.Index (IndexNftDatum)
 import Plutus.Model (Run)
 import PlutusLedgerApi.V2.Tx (TxOut, TxOutRef)
 import Spec.Index.Script (indexNftTypedValidator)

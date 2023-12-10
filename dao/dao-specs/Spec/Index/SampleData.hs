@@ -6,10 +6,8 @@ module Spec.Index.SampleData (
   validSampleIndexNftDatum,
 ) where
 
-import Dao.Index (
-  IndexNftDatum (IndexNftDatum, indIndex),
- )
+import LambdaBuffers.ApplicationTypes.Index (IndexNftDatum (IndexNftDatum, indexNftDatum'index))
 
 -- | Valid index datum with the initial index set to zero
 validSampleIndexNftDatum :: IndexNftDatum
-validSampleIndexNftDatum = IndexNftDatum {indIndex = 0}
+validSampleIndexNftDatum = IndexNftDatum {indexNftDatum'index = 0}

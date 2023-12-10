@@ -1,7 +1,7 @@
-module Types.Configuration
+module ApplicationTypes.Configuration
 
 import Prelude (Eq, Integer)
-import Plutus.V1 (CurrencySymbol, PlutusData, ScriptHash, TokenName, TxOutRef)
+import Plutus.V1 (CurrencySymbol, PlutusData, ScriptHash, TokenName)
 
 -- | DynamicConfig Datum holds the main info needed for the contracts.
 record DynamicConfigDatum = {
@@ -56,26 +56,3 @@ record DynamicConfigDatum = {
   }
 derive Eq DynamicConfigDatum
 derive PlutusData DynamicConfigDatum 
-
--- | Used as an argument to the `Dao.ConfigurationNft.Script.mkConfigurationNftPolicy` minting policy script
-record NftConfig = {
-  ncInitialUtxo : TxOutRef
-  -- ^ The UTXO to be spent in the transaction
-  , ncTokenName : TokenName
-  -- ^ The expected token name of the newly minted config NFT
-  }
-derive Eq NftConfig
-derive PlutusData NftConfig
-
--- | Used as an argument to the validator scripts that need access
--- to the `Dao.Types.DynamicConfigDatum` config in their reference inputs
-record ConfigurationValidatorConfig = {
-  cvcConfigNftCurrencySymbol : CurrencySymbol
-  -- ^ The symbol of the NFT that marks the UTXO that contains
-  -- the `Dao.Types.DynamicConfigDatum` config
-  , cvcConfigNftTokenName : TokenName
-  -- ^ The token name of the NFT that marks the UTXO that contains
-  -- the `Dao.Types.DynamicConfigDatum` config
-  }
-derive Eq ConfigurationValidatorConfig
-derive PlutusData ConfigurationValidatorConfig

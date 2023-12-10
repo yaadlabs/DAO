@@ -10,8 +10,10 @@ module Spec.Vote.Context (
 ) where
 
 import Control.Monad (void)
-import Dao.ConfigurationNft (ConfigurationValidatorConfig)
-import Dao.Vote (VoteMinterActionRedeemer (Mint))
+import Dao.ScriptArgument (ConfigurationValidatorConfig)
+import LambdaBuffers.ApplicationTypes.Vote (
+  VoteMinterActionRedeemer (VoteMinterActionRedeemer'Mint),
+ )
 import Plutus.Model (
   Run,
   adaValue,
@@ -107,7 +109,7 @@ mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
     -- Set up the txs
     baseTx =
       mconcat
-        [ mintValue votePolicy Mint voteValue
+        [ mintValue votePolicy VoteMinterActionRedeemer'Mint voteValue
         , refInputInline tallyOutRef
         , userSpend spend1
         ]

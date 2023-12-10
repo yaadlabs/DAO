@@ -1,8 +1,8 @@
-module Types.Tally
+module ApplicationTypes.Tally
 
 import Prelude (Eq, Integer)
-import Plutus.V1 (CurrencySymbol, PlutusData, POSIXTime, TokenName)
-import Types.Proposal (ProposalType)
+import Plutus.V1 (PlutusData, POSIXTime)
+import ApplicationTypes.Proposal (ProposalType)
 
 -- | Tally state datum
 record TallyStateDatum = {
@@ -17,13 +17,3 @@ record TallyStateDatum = {
   }
 derive Eq TallyStateDatum
 derive PlutusData TallyStateDatum
-
--- | Tally policy configuration
-record TallyNftConfig = {
-    tncIndexNftPolicyId : CurrencySymbol
-  , tncIndexNftTokenName : TokenName
-  , tncConfigNftCurrencySymbol : CurrencySymbol
-  , tncConfigNftTokenName : TokenName
-  }
-derive Eq TallyNftConfig
-derive PlutusData TallyNftConfig

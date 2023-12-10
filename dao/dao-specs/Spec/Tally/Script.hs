@@ -14,9 +14,9 @@ module Spec.Tally.Script (
 )
 where
 
-import Dao.Tally (TallyNftConfig (TallyNftConfig))
+import Dao.ScriptArgument (TallyNftConfig (TallyNftConfig))
 import Dao.Tally.Script (mkTallyNftMinter, tallyValidatorCompiledCode)
-import Dao.Types (TallyStateDatum)
+import LambdaBuffers.ApplicationTypes.Tally (TallyStateDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
@@ -35,9 +35,9 @@ import Spec.SpecUtils (mkTypedValidator')
 -- Policy script and info
 tallyConfigNftTypedMintingPolicy :: TallyNftConfig -> TypedPolicy ()
 tallyConfigNftTypedMintingPolicy config =
-  mkTypedPolicy $
-    $$(PlutusTx.compile [||toBuiltinPolicy . mkTallyNftMinter||])
-      `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkTypedPolicy
+    $ $$(PlutusTx.compile [||toBuiltinPolicy . mkTallyNftMinter||])
+    `PlutusTx.applyCode` PlutusTx.liftCode config
 
 tallyConfigNftCurrencySymbol :: TallyNftConfig -> CurrencySymbol
 tallyConfigNftCurrencySymbol = scriptCurrencySymbol . tallyConfigNftTypedMintingPolicy

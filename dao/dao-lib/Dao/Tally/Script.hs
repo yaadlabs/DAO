@@ -19,15 +19,20 @@ module Dao.Tally.Script (
 -- tallyValidator,
 -- tallyValidatorHash,
 
--- import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
-import Dao.ConfigurationNft (
+import Dao.ScriptArgument (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
     cvcConfigNftCurrencySymbol,
     cvcConfigNftTokenName
   ),
+  TallyNftConfig (
+    TallyNftConfig,
+    tncConfigNftCurrencySymbol,
+    tncConfigNftTokenName,
+    tncIndexNftPolicyId,
+    tncIndexNftTokenName
+  ),
  )
-import Dao.Index (IndexNftDatum (IndexNftDatum, indIndex))
 import Dao.Shared (
   WrappedMintingPolicyType,
   convertDatum,
@@ -38,51 +43,45 @@ import Dao.Shared (
   hasSymbolInValue,
   integerToByteString,
   isScriptCredential,
-  -- mintingPolicyHash,
-  -- mkValidatorWithSettings,
-  -- policyToScript,
-  -- validatorHash,
-  -- validatorToScript,
-  wrapValidate,
+  wrapValidate',
  )
-import Dao.Tally (
-  TallyNftConfig (
-    TallyNftConfig,
-    tncConfigNftCurrencySymbol,
-    tncConfigNftTokenName,
-    tncIndexNftPolicyId,
-    tncIndexNftTokenName
-  ),
- )
-import Dao.Types (
+import LambdaBuffers.ApplicationTypes.Configuration (
   DynamicConfigDatum (
     DynamicConfigDatum,
-    dcFungibleVotePercent,
-    dcTallyNft,
-    dcTallyValidator,
-    dcVoteFungibleCurrencySymbol,
-    dcVoteFungibleTokenName,
-    dcVoteNft,
-    dcVoteValidator
+    dynamicConfigDatum'fungibleVotePercent,
+    dynamicConfigDatum'tallyNft,
+    dynamicConfigDatum'tallyValidator,
+    dynamicConfigDatum'voteFungibleCurrencySymbol,
+    dynamicConfigDatum'voteFungibleTokenName,
+    dynamicConfigDatum'voteNft,
+    dynamicConfigDatum'voteValidator
   ),
-  TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposalEndTime),
  )
-import Dao.Vote (
-  VoteDatum (VoteDatum, vDirection, vOwner, vProposalTokenName, vReturnAda),
-  VoteDirection (For),
+import LambdaBuffers.ApplicationTypes.Index (
+  IndexNftDatum (IndexNftDatum, indexNftDatum'index),
  )
-import LambdaBuffers.Types.Vote (VoteDirection)
+import LambdaBuffers.ApplicationTypes.Tally (
+  TallyStateDatum (
+    TallyStateDatum,
+    tallyStateDatum'against,
+    tallyStateDatum'for,
+    tallyStateDatum'proposalEndTime
+  ),
+ )
+import LambdaBuffers.ApplicationTypes.Vote (
+  VoteDatum (
+    VoteDatum,
+    voteDatum'direction,
+    voteDatum'proposalTokenName,
+    voteDatum'returnAda,
+    voteDatum'voteOwner
+  ),
+  VoteDirection (VoteDirection'For),
+ )
 import PlutusLedgerApi.V1.Address (Address (Address, addressCredential))
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
 import PlutusLedgerApi.V1.Interval (before)
 import PlutusLedgerApi.V1.Scripts (ScriptHash)
-
--- import Plutus.V1.Ledger.Scripts (
---   MintingPolicy,
---   Validator,
---   ScriptHash,
---   mkMintingPolicyScript,
---  )
 import PlutusLedgerApi.V1.Value (
   CurrencySymbol,
   TokenName (TokenName),
@@ -91,7 +90,6 @@ import PlutusLedgerApi.V1.Value (
   adaToken,
   geq,
   getValue,
-  -- mpsSymbol,
  )
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
@@ -160,13 +158,13 @@ import PlutusTx.Prelude qualified as PlutusTx
     - This index UTXO contains a valid 'IndexNftDatum'
       (The 'Dao.Index.Script.validateIndex' validator ensures the datum's index is incremented by one)
     - Exactly one valid Tally NFT is minted with the valid token name.
-    - The token name matches the 'indIndex' field of the 'IndexNftDatum'
+    - The token name matches the 'indexNftDatum'index' field of the 'IndexNftDatum'
     - There is exactly one output containing the tally NFT.
     - This output contains a valid 'Dao.Types.TallyStateDatum' datum.
-    - The initial vote count fields `tsFor` and `tsAgainst` of
+    - The initial vote count fields `tallyStateDatum'for` and `tallyStateDatum'against` of
       the 'Dao.Types.TallyStateDatum' are both set to zero.
     - The tally output is at the tally validator
-      (Corresponding to the tally script provided by the 'dcTallyValidator'
+      (Corresponding to the tally script provided by the 'dynamicConfigDatum'tallyValidator'
        field of the 'Dao.Types.DynamicConfigDatum')
 -}
 mkTallyNftMinter :: TallyNftConfig -> BuiltinData -> ScriptContext -> Bool
@@ -183,7 +181,7 @@ mkTallyNftMinter
       hasConfigurationNft = hasOneOfToken tncConfigNftCurrencySymbol tncConfigNftTokenName
 
       -- Get the configuration from the reference inputs
-      DynamicConfigDatum {dcTallyValidator} =
+      DynamicConfigDatum {dynamicConfigDatum'tallyValidator} =
         case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Should be exactly one valid config in the reference inputs"
@@ -193,7 +191,7 @@ mkTallyNftMinter
       hasIndexNft = hasOneOfToken tncIndexNftPolicyId tncIndexNftTokenName
 
       -- Get the index datum from the inputs
-      IndexNftDatum {indIndex} = case filter (hasIndexNft . txOutValue . txInInfoResolved) txInfoInputs of
+      IndexNftDatum {indexNftDatum'index} = case filter (hasIndexNft . txOutValue . txInInfoResolved) txInfoInputs of
         [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
         _ -> traceError "Should be exactly one valid Index NFT output"
 
@@ -214,16 +212,16 @@ mkTallyNftMinter
 
       -- The initial votes for and against must both be set to zero
       tallyIsInitializeToZero :: Bool
-      !tallyIsInitializeToZero = tsFor tallyStateDatum == 0 && tsAgainst tallyStateDatum == 0
+      !tallyIsInitializeToZero = tallyStateDatum'for tallyStateDatum == 0 && tallyStateDatum'against tallyStateDatum == 0
 
       -- The NFT must be at the address of the tally validator
       outputOnTallyValidator :: Bool
-      !outputOnTallyValidator = addressCredential outputAddress == ScriptCredential dcTallyValidator
+      !outputOnTallyValidator = addressCredential outputAddress == ScriptCredential dynamicConfigDatum'tallyValidator
 
       -- The token name must be set to the index value,
       -- contained in the 'IndexNftDatum' ("0" initially)
       theTokenName :: TokenName
-      !theTokenName = TokenName $ integerToByteString indIndex
+      !theTokenName = TokenName $ integerToByteString indexNftDatum'index
 
       -- Ensure exactly one valid tally token is minted
       onlyOneTokenMinted :: Bool
@@ -322,10 +320,10 @@ valuePaidTo' outs addr = go mempty outs
     - There is exactly one 'Dao.Tally.TallyStateDatum' in the outputs.
 
     - This 'Dao.Tally.TallyStateDatum' in the outputs has been updated accordingly.
-      We check this by ensuring the the new votes have been added to the 'tsFor' and 'tsAgainst'
+      We check this by ensuring the the new votes have been added to the 'tallyStateDatum'for' and 'tallyStateDatum'against'
       vote count fields of the new tally datum at the output.
 
-    - That the proposal period has passed. We do this by checking the 'tsProposalEndTime' field of
+    - That the proposal period has passed. We do this by checking the 'tallyStateDatum'proposalEndTime' field of
       the 'TallyStateDatum' against the transaction validity range, ensuring the proposal end time has passed.
 
     - That all vote tokens are burned (there are no vote tokens in the outputs).
@@ -338,7 +336,7 @@ validateTally ::
   Bool
 validateTally
   ConfigurationValidatorConfig {..}
-  ts@TallyStateDatum {tsFor = oldFor, tsAgainst = oldAgainst, tsProposalEndTime}
+  ts@TallyStateDatum {tallyStateDatum'for = oldFor, tallyStateDatum'against = oldAgainst, tallyStateDatum'proposalEndTime}
   _
   ScriptContext
     { scriptContextTxInfo = TxInfo {..}
@@ -359,20 +357,20 @@ validateTally
 
       -- Make sure there is only one tally and many votes
       expectedScripts :: Bool
-      !expectedScripts = hasExpectedScripts txInfoInputs thisValidatorHash dcVoteValidator
+      !expectedScripts = hasExpectedScripts txInfoInputs thisValidatorHash dynamicConfigDatum'voteValidator
 
       hasVoteToken :: Value -> Maybe Value
       hasVoteToken (Value v) =
-        case filter (\(k, _) -> dcVoteNft == k) (M.toList v) of
+        case filter (\(k, _) -> dynamicConfigDatum'voteNft == k) (M.toList v) of
           [] -> Nothing
           xs@[_] -> Just (Value (M.fromList xs))
           _ -> traceError "Too many vote nfts"
 
       hasVoteWitness :: Value -> Bool
-      hasVoteWitness = hasSymbolInValue dcVoteFungibleCurrencySymbol
+      hasVoteWitness = hasSymbolInValue dynamicConfigDatum'voteFungibleCurrencySymbol
 
       thisTallyTokenName :: TokenName
-      !thisTallyTokenName = getTokenNameOfNft dcTallyNft oldValue "Tally Nft"
+      !thisTallyTokenName = getTokenNameOfNft dynamicConfigDatum'tallyNft oldValue "Tally Nft"
 
       -- Helper for loop that counts the votes
       stepVotes ::
@@ -387,48 +385,50 @@ validateTally
               let
                 VoteDatum {..} = convertDatum txInfoData txOutDatum
 
-                -- Count all the dcVoteFungibleCurrencySymbol
-                -- with dcVoteFungibleTokenName tokens on the vote utxo
+                -- Count all the dynamicConfigDatum'voteFungibleCurrencySymbol
+                -- with dynamicConfigDatum'voteFungibleTokenName tokens on the vote utxo
                 fungibleTokens :: Integer
                 !fungibleTokens =
                   countOfTokenInValue
-                    dcVoteFungibleCurrencySymbol
-                    dcVoteFungibleTokenName
+                    dynamicConfigDatum'voteFungibleCurrencySymbol
+                    dynamicConfigDatum'voteFungibleTokenName
                     txOutValue
 
-                -- Calculate fungible votes using the dcFungibleVotePercent
+                -- Calculate fungible votes using the dynamicConfigDatum'fungibleVotePercent
                 fungibleVotes :: Integer
                 !fungibleVotes
                   | fungibleTokens == 0 = 0
-                  | otherwise = (fungibleTokens * dcFungibleVotePercent) `divide` 1000
+                  | otherwise = (fungibleTokens * dynamicConfigDatum'fungibleVotePercent) `divide` 1000
 
                 -- Add the lovelaces and the NFT
                 votePayout :: Value
                 !votePayout =
                   if fungibleTokens == 0
-                    then Value (M.insert adaSymbol (M.singleton adaToken vReturnAda) (getValue voteNft))
+                    then Value (M.insert adaSymbol (M.singleton adaToken voteDatum'returnAda) (getValue voteNft))
                     else
-                      Value $
-                        M.insert
-                          dcVoteFungibleCurrencySymbol
-                          (M.singleton dcVoteFungibleTokenName fungibleTokens)
+                      Value
+                        $ M.insert
+                          dynamicConfigDatum'voteFungibleCurrencySymbol
+                          (M.singleton dynamicConfigDatum'voteFungibleTokenName fungibleTokens)
                           ( M.insert
                               adaSymbol
-                              (M.singleton adaToken vReturnAda)
+                              (M.singleton adaToken voteDatum'returnAda)
                               (getValue voteNft)
                           )
 
                 checkProposal :: Bool
-                !checkProposal = vProposalTokenName == thisTallyTokenName
+                !checkProposal = voteDatum'proposalTokenName == thisTallyTokenName
 
                 newForCount :: Integer
-                !newForCount = oldForCount + if vDirection == For then 1 + fungibleVotes else 0
+                !newForCount = oldForCount + if voteDatum'direction == VoteDirection'For then 1 + fungibleVotes else 0
 
                 newAgainstCount :: Integer
-                !newAgainstCount = oldAgainstCount + if vDirection == For then 0 else 1 + fungibleVotes
+                !newAgainstCount =
+                  oldAgainstCount
+                    + if voteDatum'direction == VoteDirection'For then 0 else 1 + fungibleVotes
 
                 newPayoutMap :: Map Address Value
-                !newPayoutMap = mergePayouts vOwner votePayout oldPayoutMap
+                !newPayoutMap = mergePayouts voteDatum'voteOwner votePayout oldPayoutMap
                in
                 if checkProposal
                   then (newForCount, newAgainstCount, newPayoutMap)
@@ -449,7 +449,7 @@ validateTally
       !voteNftAndAdaToVoters = all (addressedIsPaid txInfoOutputs) (M.toList payoutMap)
 
       tallyingIsInactive :: Bool
-      !tallyingIsInactive = tsProposalEndTime `before` txInfoValidRange
+      !tallyingIsInactive = tallyStateDatum'proposalEndTime `before` txInfoValidRange
 
       voteTokenAreAllBurned :: Bool
       !voteTokenAreAllBurned = not $ any (hasVoteWitness . txOutValue) txInfoOutputs
@@ -472,8 +472,8 @@ validateTally
       !tallyDatumIsUpdated =
         newDatum
           == ts
-            { tsFor = oldFor + forCount
-            , tsAgainst = oldAgainst + againstCount
+            { tallyStateDatum'for = oldFor + forCount
+            , tallyStateDatum'against = oldAgainst + againstCount
             }
      in
       traceIfFalse "Tally is active" tallyingIsInactive
@@ -491,7 +491,7 @@ tallyValidatorCompiledCode ::
   ConfigurationValidatorConfig ->
   CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 tallyValidatorCompiledCode config =
-  let wrapValidateTally = wrapValidate validateTally
+  let wrapValidateTally = wrapValidate' validateTally
    in $$(PlutusTx.compile [||wrapValidateTally||]) `applyCode` liftCode config
 
 -- tallyValidatorHash :: ConfigurationValidatorConfig -> ScriptHash

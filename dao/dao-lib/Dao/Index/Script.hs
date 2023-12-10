@@ -7,55 +7,40 @@ Description: Dao index related scripts. It includes:
 module Dao.Index.Script (
   -- * Minting policy
   mkIndexNftMinter,
-  -- tallyIndexNftMinter,
-  -- tallyIndexNftMinterPolicyId,
 
   -- * Validator
   validateIndex,
   indexValidatorCompiledCode,
-  -- indexScript,
-  -- indexValidator,
-  -- indexValidatorHash,
 ) where
 
--- import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
-import Dao.Index (
+import Dao.ScriptArgument (
   IndexNftConfig (
     IndexNftConfig,
     incIndexValidator,
     incInitialUtxo,
     incTokenName
   ),
-  IndexNftDatum (IndexNftDatum, indIndex),
  )
 import Dao.Shared (
   WrappedMintingPolicyType,
   convertDatum,
   hasSingleTokenWithSymbolAndTokenName,
   hasTokenInValueNoErrors,
-  -- mintingPolicyHash,
-  -- mkValidatorWithSettings,
-  -- policyToScript,
-  -- validatorHash,
-  -- validatorToScript,
-  wrapValidate,
+  wrapValidate',
+ )
+import LambdaBuffers.ApplicationTypes.Index (
+  IndexNftDatum (
+    IndexNftDatum,
+    indexNftDatum'index
+  ),
  )
 import PlutusLedgerApi.V1.Address (Address (addressCredential))
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
-
--- import PlutusLedgerApi.V1.Scripts (
---   MintingPolicy,
---   Validator,
---   ValidatorHash,
---   mkMintingPolicyScript,
---  )
 import PlutusLedgerApi.V1.Value (
   CurrencySymbol,
   Value,
   geq,
-  --  mpsSymbol,
  )
-
 import PlutusLedgerApi.V2 (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
   ScriptPurpose (Minting, Spending),
@@ -112,7 +97,7 @@ validateIndex ::
   ScriptContext ->
   Bool
 validateIndex
-  IndexNftDatum {indIndex = inputIndex}
+  IndexNftDatum {indexNftDatum'index = inputIndex}
   _
   ctx@ScriptContext
     { scriptContextTxInfo = info@TxInfo {..}
@@ -125,7 +110,7 @@ validateIndex
         Just TxInInfo {txInInfoResolved = TxOut {..}} -> txOutValue
 
       outputValue :: Value
-      (!outputValue, !IndexNftDatum {indIndex = outputIndex}) =
+      (!outputValue, !IndexNftDatum {indexNftDatum'index = outputIndex}) =
         case getContinuingOutputs ctx of
           [TxOut {..}] -> (txOutValue, convertDatum txInfoData txOutDatum)
           _ -> traceError "wrong number of continuing outputs"
@@ -148,14 +133,8 @@ indexValidatorCompiledCode =
   -- 'mempty' in this case is in place of the config argument to wrapValidate that we
   -- throw away here. And 'Value' is just an arbitrary legal type to satisfy the type checker
   -- (Same for 'indexScript' below)
-  let wrapValidateIndex = wrapValidate (const validateIndex) (mempty :: Value)
+  let wrapValidateIndex = wrapValidate' (const validateIndex) (mempty :: Value)
    in $$(PlutusTx.compile [||wrapValidateIndex||])
-
--- indexValidatorHash :: ValidatorHash
--- indexValidatorHash = validatorHash indexValidator
-
--- indexScript :: PlutusScript PlutusScriptV2
--- indexScript = validatorToScript (const indexValidator) (mempty :: Value)
 
 {- | Policy for minting index NFT.
 
@@ -190,14 +169,14 @@ mkIndexNftMinter
       hasWitness = hasTokenInValueNoErrors thisCurrencySymbol
 
       -- Get the index datum at the output marked by the index NFT
-      (!IndexNftDatum {indIndex}, !outputAddress) :: (IndexNftDatum, Address) =
+      (!IndexNftDatum {indexNftDatum'index}, !outputAddress) :: (IndexNftDatum, Address) =
         case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
           [TxOut {..}] -> (convertDatum txInfoData txOutDatum, txOutAddress)
           _ -> traceError "Should be exactly one valid minted output."
 
       -- Ensure that the initial index in the IndexNftDatum is set to zero
       initialIndexIsZero :: Bool
-      !initialIndexIsZero = indIndex == 0
+      !initialIndexIsZero = indexNftDatum'index == 0
 
       -- The NFT must be at the address of the index validator
       outputIsValidator :: Bool

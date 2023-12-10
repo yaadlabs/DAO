@@ -13,7 +13,7 @@ module Dao.ConfigurationNft.Script (
   configurationValidatorCompiledCode,
 ) where
 
-import Dao.ConfigurationNft (
+import Dao.ScriptArgument (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
     cvcConfigNftCurrencySymbol,
@@ -21,34 +21,39 @@ import Dao.ConfigurationNft (
   ),
   NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
  )
-
--- import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
 import Dao.Shared (
   WrappedMintingPolicyType,
   convertDatum,
-  convertDatum',
   hasOneOfToken,
   hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
   hasTokenInValueNoErrors,
-  wrapValidate,
   wrapValidate',
  )
-import LambdaBuffers.Types.Proposal (ProposalType (ProposalType'Upgrade))
-import LambdaBuffers.Types.Configuration (DynamicConfigDatum(..))
-import LambdaBuffers.Types.Tally 
-  ( TallyStateDatum
-      ( TallyStateDatum 
-      , tallyStateDatum'proposal
-      , tallyStateDatum'proposalEndTime
-      , tallyStateDatum'for
-      , tallyStateDatum'against
-      )
-  )
+import LambdaBuffers.ApplicationTypes.Configuration (
+  DynamicConfigDatum (
+    DynamicConfigDatum,
+    dynamicConfigDatum'proposalTallyEndOffset,
+    dynamicConfigDatum'tallyNft,
+    dynamicConfigDatum'totalVotes,
+    dynamicConfigDatum'upgradeMajorityPercent,
+    dynamicConfigDatum'upgradeRelativeMajorityPercent
+  ),
+ )
+import LambdaBuffers.ApplicationTypes.Proposal (ProposalType (ProposalType'Upgrade))
+import LambdaBuffers.ApplicationTypes.Tally (
+  TallyStateDatum (
+    TallyStateDatum,
+    tallyStateDatum'against,
+    tallyStateDatum'for,
+    tallyStateDatum'proposal,
+    tallyStateDatum'proposalEndTime
+  ),
+ )
 import PlutusLedgerApi.V1.Interval (before)
 import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
-import PlutusLedgerApi.V1.Value ( Value )
+import PlutusLedgerApi.V1.Value (Value)
 import PlutusLedgerApi.V2 (CurrencySymbol)
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
@@ -122,7 +127,7 @@ mkConfigurationNftPolicy
       -- The `convertDatum` helper will throw an error if the output datum is not found
       _newOutput :: DynamicConfigDatum
       !_newOutput = case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
-        [TxOut {txOutDatum}] -> convertDatum' txInfoData txOutDatum
+        [TxOut {txOutDatum}] -> convertDatum txInfoData txOutDatum
         _ -> traceError "Should be exactly one valid minted output."
 
       -- Ensure that the reference UTXO is spent
@@ -194,7 +199,7 @@ validateConfiguration
         case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [] -> traceError "Should be exactly one tally NFT in the reference inputs. None found."
           [TxInInfo {txInInfoResolved = TxOut {..}}] ->
-            convertDatum' txInfoData txOutDatum
+            convertDatum txInfoData txOutDatum
           _ -> traceError "Should be exactly one tally NFT in the reference inputs. More than one found."
 
       -- Ensure that the 'ProposalType' set in the 'tsProposal' field
@@ -219,12 +224,12 @@ validateConfiguration
       -- the majorities against the required amounts specified in the 'DynamicConfigDatum'
       hasEnoughVotes :: Bool
       !hasEnoughVotes =
-        traceIfFalse 
-          "relative majority is too low" 
+        traceIfFalse
+          "relative majority is too low"
           (relativeMajority >= dynamicConfigDatum'upgradeRelativeMajorityPercent)
-          && traceIfFalse 
-               "majority is too small" 
-               (majorityPercent >= dynamicConfigDatum'upgradeMajorityPercent)
+          && traceIfFalse
+            "majority is too small"
+            (majorityPercent >= dynamicConfigDatum'upgradeMajorityPercent)
 
       -- Make sure the upgrade token was minted
       hasUpgradeMinterToken :: Bool
@@ -232,10 +237,9 @@ validateConfiguration
 
       -- Ensure the proposal has finished
       isAfterTallyEndTime :: Bool
-      isAfterTallyEndTime = 
-        (tallyStateDatum'proposalEndTime + POSIXTime dynamicConfigDatum'proposalTallyEndOffset) 
-          `before` 
-          txInfoValidRange
+      isAfterTallyEndTime =
+        (tallyStateDatum'proposalEndTime + POSIXTime dynamicConfigDatum'proposalTallyEndOffset)
+          `before` txInfoValidRange
      in
       traceIfFalse "Should be exactly one configuration NFT in the inputs" hasConfigurationNft
         && traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes

@@ -10,6 +10,7 @@ module Dao.Shared (
   -- mkValidatorWithSettings,
   wrapValidate,
   wrapValidate',
+  wrapValidate'',
   hasBurnedTokens,
   hasTokenInValue,
   getTokenNameOfNft,
@@ -21,7 +22,6 @@ module Dao.Shared (
   integerToByteString,
   isScriptCredential,
   lovelacesOf,
-  convertDatum',
   -- mintingPolicyHash,
   -- plutonomyMintingPolicyHash,
   -- validatorHash,
@@ -60,11 +60,11 @@ import PlutusLedgerApi.V2 (
   OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash),
  )
 
-import PlutusTx (UnsafeFromData, FromData, fromBuiltinData, unsafeFromBuiltinData)
+import Data.Maybe (fromJust)
+import PlutusTx (FromData, UnsafeFromData, fromBuiltinData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as Map
 import PlutusTx.Code (CompiledCode)
-import Data.Maybe (fromJust)
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinByteString,
@@ -177,26 +177,17 @@ hasOneOfToken symbol tokenName (Value value) = case Map.lookup symbol value of
   Nothing -> False
 
 {-# INLINEABLE convertDatum #-}
-convertDatum :: (UnsafeFromData a) => Map DatumHash Datum -> OutputDatum -> a
-convertDatum infoData datum = unsafeFromBuiltinData $ case datum of
-  OutputDatum (Datum dbs) -> dbs
-  OutputDatumHash dh -> case Map.lookup dh infoData of
-    Just (Datum dbs) -> dbs
-    _ -> traceError "Missing datum"
-  NoOutputDatum -> traceError "Missing datum hash or datum"
-
-{-# INLINEABLE convertDatum' #-}
-convertDatum' :: (FromData a) => Map DatumHash Datum -> OutputDatum -> a
-convertDatum' infoData datum = case datum of
+convertDatum :: (FromData a) => Map DatumHash Datum -> OutputDatum -> a
+convertDatum infoData datum = case datum of
   OutputDatum (Datum dbs) -> case fromBuiltinData dbs of
-                               Just dbs' -> dbs'
-                               Nothing -> traceError "fromData error"
+    Just dbs' -> dbs'
+    Nothing -> traceError "convertDatum: Error at fromBuiltinData"
   OutputDatumHash dh -> case Map.lookup dh infoData of
     Just (Datum dbs) -> case fromBuiltinData dbs of
-                          Just dbs' -> dbs'
-                          Nothing -> traceError "fromData error"
-    _ -> traceError "Missing datum"
-  NoOutputDatum -> traceError "Missing datum hash or datum"
+      Just dbs' -> dbs'
+      Nothing -> traceError "convertDatum: Error at fromBuiltinData"
+    _ -> traceError "convertDatum: Missing datum"
+  NoOutputDatum -> traceError "convertDatum: Missing datum hash or datum"
 
 {-# INLINEABLE integerToByteString #-}
 integerToByteString :: Integer -> BuiltinByteString
@@ -217,25 +208,46 @@ integerToByteString n
 
 -- | Transforms a validator function `validate` to its lower level representation
 wrapValidate' ::
-  (FromData dynamicConfig, UnsafeFromData c, UnsafeFromData d) =>
-  (config -> dynamicConfig -> c -> d -> Bool) ->
+  (FromData b, UnsafeFromData c, UnsafeFromData d) =>
+  (config -> b -> c -> d -> Bool) ->
   config ->
   BuiltinData ->
   BuiltinData ->
   BuiltinData ->
   ()
-wrapValidate' validate config dynamicConfig y z =
-  let maybeDynamicConfigData = fromBuiltinData dynamicConfig
-   in case maybeDynamicConfigData of
-        Nothing -> traceError "fromData error"
-        Just dynamicConfig' ->
+wrapValidate' validate config x y z =
+  let maybeDataArg = fromBuiltinData x
+   in case maybeDataArg of
+        Nothing -> traceError "wrapValidate': Error at fromBuiltinData"
+        Just dataArg ->
           check
             ( validate
                 config
-                dynamicConfig'
+                dataArg
                 (unsafeFromBuiltinData y)
                 (unsafeFromBuiltinData z)
             )
+
+wrapValidate'' ::
+  (FromData b, FromData c, UnsafeFromData d) =>
+  (config -> b -> c -> d -> Bool) ->
+  config ->
+  BuiltinData ->
+  BuiltinData ->
+  BuiltinData ->
+  ()
+wrapValidate'' validate config x y z =
+  let (maybeDataArgX, maybeDataArgY) = (fromBuiltinData x, fromBuiltinData y)
+   in case (maybeDataArgX, maybeDataArgY) of
+        (Just dataArgX, Just dataArgY) ->
+          check
+            ( validate
+                config
+                dataArgX
+                dataArgY
+                (unsafeFromBuiltinData z)
+            )
+        _ -> traceError "wrapValidate'': Error at fromBuiltinData"
 
 wrapValidate ::
   (UnsafeFromData b, UnsafeFromData c, UnsafeFromData d) =>

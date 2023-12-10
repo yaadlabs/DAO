@@ -1,4 +1,4 @@
-module Types.Proposal
+module ApplicationTypes.Proposal
 
 import Prelude (Eq, Integer)
 import Plutus.V1 

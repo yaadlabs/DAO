@@ -1,4 +1,4 @@
-module Types.Vote
+module ApplicationTypes.Vote
 
 import Prelude (Eq, Integer)
 import Plutus.V1 (Address, PlutusData, TokenName)
@@ -14,20 +14,26 @@ derive PlutusData VoteDirection
 
 -- | The vote datum, representing a vote cast by a user on a specific proposal
 record VoteDatum = {
-  vProposalTokenName : TokenName
+  proposalTokenName : TokenName
   -- ^ The name of the proposal for which this vote relates to.
   -- This is checked in 'Dao.Tally.Script.validateTally' to ensure
   -- the vote is for the correct proposal.
-  , vDirection : VoteDirection
+  , direction : VoteDirection
   -- ^ Whether the vote is for or against the proposal.
-  , vOwner : Address
+  , voteOwner : Address
   -- ^ The address of the user casting the vote.
-  , vReturnAda : Integer
+  , returnAda : Integer
   -- ^ Ada amount to return
   }
+derive Eq VoteDatum
+derive PlutusData VoteDatum
 
 -- | Redeemer for 'Dao.Vote.Script.mkVoteMinter' policy
-sum VoteMinterActionRedeemer = Mint | Burn
+sum VoteMinterActionRedeemer = 
+    Mint 
+  | Burn
+derive Eq VoteMinterActionRedeemer
+derive PlutusData VoteMinterActionRedeemer
 
 -- | Redeemer for 'Dao.Vote.Script.validateVote' validator
 sum VoteActionRedeemer
@@ -35,3 +41,5 @@ sum VoteActionRedeemer
     Count
   | -- | Retract the vote
     Cancel
+derive Eq VoteActionRedeemer
+derive PlutusData VoteActionRedeemer

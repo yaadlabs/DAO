@@ -15,8 +15,9 @@ module Spec.Index.Script (
 )
 where
 
-import Dao.Index (IndexNftConfig (IndexNftConfig), IndexNftDatum)
 import Dao.Index.Script (indexValidatorCompiledCode, mkIndexNftMinter)
+import Dao.ScriptArgument (IndexNftConfig (IndexNftConfig))
+import LambdaBuffers.ApplicationTypes.Index (IndexNftDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
@@ -34,9 +35,9 @@ import Spec.SpecUtils (mkTypedValidator')
 -- Policy script and info
 indexConfigNftTypedMintingPolicy :: IndexNftConfig -> TypedPolicy ()
 indexConfigNftTypedMintingPolicy config =
-  mkTypedPolicy $
-    $$(PlutusTx.compile [||toBuiltinPolicy . mkIndexNftMinter||])
-      `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkTypedPolicy
+    $ $$(PlutusTx.compile [||toBuiltinPolicy . mkIndexNftMinter||])
+    `PlutusTx.applyCode` PlutusTx.liftCode config
 
 indexConfigNftCurrencySymbol :: IndexNftConfig -> CurrencySymbol
 indexConfigNftCurrencySymbol = scriptCurrencySymbol . indexConfigNftTypedMintingPolicy

@@ -6,9 +6,6 @@ Description: Dao vote related scripts. It includes:
 -}
 module Dao.Vote.Script (
   -- * Minting policy
-
-  -- voteMinter,
-  -- voteMinterPolicyId,
   mkVoteMinter,
   wrappedPolicy,
 
@@ -16,13 +13,7 @@ module Dao.Vote.Script (
   voteValidatorCompiledCode,
 ) where
 
--- voteScript,
--- voteValidator,
--- voteValidatorHash,
-
--- import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
--- import Codec.Serialise (serialise)
-import Dao.ConfigurationNft (
+import Dao.ScriptArgument (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
     cvcConfigNftCurrencySymbol,
@@ -37,61 +28,52 @@ import Dao.Shared (
   hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
-  -- mkValidatorWithSettings,
-  -- plutonomyMintingPolicyHash,
-  -- validatorHash,
-  -- validatorToScript,
-  wrapValidate,
- )
-import Dao.Types (
-  DynamicConfigDatum (
-    DynamicConfigDatum,
-    dcFungibleVotePercent,
-    dcTallyNft,
-    dcTallyValidator,
-    dcVoteCurrencySymbol,
-    dcVoteFungibleCurrencySymbol,
-    dcVoteFungibleTokenName,
-    dcVoteNft,
-    dcVoteTokenName,
-    dcVoteValidator
-  ),
-  TallyStateDatum (TallyStateDatum, tsProposalEndTime),
- )
-import Dao.Vote (
-  VoteActionRedeemer (Cancel, Count),
-  VoteDatum (VoteDatum, vOwner, vReturnAda),
-  VoteMinterActionRedeemer (Burn, Mint),
+  wrapValidate'',
  )
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as BSS
+import Data.Maybe (Maybe (Just))
+import LambdaBuffers.ApplicationTypes.Configuration (
+  DynamicConfigDatum (
+    DynamicConfigDatum,
+    dynamicConfigDatum'fungibleVotePercent,
+    dynamicConfigDatum'tallyNft,
+    dynamicConfigDatum'tallyValidator,
+    dynamicConfigDatum'voteCurrencySymbol,
+    dynamicConfigDatum'voteFungibleCurrencySymbol,
+    dynamicConfigDatum'voteFungibleTokenName,
+    dynamicConfigDatum'voteNft,
+    dynamicConfigDatum'voteTokenName,
+    dynamicConfigDatum'voteValidator
+  ),
+ )
+import LambdaBuffers.ApplicationTypes.Tally (
+  TallyStateDatum (
+    TallyStateDatum,
+    tallyStateDatum'proposalEndTime
+  ),
+ )
+import LambdaBuffers.ApplicationTypes.Vote (
+  VoteActionRedeemer (VoteActionRedeemer'Cancel, VoteActionRedeemer'Count),
+  VoteDatum (VoteDatum, voteDatum'returnAda, voteDatum'voteOwner),
+  VoteMinterActionRedeemer (VoteMinterActionRedeemer'Burn, VoteMinterActionRedeemer'Mint),
+ )
 
 -- import Plutonomy qualified
 import PlutusLedgerApi.V1.Address (addressCredential)
 import PlutusLedgerApi.V1.Credential (Credential (PubKeyCredential, ScriptCredential))
 import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusLedgerApi.V1.Interval (after)
-import PlutusLedgerApi.V2 (
-  Datum,
-  DatumHash,
- )
-
--- import Plutus.V1.Ledger.Scripts (
---   Datum,
---   DatumHash,
---   MintingPolicy,
---   Validator (Validator),
---   ValidatorHash,
---   mkMintingPolicyScript,
---   unMintingPolicyScript,
---  )
 import PlutusLedgerApi.V1.Value (
   CurrencySymbol,
   Value,
   adaSymbol,
   adaToken,
-  -- mpsSymbol,
   valueOf,
+ )
+import PlutusLedgerApi.V2 (
+  Datum,
+  DatumHash,
  )
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
@@ -116,9 +98,7 @@ import PlutusLedgerApi.V2.Tx (
     txOutValue
   ),
  )
-
--- import Plutus.V2.Ledger.Tx hiding (Mint)
-import PlutusTx (CompiledCode, applyCode, compile, liftCode, unsafeFromBuiltinData)
+import PlutusTx (CompiledCode, applyCode, compile, fromBuiltinData, liftCode)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (
   Bool (False),
@@ -155,7 +135,7 @@ import PlutusTx.Prelude (
         - The proposal is still active.
           Checked by ensuring the proposal end time provided by
           the 'TallyStateDatum' is after the validity range of the transaction
-        - The total ada is greater than the return ada specified by the 'vReturnAda' field of the 'VoteDatum'
+        - The total ada is greater than the return ada specified by the 'voteDatum'returnAda' field of the 'VoteDatum'
 
    == Burning Vote Token
 
@@ -172,14 +152,14 @@ mkVoteMinter
     { scriptContextTxInfo = TxInfo {..}
     , scriptContextPurpose = Minting thisCurrencySymbol
     } = case action of
-    Burn ->
+    VoteMinterActionRedeemer'Burn ->
       let
         -- Check the transaction burns a valid token
         burnsTokens :: Bool
         !burnsTokens = hasBurnedTokens thisCurrencySymbol txInfoMint "Vote Minter Burn"
        in
         traceIfFalse "Need to burn a vote token" burnsTokens
-    Mint ->
+    VoteMinterActionRedeemer'Mint ->
       let
         -- Helper for filtering for config UTXO in the reference inputs
         hasConfigurationNft :: Value -> Bool
@@ -200,17 +180,17 @@ mkVoteMinter
         -- Get output at the vote validator, should just be one.
         (VoteDatum {..}, !voteValue) =
           case filter
-            ((== ScriptCredential dcVoteValidator) . addressCredential . txOutAddress)
+            ((== ScriptCredential dynamicConfigDatum'voteValidator) . addressCredential . txOutAddress)
             txInfoOutputs of
             [TxOut {..}] -> (convertDatum theData txOutDatum, txOutValue)
             _ -> traceError "Should be exactly one vote datum (proposal reference) at the output"
 
         -- Helper for filtering for tally UTXO in the outputs
         hasTallyNft :: Value -> Bool
-        hasTallyNft = hasSymbolInValue dcTallyNft
+        hasTallyNft = hasSymbolInValue dynamicConfigDatum'tallyNft
 
         -- Get the tally state datum at the output marked by the tally NFT
-        TallyStateDatum {tsProposalEndTime} =
+        TallyStateDatum {tallyStateDatum'proposalEndTime} =
           case filter
             (hasTallyNft . txOutValue . txInInfoResolved)
             txInfoReferenceInputs of
@@ -219,11 +199,11 @@ mkVoteMinter
 
         -- Ensure the proposal end time is after the transaction's validity range
         proposalIsActive :: Bool
-        !proposalIsActive = tsProposalEndTime `after` txInfoValidRange
+        !proposalIsActive = tallyStateDatum'proposalEndTime `after` txInfoValidRange
 
         -- Ensure the vote value contains exactly one valid witness token
         hasWitness :: Bool
-        !hasWitness = hasOneOfToken thisCurrencySymbol dcVoteTokenName voteValue
+        !hasWitness = hasOneOfToken thisCurrencySymbol dynamicConfigDatum'voteTokenName voteValue
 
         -- Ensure exactly one valid vote token is minted
         onlyMintedOne :: Bool
@@ -231,14 +211,14 @@ mkVoteMinter
           hasSingleTokenWithSymbolAndTokenName
             txInfoMint
             thisCurrencySymbol
-            dcVoteTokenName
+            dynamicConfigDatum'voteTokenName
 
         hasVoteNft :: Bool
-        !hasVoteNft = hasTokenInValue dcVoteNft "Vote NFT" voteValue
+        !hasVoteNft = hasTokenInValue dynamicConfigDatum'voteNft "Vote NFT" voteValue
 
         -- Ensure the return ADA is less than the ada provided by the user, contained in the vote value
         totalAdaIsGreaterThanReturnAda :: Bool
-        !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > vReturnAda
+        !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > voteDatum'returnAda
        in
         traceIfFalse "Proposal has expired" proposalIsActive
           && traceIfFalse "Vote Nft is missing" hasVoteNft
@@ -248,7 +228,11 @@ mkVoteMinter
 mkVoteMinter _ _ _ = traceError "Wrong type of script purpose!"
 
 wrappedPolicy :: ConfigurationValidatorConfig -> WrappedMintingPolicyType
-wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) (unsafeFromBuiltinData b))
+wrappedPolicy config x y =
+  let (maybeDataX, maybeDataY) = (fromBuiltinData x, fromBuiltinData y)
+   in case (maybeDataX, maybeDataY) of
+        (Just dataX, Just dataY) -> check (mkVoteMinter config dataX dataY)
+        _ -> traceError "Error at fromBuiltinData function"
 
 -- policy :: ConfigurationValidatorConfig -> MintingPolicy
 -- policy cfg =
@@ -304,7 +288,7 @@ wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) 
       When the 'Dao.Vote.VoteActionRedeemer' redeemer
       is set to 'Cancel', this validator performs the following checks:
 
-        - The transaction is signed by the vote owner, specified by the 'vOwner' field
+        - The transaction is signed by the vote owner, specified by the 'voteDatum'voteOwner' field
           of the 'Dao.Vote.VoteDatum'.
         - All the vote tokens are burned, checking that there are no vote tokens in the transaction outputs,
           with the corresponding 'CurrencySymbol' specified by the 'dcVoteCurrencySymbol'
@@ -335,31 +319,31 @@ validateVote
           _ -> traceError "Should be exactly one config NFT in the reference inputs. None found."
      in
       case action of
-        Count ->
+        VoteActionRedeemer'Count ->
           -- Ensure the tally validator is contained in the inputs
           traceIfFalse
             "Missing Tally Validator input"
             ( any
-                ( (== ScriptCredential dcTallyValidator)
+                ( (== ScriptCredential dynamicConfigDatum'tallyValidator)
                     . addressCredential
                     . txOutAddress
                     . txInInfoResolved
                 )
                 (txInfoInputs :: [TxInInfo])
             )
-        Cancel ->
+        VoteActionRedeemer'Cancel ->
           let
             -- Ensure that the tx is signed by the vote owner,
-            -- specified in the 'vOwner' field of the 'VoteDatum'
+            -- specified in the 'voteDatum'voteOwner' field of the 'VoteDatum'
             isSignedByOwner :: Bool
             !isSignedByOwner =
               any
-                ((== addressCredential vOwner) . PubKeyCredential)
+                ((== addressCredential voteDatum'voteOwner) . PubKeyCredential)
                 (txInfoSignatories :: [PubKeyHash])
 
             -- Helper for filtering for UTXOs containing a vote token
             hasVoteToken :: Value -> Bool
-            hasVoteToken = hasSymbolInValue dcVoteCurrencySymbol
+            hasVoteToken = hasSymbolInValue dynamicConfigDatum'voteCurrencySymbol
 
             -- Ensure there are no vote tokens in the outputs
             voteTokenAreAllBurned :: Bool
@@ -376,7 +360,7 @@ voteValidatorCompiledCode ::
   ConfigurationValidatorConfig ->
   CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 voteValidatorCompiledCode config =
-  $$(PlutusTx.compile [||wrapValidate validateVote||]) `applyCode` liftCode config
+  $$(PlutusTx.compile [||wrapValidate'' validateVote||]) `applyCode` liftCode config
 
 -- voteValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 -- voteValidatorHash = validatorHash . voteValidator

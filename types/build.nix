@@ -5,11 +5,11 @@
         name = "dao-lb-types";
         src = ./.;
         files =
-          [ "Types/Proposal.lbf"
-            "Types/Vote.lbf"
-            "Types/Configuration.lbf"
-            "Types/Index.lbf"
-            "Types/Tally.lbf"
+          [ "ApplicationTypes/Proposal.lbf"
+            "ApplicationTypes/Vote.lbf"
+            "ApplicationTypes/Configuration.lbf"
+            "ApplicationTypes/Index.lbf"
+            "ApplicationTypes/Tally.lbf"
           ];
       };
     };

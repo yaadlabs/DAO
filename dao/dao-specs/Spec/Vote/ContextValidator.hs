@@ -17,7 +17,12 @@ module Spec.Vote.ContextValidator (
 ) where
 
 import Control.Monad (when)
-import Dao.Vote (VoteActionRedeemer (Cancel, Count))
+import LambdaBuffers.ApplicationTypes.Vote (
+  VoteActionRedeemer (
+    VoteActionRedeemer'Cancel,
+    VoteActionRedeemer'Count
+  ),
+ )
 import Plutus.Model (
   Run,
   adaValue,
@@ -152,7 +157,8 @@ mkVoteValidatorCountRedeemerTest configRef voteValidator tallyValidator tallyPer
         NoConfigInReferenceInputs -> mempty
 
       withVoteValidator = case voteValidator of
-        HasVoteValidatorInInputs -> spendScript voteTypedValidator voteOutRef Count voteDatum
+        HasVoteValidatorInInputs ->
+          spendScript voteTypedValidator voteOutRef VoteActionRedeemer'Count voteDatum
         NoVoteValidatorInInputs -> mempty
 
       withTallyValidator = case tallyValidator of
@@ -255,7 +261,8 @@ mkVoteValidatorCancelRedeemerTest
           NoConfigInReferenceInputs -> mempty
 
         withVoteValidator = case voteValidator of
-          HasVoteValidatorInInputs -> spendScript voteTypedValidator voteOutRef Cancel voteDatum
+          HasVoteValidatorInInputs ->
+            spendScript voteTypedValidator voteOutRef VoteActionRedeemer'Cancel voteDatum
           NoVoteValidatorInInputs -> mempty
 
         withTallyValidator = case tallyValidator of

@@ -9,7 +9,7 @@ module Spec.ConfigurationNft.Context (
   invalidConfigNftWrongTokenNameTest,
 ) where
 
-import Dao.ConfigurationNft (NftConfig (NftConfig))
+import Dao.ScriptArgument (NftConfig (NftConfig))
 import Plutus.Model (
   Run,
   Tx,

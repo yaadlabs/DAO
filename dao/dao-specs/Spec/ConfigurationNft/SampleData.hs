@@ -6,7 +6,7 @@ module Spec.ConfigurationNft.SampleData (
   sampleConfigValidatorConfig,
 ) where
 
-import Dao.ConfigurationNft (ConfigurationValidatorConfig (..))
+import Dao.ScriptArgument (ConfigurationValidatorConfig (..))
 import Spec.Values (dummyConfigNftSymbol, dummyConfigNftTokenName)
 
 sampleConfigValidatorConfig :: ConfigurationValidatorConfig

@@ -11,10 +11,9 @@ module Spec.ConfigurationNft.Script (
   configNftCurrencySymbol,
 ) where
 
-import Dao.ConfigurationNft (NftConfig)
 import Dao.ConfigurationNft.Script (configurationValidatorCompiledCode, mkConfigurationNftPolicy)
--- import Dao.Types (DynamicConfigDatum)
-import LambdaBuffers.Types.Configuration (DynamicConfigDatum)
+import Dao.ScriptArgument (NftConfig)
+import LambdaBuffers.ApplicationTypes.Configuration (DynamicConfigDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
@@ -31,9 +30,9 @@ import Spec.SpecUtils (mkTypedValidator')
 -- Policy script and info
 configNftTypedMintingPolicy :: NftConfig -> TypedPolicy ()
 configNftTypedMintingPolicy config =
-  mkTypedPolicy $
-    $$(PlutusTx.compile [||toBuiltinPolicy . mkConfigurationNftPolicy||])
-      `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkTypedPolicy
+    $ $$(PlutusTx.compile [||toBuiltinPolicy . mkConfigurationNftPolicy||])
+    `PlutusTx.applyCode` PlutusTx.liftCode config
 
 configNftCurrencySymbol :: NftConfig -> CurrencySymbol
 configNftCurrencySymbol = scriptCurrencySymbol . configNftTypedMintingPolicy

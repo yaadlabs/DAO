@@ -8,7 +8,7 @@ module Spec.Index.Context (
   invalidNoDatumSentToValidadtorIndexConfigNftTest,
 ) where
 
-import Dao.Index (IndexNftConfig (IndexNftConfig))
+import Dao.ScriptArgument (IndexNftConfig (IndexNftConfig))
 import Plutus.Model (
   Run,
   Tx,
