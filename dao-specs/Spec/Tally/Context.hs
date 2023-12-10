@@ -51,7 +51,7 @@ import Spec.Values (
   dummyIndexConfigNftTokenName,
   dummyIndexConfigNftValue,
  )
-import Prelude (mconcat, mempty, (+), (<>))
+import Prelude (mconcat, mempty, pure, (+), (<>))
 
 validTallyConfigNftTest :: Run ()
 validTallyConfigNftTest =
