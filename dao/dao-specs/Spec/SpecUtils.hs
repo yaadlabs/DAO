@@ -68,17 +68,6 @@ mkTypedValidator' ::
   TypedValidator datum redeemer
 mkTypedValidator' mkValidator = mkTypedValidator . mkValidator
 
-initScriptRef :: (IsValidator script) => script -> Run ()
-initScriptRef script = do
-  admin <- getMainUser
-  sp <- spend admin minAda
-  let tx =
-        mconcat
-          [ userSpend sp
-          , loadRefScript script admin minAda
-          ]
-  void $ signTx admin tx >>= sendTx
-
 data ScriptType = Reference | Script
   deriving stock (Eq)
 
@@ -90,7 +79,6 @@ runInitScript ::
   Value ->
   Run ()
 runInitScript validatorScript scriptType datum token = do
-  unless (scriptType == Script) (initScriptRef validatorScript)
   admin <- getMainUser
   let value = minAda <> token
   spend' <- spend admin value
