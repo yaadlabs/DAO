@@ -26757,18 +26757,17 @@
         "tooling": "tooling_3"
       },
       "locked": {
-        "lastModified": 1701904422,
-        "narHash": "sha256-XDyvQgFGbAwYAmsDYacoYxMhdMWW56SRQJgBDWLkVD0=",
-        "ref": "refs/heads/main",
-        "rev": "2050af6750b4a2343bb5a549e90150fcf0fc167b",
-        "revCount": 392,
-        "type": "git",
-        "url": "file:///home/nini/dev/triphut-repos/plutus-simple-model"
+        "lastModified": 1697631956,
+        "narHash": "sha256-3gbHPPc2M9dtsXk38Hfi/QMQaFHK3uhJ8FtO3y2jcWc=",
+        "owner": "mlabs-haskell",
+        "repo": "plutus-simple-model",
+        "rev": "450e278a819bf2955828726d02e239d233c36cba",
+        "type": "github"
       },
       "original": {
-        "rev": "2050af6750b4a2343bb5a549e90150fcf0fc167b",
-        "type": "git",
-        "url": "file:///home/nini/dev/triphut-repos/plutus-simple-model"
+        "owner": "mlabs-haskell",
+        "repo": "plutus-simple-model",
+        "type": "github"
       }
     },
     "ragenix": {
