@@ -7,7 +7,7 @@
     plutarch.url = "github:plutonomicon/plutarch-plutus";
     lbf.url = "github:mlabs-haskell/lambda-buffers";
     # psm.url = "github:mlabs-haskell/plutus-simple-model";
-    psm.url = "/home/nini/dev/triphut-repos/plutus-simple-model?rev=2050af6750b4a2343bb5a549e90150fcf0fc167b";
+    psm.url = "/home/nini/dev/triphut-repos/plutus-simple-model?rev=f97756a00a90197faf39ccfd144bbb7f8bd9f16d";
     
     plutonomy = {
       url = "github:well-typed/plutonomy";
