@@ -13,7 +13,7 @@ nix develop
 
 Once inside the shell you can use the following command to run the tests:
 ```
-cabal test
+make run-tests
 ```
 
 # Project overview
@@ -132,7 +132,7 @@ Voting occurs first, and a vote minter contract is used to ensure that the vote 
 4. The UTxO is outputted to the vote validator.
 5. The vote is not counted.
 
-If the vote is valid, a UTxO is created with the a vote datum that stores the proposal and direction of the vote (e.g. for or against). Additionally, a witness token is created that checked during tallying, to verify the vote occured at the correct time.
+If the vote is valid, a UTxO is created with the a vote datum that stores the proposal and direction of the vote (e.g. for or against). Additionally, a witness token is created that checked during tallying, to verify the vote occurred at the correct time.
 
 Users have to include min Ada for the their vote NFT, and additionally ada to cover the fees of tallying their vote. Users can cancel their votes at any time and receive all the assets the used to create the vote UTxO.
 
