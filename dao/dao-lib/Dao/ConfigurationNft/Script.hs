@@ -22,7 +22,6 @@ import Dao.ScriptArgument (
   NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
  )
 import Dao.Shared (
-  WrappedMintingPolicyType,
   convertDatum,
   hasOneOfToken,
   hasSingleTokenWithSymbolAndTokenName,
@@ -78,19 +77,16 @@ import PlutusTx (
   applyCode,
   compile,
   liftCode,
-  unsafeFromBuiltinData,
  )
 import PlutusTx.Prelude (
-  Bool (True),
+  Bool,
   BuiltinData,
   Integer,
   any,
-  check,
   divide,
   filter,
   traceError,
   traceIfFalse,
-  ($),
   (&&),
   (*),
   (+),
@@ -255,15 +251,6 @@ configurationValidatorCompiledCode config =
 
 wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
 wrapValidateConfiguration = wrapValidate' validateConfiguration
-
--- configurationValidator :: ConfigurationValidatorConfig -> Validator
--- configurationValidator config = mkValidatorWithSettings configurationCompiledCode True
-
--- configurationValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
--- configurationValidatorHash = validatorHash . configurationValidator
-
--- configurationScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
--- configurationScript = validatorToScript configurationValidator
 
 ownValue :: [TxInInfo] -> TxOutRef -> Value
 ownValue ins txOutRef = go ins

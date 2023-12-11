@@ -22,7 +22,6 @@ import Dao.ScriptArgument (
   ),
  )
 import Dao.Shared (
-  WrappedMintingPolicyType,
   convertDatum,
   hasSingleTokenWithSymbolAndTokenName,
   hasTokenInValueNoErrors,
@@ -58,28 +57,19 @@ import PlutusLedgerApi.V2.Contexts (
   findTxInByTxOutRef,
   getContinuingOutputs,
  )
-import PlutusTx (
-  CompiledCode,
-  applyCode,
-  compile,
-  liftCode,
-  unsafeFromBuiltinData,
- )
+import PlutusTx (CompiledCode, compile)
 import PlutusTx.Prelude (
-  Bool (True),
+  Bool,
   BuiltinData,
   Maybe (Just, Nothing),
   any,
-  check,
   const,
   filter,
   mempty,
   traceError,
   traceIfFalse,
-  ($),
   (&&),
   (+),
-  (.),
   (==),
  )
 
@@ -124,9 +114,6 @@ validateIndex
       traceIfFalse "output datum is not incremented" outputDatumIsIncremented
         && traceIfFalse "script value is not returned" outputValueGreaterThanInputValue
 validateIndex _ _ _ = traceError "Wrong script purpose"
-
--- indexValidator :: Validator
--- indexValidator = mkValidatorWithSettings compiledCode True
 
 indexValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 indexValidatorCompiledCode =
@@ -195,18 +182,3 @@ mkIndexNftMinter
         && traceIfFalse "Initial index should be set to zero" initialIndexIsZero
         && traceIfFalse "Index NFT must be sent to the Index validator" outputIsValidator
 mkIndexNftMinter _ _ _ = traceError "Wrong type of script purpose!"
-
--- wrappedPolicy :: IndexNftConfig -> WrappedMintingPolicyType
--- wrappedPolicy config a b = check (mkIndexNftMinter config a (unsafeFromBuiltinData b))
---
--- policy :: IndexNftConfig -> MintingPolicy
--- policy cfg =
---   mkMintingPolicyScript
---     $ $$(compile [||\c -> wrappedPolicy c||])
---     `PlutusTx.applyCode` PlutusTx.liftCode cfg
---
--- tallyIndexNftMinterPolicyId :: IndexNftConfig -> CurrencySymbol
--- tallyIndexNftMinterPolicyId = mpsSymbol . mintingPolicyHash . policy
---
--- tallyIndexNftMinter :: IndexNftConfig -> PlutusScript PlutusScriptV2
--- tallyIndexNftMinter = policyToScript policy

@@ -11,7 +11,6 @@ module Spec.SpecUtils (
   oneSecond,
 ) where
 
-import Control.Monad (unless, void)
 import Dao.Shared (hasOneOfToken)
 import Plutus.Model (
   Ada (Lovelace),
@@ -23,8 +22,6 @@ import Plutus.Model (
   mustFail,
   payToRef,
   payToScript,
-  sendTx,
-  signTx,
   skipLimits,
   spend,
   submitTx,
@@ -34,17 +31,12 @@ import Plutus.Model (
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
   DatumType,
-  HasAddress,
-  HasDatum,
-  HasRedeemer,
   TxBox,
-  TypedValidator (TypedValidator),
+  TypedValidator,
   boxAt,
   checkErrors,
-  loadRefScript,
   mkTypedValidator,
   refScriptAt,
-  toV2,
   txBoxDatum,
   txBoxOut,
   txBoxRef,
@@ -56,7 +48,7 @@ import PlutusLedgerApi.V2.Tx (TxOut, TxOutRef)
 import PlutusTx (CompiledCode)
 import PlutusTx.Prelude (Bool, BuiltinData, Integer, Maybe (Just, Nothing), fst, head, ($), (.), (>>=))
 import Test.Tasty (TestTree)
-import Prelude (Eq, String, error, mconcat, pure, show, (<$>), (<>), (==))
+import Prelude (Eq, String, error, pure, show, (<$>), (<>))
 
 checkFails :: MockConfig -> Value -> String -> Run () -> TestTree
 checkFails cfg funds msg act =

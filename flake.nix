@@ -14,7 +14,6 @@
       url = "github:well-typed/plutonomy";
       flake = false;
     };
-
   };
 
   outputs = inputs@{ flake-parts, ... }:

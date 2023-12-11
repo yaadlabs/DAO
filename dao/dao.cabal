@@ -64,7 +64,6 @@ library
     , plutus-tx
     , plutus-tx-plugin
     , serialise
-  --, cardano-api
 
   hs-source-dirs:  dao-lib
   ghc-options:
@@ -77,12 +76,12 @@ library dao-specs
 
   hs-source-dirs:  dao-specs
   build-depends:
+    , dao-lb-types
     , plutus-ledger-api
     , plutus-simple-model
     , plutus-tx
     , tasty
     , tasty-hunit
-    , dao-lb-types
 
   exposed-modules:
     Spec.Addresses
@@ -140,9 +139,6 @@ executable create-sc
   build-depends:
     , dao
     , plutus-ledger-api
-
--- , optparse-generic
--- , cardano-api
 
 test-suite dao-test
   import:

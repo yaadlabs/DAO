@@ -99,8 +99,6 @@ import PlutusLedgerApi.V2.Contexts (
   ),
   TxOutRef,
  )
-
--- import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (
   CompiledCode,
   applyCode,
@@ -186,10 +184,10 @@ import PlutusTx.Prelude (
           the 'dcUpgradeRelativeMajorityPercent' and 'dcUpgradeMajorityPercent' fields of the
           'Dao.Types.DynamicConfigDatum'.
 
-        - That the proposal end time has passed. We do this by checking that the sum of the 'tallyStateDatum'proposalEndtime'
-          field of the 'Dao.Types.TallyStateDatum' and the 'dcProposalTallyEndOffset' of the
-          'Dao.Types.DynamicConfigDatum' against the validity range of the transaction.
-          Ensuring the sum of these values is less than the range.
+        - That the proposal end time has passed. We do this by checking that the sum of
+          the 'tallyStateDatum'proposalEndtime' field of the 'Dao.Types.TallyStateDatum' and
+          the 'dcProposalTallyEndOffset' of the 'Dao.Types.DynamicConfigDatum' against
+          the validity range of the transaction. Ensuring the sum of these values is less than the range.
 
         - That exactly one 'upgradeMinter' token was minted. The CurrencySymbol for this token
           is provided as the field of the 'Upgrade' constructor of the Proposal type.

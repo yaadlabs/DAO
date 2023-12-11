@@ -6,18 +6,11 @@ Description: Dao tally related scripts. It includes:
 -}
 module Dao.Tally.Script (
   -- * Minting policy
-
-  -- tallyNftMinter,
-  -- tallyNftMinterPolicyId,
   mkTallyNftMinter,
 
   -- * Validator
   tallyValidatorCompiledCode,
 ) where
-
--- tallyScript,
--- tallyValidator,
--- tallyValidatorHash,
 
 import Dao.ScriptArgument (
   ConfigurationValidatorConfig (
@@ -34,7 +27,6 @@ import Dao.ScriptArgument (
   ),
  )
 import Dao.Shared (
-  WrappedMintingPolicyType,
   convertDatum,
   countOfTokenInValue,
   getTokenNameOfNft,
@@ -83,7 +75,6 @@ import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
 import PlutusLedgerApi.V1.Interval (before)
 import PlutusLedgerApi.V1.Scripts (ScriptHash)
 import PlutusLedgerApi.V1.Value (
-  CurrencySymbol,
   TokenName (TokenName),
   Value (Value),
   adaSymbol,
@@ -114,18 +105,16 @@ import PlutusTx (
   applyCode,
   compile,
   liftCode,
-  unsafeFromBuiltinData,
  )
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
-  Bool (False, True),
+  Bool (True),
   BuiltinData,
   Integer,
   Maybe (Just, Nothing),
   all,
   any,
-  check,
   divide,
   filter,
   foldr,
@@ -235,21 +224,6 @@ mkTallyNftMinter
         && traceIfFalse "Tally datum vote counts are not initialized to zero" tallyIsInitializeToZero
         && traceIfFalse "Should be exactly one valid token minted" onlyOneTokenMinted
 mkTallyNftMinter _ _ _ = traceError "Wrong type of script purpose!"
-
--- wrappedPolicyTally :: TallyNftConfig -> WrappedMintingPolicyType
--- wrappedPolicyTally config a b = check (mkTallyNftMinter config a (unsafeFromBuiltinData b))
---
--- tallyNftPolicy :: TallyNftConfig -> MintingPolicy
--- tallyNftPolicy cfg =
---   mkMintingPolicyScript
---     $ $$(compile [||\c -> wrappedPolicyTally c||])
---     `PlutusTx.applyCode` PlutusTx.liftCode cfg
---
--- tallyNftMinterPolicyId :: TallyNftConfig -> CurrencySymbol
--- tallyNftMinterPolicyId = mpsSymbol . mintingPolicyHash . tallyNftPolicy
---
--- tallyNftMinter :: TallyNftConfig -> PlutusScript PlutusScriptV2
--- tallyNftMinter = policyToScript tallyNftPolicy
 
 -- | Validator
 ownValueAndValidator :: [TxInInfo] -> TxOutRef -> (Value, ScriptHash)
@@ -406,8 +380,8 @@ validateTally
                   if fungibleTokens == 0
                     then Value (M.insert adaSymbol (M.singleton adaToken voteDatum'returnAda) (getValue voteNft))
                     else
-                      Value
-                        $ M.insert
+                      Value $
+                        M.insert
                           dynamicConfigDatum'voteFungibleCurrencySymbol
                           (M.singleton dynamicConfigDatum'voteFungibleTokenName fungibleTokens)
                           ( M.insert
@@ -484,18 +458,9 @@ validateTally
         && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
 validateTally _ _ _ _ = traceError "Wrong script purpose"
 
--- tallyValidator :: ConfigurationValidatorConfig -> Validator
--- tallyValidator config = mkValidatorWithSettings compiledCode False
-
 tallyValidatorCompiledCode ::
   ConfigurationValidatorConfig ->
   CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 tallyValidatorCompiledCode config =
   let wrapValidateTally = wrapValidate' validateTally
    in $$(PlutusTx.compile [||wrapValidateTally||]) `applyCode` liftCode config
-
--- tallyValidatorHash :: ConfigurationValidatorConfig -> ScriptHash
--- tallyValidatorHash = validatorHash . tallyValidator
---
--- tallyScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
--- tallyScript = validatorToScript tallyValidator

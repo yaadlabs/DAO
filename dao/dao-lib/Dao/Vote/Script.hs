@@ -58,14 +58,11 @@ import LambdaBuffers.ApplicationTypes.Vote (
   VoteDatum (VoteDatum, voteDatum'returnAda, voteDatum'voteOwner),
   VoteMinterActionRedeemer (VoteMinterActionRedeemer'Burn, VoteMinterActionRedeemer'Mint),
  )
-
--- import Plutonomy qualified
 import PlutusLedgerApi.V1.Address (addressCredential)
 import PlutusLedgerApi.V1.Credential (Credential (PubKeyCredential, ScriptCredential))
 import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusLedgerApi.V1.Interval (after)
 import PlutusLedgerApi.V1.Value (
-  CurrencySymbol,
   Value,
   adaSymbol,
   adaToken,
@@ -101,7 +98,7 @@ import PlutusLedgerApi.V2.Tx (
 import PlutusTx (CompiledCode, applyCode, compile, fromBuiltinData, liftCode)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (
-  Bool (False),
+  Bool,
   BuiltinData,
   any,
   check,
@@ -234,37 +231,6 @@ wrappedPolicy config x y =
         (Just dataX, Just dataY) -> check (mkVoteMinter config dataX dataY)
         _ -> traceError "Error at fromBuiltinData function"
 
--- policy :: ConfigurationValidatorConfig -> MintingPolicy
--- policy cfg =
---   mkMintingPolicyScript
---     $ $$(compile [||\c -> wrappedPolicy c||])
---     `PlutusTx.applyCode` PlutusTx.liftCode cfg
---
--- voteMinterPolicyId :: ConfigurationValidatorConfig -> CurrencySymbol
--- voteMinterPolicyId = mpsSymbol . plutonomyMintingPolicyHash . policy
---
--- scriptAsCbor :: ConfigurationValidatorConfig -> BSL.ByteString
--- scriptAsCbor =
---   let
---     optimizerSettings =
---       Plutonomy.defaultOptimizerOptions
---         { Plutonomy.ooSplitDelay = False
---         , Plutonomy.ooFloatOutLambda = False
---         }
---    in
---     serialise
---       . Plutonomy.optimizeUPLCWith optimizerSettings
---       . Validator
---       . unMintingPolicyScript
---       . policy
---
--- voteMinter :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
--- voteMinter =
---   PlutusScriptSerialised
---     . BSS.toShort
---     . BSL.toStrict
---     . scriptAsCbor
-
 {- | Validator for votes.
 
    == Common checks
@@ -353,17 +319,8 @@ validateVote
             traceIfFalse "Transaction should be signed by the vote owner" isSignedByOwner
               && traceIfFalse "All vote tokens should be burned" voteTokenAreAllBurned
 
--- voteValidator :: ConfigurationValidatorConfig -> Validator
--- voteValidator config = mkValidatorWithSettings compiledCode False
-
 voteValidatorCompiledCode ::
   ConfigurationValidatorConfig ->
   CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 voteValidatorCompiledCode config =
   $$(PlutusTx.compile [||wrapValidate'' validateVote||]) `applyCode` liftCode config
-
--- voteValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
--- voteValidatorHash = validatorHash . voteValidator
---
--- voteScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
--- voteScript = validatorToScript voteValidator
