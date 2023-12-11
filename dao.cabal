@@ -66,7 +66,6 @@ library
        , serialise
        , plutonomy
        , plutus-ledger-api
-       --, cardano-api
 
   hs-source-dirs:  dao
   ghc-options:
@@ -135,9 +134,7 @@ executable create-sc
   ghc-options:    -threaded -rtsopts -with-rtsopts=-T
   build-depends:
        , dao
-       -- , optparse-generic
        , plutus-ledger-api
-       -- , cardano-api
 
 test-suite dao-test
   import: common-lang, common-depends, common-options, common-extensions
