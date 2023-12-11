@@ -142,15 +142,15 @@ import PlutusTx.Prelude (
 
    == Trip proposal
 
-      When the 'tallyStateDatum'proposal' field of 'Dao.Types.TallyStateDatum'
+      When the 'tallyStateDatum'proposal' field of 'LambdaBuffers.ApplicationTypes.Tally.TallyStateDatum'
       is set to 'Trip', this validator performs the following checks:
 
         - The proposal has enough votes. The vote counts equal or exceed the values specified in
-          the 'dcTripRelativeMajorityPercent' and 'dcTripMajorityPercent' fields of the
-          'Dao.Types.DynamicConfigDatum'.
+          the 'tripRelativeMajorityPercent' and 'tripMajorityPercent' fields of the
+          'LambdaBuffers.ApplicationTypes.Configuration.DynamicConfigDatum'.
 
-        - The amount disbursed does not exceed the amount specified in the 'dcMaxTripDisbursement'
-          field of the 'Dao.Types.DynamicConfigDatum'.
+        - The amount disbursed does not exceed the amount specified in the 'maxTripDisbursement'
+          field of the 'DynamicConfigDatum'.
 
         - The correct amount is paid to the traveler's address, specified by the
           corresponding 'Trip' field in the 'ProposalType'. The traveler's amount should
@@ -162,31 +162,31 @@ import PlutusTx.Prelude (
 
    == General proposal
 
-      When the 'tallyStateDatum'proposal' field of 'Dao.Types.TallyStateDatum'
+      When the 'tallyStateDatum'proposal' field of 'TallyStateDatum'
       is set to 'General', this validator performs the following checks:
 
         - The proposal has enough votes. The vote counts equal or exceed the values specified in
-          the 'dcGeneralRelativeMajorityPercent' and 'dcGeneralMajorityPercent' fields of the
-          'Dao.Types.DynamicConfigDatum'.
+          the 'generalRelativeMajorityPercent' and 'generalMajorityPercent' fields of the
+          'DynamicConfigDatum'.
 
-        - The amount disbursed does not exceed the amount specified in the 'dcMaxGeneralDisbursement'
-          field of the 'Dao.Types.DynamicConfigDatum'.
+        - The amount disbursed does not exceed the amount specified in the 'maxGeneralDisbursement'
+          field of the 'DynamicConfigDatum'.
 
         - The correct amount is paid to the general payment address, specified by the
           corresponding 'General' field in the 'ProposalType'.
 
    == Upgrade proposal
 
-      When the 'tallyStateDatum'proposal' field of 'Dao.Types.TallyStateDatum'
+      When the 'tallyStateDatum'proposal' field of 'TallyStateDatum'
       is set to 'Upgrade', this validator performs the following checks:
 
         - The proposal has enough votes. The vote counts equal or exceed the values specified in
-          the 'dcUpgradeRelativeMajorityPercent' and 'dcUpgradeMajorityPercent' fields of the
-          'Dao.Types.DynamicConfigDatum'.
+          the 'upgradeRelativeMajorityPercent' and 'upgradeMajorityPercent' fields of the
+          'DynamicConfigDatum'.
 
         - That the proposal end time has passed. We do this by checking that the sum of
-          the 'tallyStateDatum'proposalEndtime' field of the 'Dao.Types.TallyStateDatum' and
-          the 'dcProposalTallyEndOffset' of the 'Dao.Types.DynamicConfigDatum' against
+          the 'tallyStateDatum'proposalEndtime' field of the 'TallyStateDatum' and
+          the 'proposalTallyEndOffset' of the 'DynamicConfigDatum' against
           the validity range of the transaction. Ensuring the sum of these values is less than the range.
 
         - That exactly one 'upgradeMinter' token was minted. The CurrencySymbol for this token

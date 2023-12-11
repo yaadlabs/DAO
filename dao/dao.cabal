@@ -44,7 +44,7 @@ library
     common-lang, common-depends, common-options, common-extensions
 
   exposed-modules:
-    Dao.ConfigurationNft.Script
+    Dao.Configuration.Script
     Dao.Index.Script
     Dao.ScriptArgument
     Dao.Shared
@@ -86,12 +86,12 @@ library dao-specs
   exposed-modules:
     Spec.Addresses
     Spec.AlwaysSucceed.Script
-    Spec.ConfigurationNft
-    Spec.ConfigurationNft.Context
-    Spec.ConfigurationNft.SampleData
-    Spec.ConfigurationNft.Script
-    Spec.ConfigurationNft.Transactions
-    Spec.ConfigurationNft.Utils
+    Spec.Configuration
+    Spec.Configuration.Context
+    Spec.Configuration.SampleData
+    Spec.Configuration.Script
+    Spec.Configuration.Transactions
+    Spec.Configuration.Utils
     Spec.Index
     Spec.Index.Context
     Spec.Index.SampleData

@@ -1,10 +1,10 @@
 {- |
-Module: Dao.ConfigurationNft.Script
+Module: Dao.Configuration.Script
 Description: Dao configuration related scripts. It includes:
   - Minting policy for Dao configuration.
   - Validator for upgrading the configuration.
 -}
-module Dao.ConfigurationNft.Script (
+module Dao.Configuration.Script (
   -- * Minting policy
   mkConfigurationNftPolicy,
 
@@ -104,7 +104,7 @@ import PlutusTx.Prelude (
     - The token name matches the `ncTokenName` field of the `NftConfig` argument.
     - Exactly one config NFT is minted with the valid token name.
     - There is exactly one output containing the NFT.
-    - This output contains a valid 'Dao.Types.DynamicConfigDatum' datum.
+    - This output contains a valid 'LambdaBuffers.ApplicationTypes.Configuration.DynamicConfigDatum' datum.
 -}
 mkConfigurationNftPolicy :: NftConfig -> BuiltinData -> ScriptContext -> Bool
 mkConfigurationNftPolicy
@@ -147,20 +147,20 @@ mkConfigurationNftPolicy _ _ _ = traceError "Wrong type of script purpose!"
 
    This validator performs the following checks:
 
-    - There is exactly one 'Dao.Tally.TallyStateDatum' in the reference inputs,
+    - There is exactly one 'LambdaBuffers.ApplicationTypes.Tally.TallyStateDatum' in the reference inputs,
       marked by the tally NFT
-      (Corresponding tally CurrencySymbol is contained in the 'dcTallyNft' field of the 'DynamicConfigDatum')
+      (Corresponding tally CurrencySymbol is contained in the 'tallyNft' field of the 'DynamicConfigDatum')
     - There is a configuration token in the inputs
-    - The proposal is an upgrade proposal (Dao.Types.ProposalType.Upgrade)
+    - The proposal is an upgrade proposal (LambdaBuffers.ApplicationTypes.Proposal.ProposalType.Upgrade)
     - That one 'Upgrade' token was minted in the transaction with the CurrencySymbol specified in
       the 'ProposalType.Upgrade'
     - That the upgrade proposal has enough votes
         We do this by checking that the number of votes recorded in the 'TallyStateDatum' via the
-        'tsFor' and 'tsAgainst' fields are greater than or equal to the required majorities specified in
-        the 'dcUpgradeRelativeMajorityPercent' and 'dcUpgradeMajorityPercent' fields of the 'DynamicConfigDatum'.
+        'For' and 'Against' fields are greater than or equal to the required majorities specified in
+        the 'upgradeRelativeMajorityPercent' and 'upgradeMajorityPercent' fields of the 'DynamicConfigDatum'.
     - That the time period for voting on the proposal has passed.
-        We do this by checking the 'tsProposalEndTime' (specified in the 'TallyStateDatum') added to the
-        'dcProposalTallyEndOffset' (specified ) against the validity range of the transaction, ensuring they
+        We do this by checking the 'proposalEndTime' (specified in the 'TallyStateDatum') added to the
+        'proposalTallyEndOffset' (specified ) against the validity range of the transaction, ensuring they
         sum to a time before the transaction's validity range.
 -}
 validateConfiguration ::

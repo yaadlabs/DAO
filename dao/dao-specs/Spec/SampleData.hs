@@ -6,12 +6,11 @@ module Spec.SampleData (
 import LambdaBuffers.ApplicationTypes.Configuration (DynamicConfigDatum (..))
 import PlutusLedgerApi.V1.Scripts (ScriptHash (ScriptHash))
 import PlutusLedgerApi.V1.Value (TokenName (TokenName), adaToken)
-import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
+import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
 import Spec.Tally.Script (tallyValidatorScriptHash)
 import Spec.Treasury.Script (treasuryValidatorScriptHash)
 import Spec.Values (dummyTallySymbol, dummyVoteFungibleSymbol)
 import Spec.Vote.Script (voteCurrencySymbol, voteValidatorScriptHash)
-import Prelude (undefined)
 
 -- DynamicConfigDatum samples
 sampleDynamicConfig :: DynamicConfigDatum

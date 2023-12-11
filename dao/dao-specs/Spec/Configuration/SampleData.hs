@@ -1,8 +1,8 @@
 {- |
-Module      : Spec.ConfigurationNft.SampleData
-Description : ConfigurationNft sample data for tests
+Module      : Spec.Configuration.SampleData
+Description : Configuration sample data for tests
 -}
-module Spec.ConfigurationNft.SampleData (
+module Spec.Configuration.SampleData (
   sampleConfigValidatorConfig,
 ) where
 

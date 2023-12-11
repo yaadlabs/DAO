@@ -117,16 +117,16 @@ import PlutusTx.Prelude (
 
    == Minting Vote Token
 
-      When the 'Dao.Vote.VoteMinterActionRedeemer' redeemer
+      When the 'LambdaBuffers.ApplicationTypes.Vote.VoteMinterActionRedeemer' redeemer
       is set to 'Mint', this policy performs the following checks:
 
-        - There is exactly one 'Dao.Types.DynamicConfigDatum' in the reference inputs,
+        - There is exactly one 'LambdaBuffers.ApplicationTypes.Configuration.DynamicConfigDatum' in the reference inputs,
           marked by the config NFT
           (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'ConfigurationValidatorConfig' argument)
         - There is exactly one 'Dao.Types.TallyStateDatum' in the reference inputs,
           marked by the Tally NFT
         - Exactly one valid Vote NFT is minted with the valid token name.
-        - The token name matches the 'dcVoteTokenName' field of the 'DynamicConfigDatum'.
+        - The token name matches the 'voteTokenName' field of the 'DynamicConfigDatum'.
         - There is exactly one output containing the vote NFT.
         - This output contains a valid 'Dao.Vote.VoteDatum' datum.
         - The proposal is still active.
@@ -136,7 +136,7 @@ import PlutusTx.Prelude (
 
    == Burning Vote Token
 
-      When the 'Dao.Vote.VoteMinterActionRedeemer' redeemer
+      When the 'LambdaBuffers.ApplicationTypes.Vote.VoteMinterActionRedeemer' redeemer
       is set to 'Burn', this policy performs the following checks:
 
         - That one vote token is burned
@@ -237,27 +237,27 @@ wrappedPolicy config x y =
 
      The validator always ensures:
 
-       - There is exactly one 'Dao.Types.DynamicConfigDatum' in the reference inputs,
+       - There is exactly one 'DynamicConfigDatum' in the reference inputs,
          marked by the config NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
          provided by the 'ConfigurationValidatorConfig' argument)
 
    == Count vote
 
-      When the 'Dao.Vote.VoteActionRedeemer' redeemer
-      is set to 'Count', this validator performs the following checks:
+      When the 'VoteActionRedeemer' redeemer is set to 'Count',
+      this validator performs the following checks:
 
         - That the tally validator is present in the inputs, the tally validator is specified
           by the 'dcTallyValidator' field of the 'DynamicConfigDatum'
 
    == Cancel vote
 
-      When the 'Dao.Vote.VoteActionRedeemer' redeemer
-      is set to 'Cancel', this validator performs the following checks:
+      When the 'VoteActionRedeemer' redeemer is set to 'Cancel',
+      this validator performs the following checks:
 
         - The transaction is signed by the vote owner, specified by the 'voteDatum'voteOwner' field
-          of the 'Dao.Vote.VoteDatum'.
+          of the 'VoteDatum'.
         - All the vote tokens are burned, checking that there are no vote tokens in the transaction outputs,
-          with the corresponding 'CurrencySymbol' specified by the 'dcVoteCurrencySymbol'
+          with the corresponding 'CurrencySymbol' specified by the 'voteCurrencySymbol'
           in the 'DynamicConfigDatum'
 -}
 validateVote ::

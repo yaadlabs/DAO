@@ -1,8 +1,8 @@
 {- |
-Module      : Spec.ConfigurationNft.Context
+Module      : Spec.Configuration.Context
 Description : Configuration policy unit tests
 -}
-module Spec.ConfigurationNft.Context (
+module Spec.Configuration.Context (
   validConfigNftTest,
   invalidConfigNftTooManyTokensMintedTest,
   invalidConfigNftNoDatumPaidToScriptTest,
@@ -31,7 +31,7 @@ import Plutus.Model.V2 (
 import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusLedgerApi.V1.Value (TokenName (TokenName), Value, singleton)
 import PlutusTx.Prelude (Bool (False, True), ($))
-import Spec.ConfigurationNft.Script (
+import Spec.Configuration.Script (
   configNftCurrencySymbol,
   configNftTypedMintingPolicy,
   upgradeConfigNftTypedValidator,

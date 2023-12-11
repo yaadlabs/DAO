@@ -29,15 +29,15 @@ import PlutusLedgerApi.V1.Scripts (ScriptHash)
 import PlutusLedgerApi.V1.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
-import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
+import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
 import Spec.SpecUtils (mkTypedValidator')
 
 -- Policy script and info
 tallyConfigNftTypedMintingPolicy :: TallyNftConfig -> TypedPolicy ()
 tallyConfigNftTypedMintingPolicy config =
-  mkTypedPolicy
-    $ $$(PlutusTx.compile [||toBuiltinPolicy . mkTallyNftMinter||])
-    `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkTypedPolicy $
+    $$(PlutusTx.compile [||toBuiltinPolicy . mkTallyNftMinter||])
+      `PlutusTx.applyCode` PlutusTx.liftCode config
 
 tallyConfigNftCurrencySymbol :: TallyNftConfig -> CurrencySymbol
 tallyConfigNftCurrencySymbol = scriptCurrencySymbol . tallyConfigNftTypedMintingPolicy

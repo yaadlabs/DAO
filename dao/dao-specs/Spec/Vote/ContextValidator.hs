@@ -40,8 +40,8 @@ import Plutus.Model.V2 (
   refInputInline,
  )
 import PlutusLedgerApi.V1.Interval (from)
-import Spec.ConfigurationNft.Transactions (runInitConfig)
-import Spec.ConfigurationNft.Utils (findConfig)
+import Spec.Configuration.Transactions (runInitConfig)
+import Spec.Configuration.Utils (findConfig)
 import Spec.SpecUtils (amountOfAda)
 import Spec.Tally.Script (tallyNftTypedValidator)
 import Spec.Tally.Transactions (

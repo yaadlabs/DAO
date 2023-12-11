@@ -12,7 +12,7 @@ where
 import Dao.Treasury.Script (treasuryValidatorCompiledCode)
 import Plutus.Model.V2 (TypedValidator, scriptHash)
 import PlutusLedgerApi.V1.Scripts (ScriptHash)
-import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
+import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
 import Spec.SpecUtils (mkTypedValidator')
 
 -- Validator script and info

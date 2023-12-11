@@ -1,8 +1,8 @@
 {- |
-Module      : Spec.ConfigurationNft
+Module      : Spec.Configuration
 Description : Tests for `configurationNftPolicy`
 -}
-module Spec.ConfigurationNft (spec) where
+module Spec.Configuration (spec) where
 
 import Control.Monad (void)
 import Plutus.Model (
@@ -11,13 +11,13 @@ import Plutus.Model (
   defaultBabbageV2,
   testNoErrors,
  )
-import Spec.ConfigurationNft.Context (
+import Spec.Configuration.Context (
   invalidConfigNftNoDatumPaidToScriptTest,
   invalidConfigNftTooManyTokensMintedTest,
   invalidConfigNftWrongTokenNameTest,
   validConfigNftTest,
  )
-import Spec.ConfigurationNft.Transactions (runInitConfig)
+import Spec.Configuration.Transactions (runInitConfig)
 import Spec.SpecUtils (checkFails)
 import Spec.Values (dummyConfigNftValue)
 import Test.Tasty (TestTree, testGroup)

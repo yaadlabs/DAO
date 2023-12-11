@@ -39,11 +39,11 @@ import Spec.AlwaysSucceed.Script (
   alwaysSucceedCurrencySymbol,
   alwaysSucceedTypedMintingPolicy,
  )
-import Spec.ConfigurationNft.Transactions (
+import Spec.Configuration.Transactions (
   runHighRelativeMajorityTotalVotesInitConfig,
   runInitConfig,
  )
-import Spec.ConfigurationNft.Utils (findConfig)
+import Spec.Configuration.Utils (findConfig)
 import Spec.SpecUtils (amountOfAda)
 import Spec.Tally.Transactions (
   runInitGeneralTallyWithEndTimeInFuture,

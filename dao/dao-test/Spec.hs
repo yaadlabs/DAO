@@ -2,7 +2,7 @@
 module Main (main) where
 
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
-import Spec.ConfigurationNft qualified as ConfigurationNft
+import Spec.Configuration qualified as Configuration
 import Spec.Index qualified as Index
 import Spec.Tally qualified as Tally
 import Spec.Treasury qualified as Treasury
@@ -20,7 +20,7 @@ main = do
     testGroup
       "Triphut"
       [ Utils.spec
-      , ConfigurationNft.spec
+      , Configuration.spec
       , Index.spec
       , Tally.spec
       , Vote.spec

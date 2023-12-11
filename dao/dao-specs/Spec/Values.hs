@@ -32,8 +32,8 @@ dummyConfigNftTokenName = TokenName "config"
 
 dummyConfigNftSymbol :: CurrencySymbol
 dummyConfigNftSymbol =
-  CurrencySymbol
-    $ getLedgerBytes "00000000000000000000000000000000000000000000000000000000"
+  CurrencySymbol $
+    getLedgerBytes "00000000000000000000000000000000000000000000000000000000"
 
 -- | Dummy Index config
 dummyIndexConfigNftValue :: Value
@@ -41,8 +41,8 @@ dummyIndexConfigNftValue = singleton dummyIndexConfigNftSymbol dummyIndexConfigN
 
 dummyIndexConfigNftSymbol :: CurrencySymbol
 dummyIndexConfigNftSymbol =
-  CurrencySymbol
-    $ getLedgerBytes "11111111111111111111111111111111111111111111111111111111"
+  CurrencySymbol $
+    getLedgerBytes "11111111111111111111111111111111111111111111111111111111"
 
 dummyIndexConfigNftTokenName :: TokenName
 dummyIndexConfigNftTokenName = TokenName "triphut_index"
@@ -56,8 +56,8 @@ dummyTallyTokenName = TokenName "0"
 
 dummyTallySymbol :: CurrencySymbol
 dummyTallySymbol =
-  CurrencySymbol
-    $ getLedgerBytes "33333333333333333333333333333333333333333333333333333333"
+  CurrencySymbol $
+    getLedgerBytes "33333333333333333333333333333333333333333333333333333333"
 
 -- | Dummy vote
 dummyVoteValue :: Value
@@ -68,8 +68,8 @@ dummyVoteTokenName = TokenName "vote"
 
 dummyVoteSymbol :: CurrencySymbol
 dummyVoteSymbol =
-  CurrencySymbol
-    $ getLedgerBytes "44444444444444444444444444444444444444444444444444444444"
+  CurrencySymbol $
+    getLedgerBytes "44444444444444444444444444444444444444444444444444444444"
 
 -- | Dummy vote fungible
 dummyVoteFungibleValue :: Value
@@ -80,8 +80,8 @@ dummyVoteFungibleToken = TokenName "vote_fungible"
 
 dummyVoteFungibleSymbol :: CurrencySymbol
 dummyVoteFungibleSymbol =
-  CurrencySymbol
-    $ getLedgerBytes "66666666666666666666666666666666666666666666666666666666"
+  CurrencySymbol $
+    getLedgerBytes "66666666666666666666666666666666666666666666666666666666"
 
 -- | Dummy treasury
 dummyTreasuryValue :: Value
@@ -92,5 +92,5 @@ dummyTreasuryTokenName = TokenName "treasury"
 
 dummyTreasurySymbol :: CurrencySymbol
 dummyTreasurySymbol =
-  CurrencySymbol
-    $ getLedgerBytes "77777777777777777777777777777777777777777777777777777777"
+  CurrencySymbol $
+    getLedgerBytes "77777777777777777777777777777777777777777777777777777777"

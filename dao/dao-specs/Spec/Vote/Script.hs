@@ -30,7 +30,7 @@ import PlutusLedgerApi.V1.Scripts (ScriptHash)
 import PlutusLedgerApi.V1.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
-import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
+import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
 import Spec.SpecUtils (mkTypedValidator')
 
 -- Policy script and info
@@ -38,9 +38,9 @@ type VoteMintingPolicy = TypedPolicy VoteMinterActionRedeemer
 
 voteTypedMintingPolicy :: ConfigurationValidatorConfig -> VoteMintingPolicy
 voteTypedMintingPolicy config =
-  mkTypedPolicy
-    $ $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
-    `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkTypedPolicy $
+    $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
+      `PlutusTx.applyCode` PlutusTx.liftCode config
 
 voteCurrencySymbol :: ConfigurationValidatorConfig -> CurrencySymbol
 voteCurrencySymbol = scriptCurrencySymbol . voteTypedMintingPolicy

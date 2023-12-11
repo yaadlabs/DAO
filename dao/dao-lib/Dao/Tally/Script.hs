@@ -285,15 +285,15 @@ valuePaidTo' outs addr = go mempty outs
 
   This validator performs the following checks:
 
-    - There is exactly one 'Dao.Tally.DynamicConfigDatum' in the reference inputs,
+    - There is exactly one 'LambdaBuffers.ApplicationTypes.Configuration.DynamicConfigDatum' in the reference inputs,
       marked by the tally NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
       provided by the 'ConfigurationValidatorConfig' argument)
 
     - That the tally NFT remains at the validator (the 'newValueIsAtleastAsBigAsOldValue' check)
 
-    - There is exactly one 'Dao.Tally.TallyStateDatum' in the outputs.
+    - There is exactly one 'LambdaBuffers.ApplicationTypes.Tally.TallyStateDatum' in the outputs.
 
-    - This 'Dao.Tally.TallyStateDatum' in the outputs has been updated accordingly.
+    - This 'TallyStateDatum' in the outputs has been updated accordingly.
       We check this by ensuring the the new votes have been added to the 'tallyStateDatum'for' and 'tallyStateDatum'against'
       vote count fields of the new tally datum at the output.
 

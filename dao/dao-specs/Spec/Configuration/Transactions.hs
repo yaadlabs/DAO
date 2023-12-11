@@ -1,10 +1,10 @@
-module Spec.ConfigurationNft.Transactions (
+module Spec.Configuration.Transactions (
   runInitConfig,
   runHighRelativeMajorityTotalVotesInitConfig,
 ) where
 
 import Plutus.Model (Run)
-import Spec.ConfigurationNft.Script (upgradeConfigNftTypedValidator)
+import Spec.Configuration.Script (upgradeConfigNftTypedValidator)
 import Spec.SampleData (
   sampleDynamicConfig,
   sampleHighRelativeMajorityHighTotalVotesDynamicConfig,

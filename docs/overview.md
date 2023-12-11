@@ -10,7 +10,7 @@ The project is structured in the following manner:
 
 `dao/dao-test` imports all the tests from the `dao/dao-specs` directory and runs them using the `tasty` testing library.
 
-`dao/dao-lib` contains the core of the application, including the DAO validator and minting policy scripts, as well as utility functions shared across the modules. The scripts are contained in the following modules - `Dao.ConfigurationNft.Script`, `Dao.Vote.Script`, `Dao.Treasury.Script`, `Dao.Tally.Script`, `Dao.Index.Script`.
+`dao/dao-lib` contains the core of the application, including the DAO validator and minting policy scripts, as well as utility functions shared across the modules. The scripts are contained in the following modules - `Dao.Configuration.Script`, `Dao.Vote.Script`, `Dao.Treasury.Script`, `Dao.Tally.Script`, `Dao.Index.Script`.
 
 The application's types are contained in the `types` directory. The use of the `Lambda Buffers` library for representing these types allows us to circumvent some of the common issues, such as encoding errors, encountered when sharing types between the on-chain and the off-chain.
 
@@ -18,11 +18,11 @@ The application's types are contained in the `types` directory. The use of the `
 
 The scripts are made up of a number of minting policies and validators contained in the modules referenced above. We have added detailed haddock-style comments to each of the scripts contained within the `dao` directory, which we will also cover here.
 
-## Dao.ConfigurationNft.Script
+## Dao.Configuration.Script
 
-In the `Dao.ConfigurationNft.Script` module we have two scripts, a minting policy and a validator, which we will outline below.
+In the `Dao.Configuration.Script` module we have two scripts, a minting policy and a validator, which we will outline below.
 
-The `Dao.ConfigurationNft.Script.mkConfigurationNftPolicy` is a one-shot minting policy script used for minting the NFT which marks the UTXO containing the `LambdaBuffers.ApplicationTypes.DynamicConfigDatum`. This configuration datum includes a number of fields for choosing how the application will function, we will reference it again in the section on the application's types below.
+The `Dao.Configuration.Script.mkConfigurationNftPolicy` is a one-shot minting policy script used for minting the NFT which marks the UTXO containing the `LambdaBuffers.ApplicationTypes.DynamicConfigDatum`. This configuration datum includes a number of fields for choosing how the application will function, we will reference it again in the section on the application's types below.
 
 The `mkConfigurationNftPolicy` script performs the following validation checks:
 
@@ -33,9 +33,9 @@ The `mkConfigurationNftPolicy` script performs the following validation checks:
   - There is exactly one output containing the NFT.
   - This output contains a valid `LambdaBuffers.ApplicationTypes.DynamicConfigDatum` datum.
 
-The tests for this policy can be found in the `Spec.ConfigurationNft.Context` module. 
+The tests for this policy can be found in the `Spec.Configuration.Context` module. 
 
-The other script contained in this module is the validator script `Dao.ConfigurationNft.Script.validateConfiguration`. As you can see in the tests for the `mkConfigurationNftPolicy` policy script we pay the configuration NFT with the `DynamicConfigDatum` to the `validateConfiguration` script, which we refer to in the tests as the `upgradeConfigNftTypedValidavtor`, as this is the validator envoked when a transaction wishes to upgrade the configuration. This action can only occur when the type of the proposal is an `Upgrade` proposal.
+The other script contained in this module is the validator script `Dao.Configuration.Script.validateConfiguration`. As you can see in the tests for the `mkConfigurationNftPolicy` policy script we pay the configuration NFT with the `DynamicConfigDatum` to the `validateConfiguration` script, which we refer to in the tests as the `upgradeConfigNftTypedValidavtor`, as this is the validator envoked when a transaction wishes to upgrade the configuration. This action can only occur when the type of the proposal is an `Upgrade` proposal.
 
 The `validateConfiguration` script performs the following validation checks:
 
