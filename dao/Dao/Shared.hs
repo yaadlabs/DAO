@@ -5,9 +5,6 @@ Description: Contains helper functions used across the other modules.
 module Dao.Shared (
   WrappedMintingPolicyType,
   hasTokenInValueNoErrors,
-  -- validatorToScript,
-  -- policyToScript,
-  -- mkValidatorWithSettings,
   wrapValidate,
   hasBurnedTokens,
   hasTokenInValue,
@@ -20,49 +17,19 @@ module Dao.Shared (
   integerToByteString,
   isScriptCredential,
   lovelacesOf,
-  -- mintingPolicyHash,
-  -- plutonomyMintingPolicyHash,
-  -- validatorHash,
 ) where
 
--- import Cardano.Api.Shelley (PlutusScript (PlutusScriptSerialised), PlutusScriptV2)
--- import Cardano.Api.Shelley qualified as Shelly
-import Codec.Serialise (serialise)
-
-import Data.ByteString.Lazy qualified as BSL
-import Data.ByteString.Short qualified as BSS
-
---
-import Plutonomy qualified
-import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
-
--- import Plutus.V1.Ledger.Scripts (
---   Datum (Datum),
---   DatumHash,
---   MintingPolicy,
---   MintingPolicyHash (MintingPolicyHash),
---   Script,
---   ScriptHash (ScriptHash),
---   Validator (Validator),
---   ValidatorHash (ValidatorHash),
---   getMintingPolicy,
---   getScriptHash,
---   getValidator,
---   unMintingPolicyScript,
---  )
-
 import PlutusLedgerApi.V1 (CurrencySymbol)
+import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
 import PlutusLedgerApi.V1.Value (TokenName, Value (Value, getValue), adaSymbol, adaToken)
 import PlutusLedgerApi.V2 (
   Datum (Datum),
   DatumHash,
   OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash),
  )
-
 import PlutusTx (UnsafeFromData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as Map
-import PlutusTx.Code (CompiledCode)
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinByteString,
@@ -76,7 +43,6 @@ import PlutusTx.Prelude (
   isJust,
   modulo,
   otherwise,
-  toBuiltin,
   traceError,
   traceIfFalse,
   ($),
@@ -217,91 +183,3 @@ wrapValidate validate config x y z =
         (unsafeFromBuiltinData y)
         (unsafeFromBuiltinData z)
     )
-
-{- | Make Validator with given Plutonomy optimisations
-mkValidatorWithSettings ::
-  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ()) ->
-  Bool ->
-  Validator
-mkValidatorWithSettings
-  compiledCode
-  setFloatOutputLambda =
-    let
-      optimizerSettings =
-        Plutonomy.defaultOptimizerOptions
-          { Plutonomy.ooSplitDelay = False
-          , Plutonomy.ooFloatOutLambda = setFloatOutputLambda
-          }
-     in
-      Plutonomy.optimizeUPLCWith optimizerSettings
-        $ Plutonomy.validatorToPlutus
-        $ Plutonomy.validatorToRaw
-        $ Plutonomy.mkValidatorScript compiledCode
--}
-
-{- | Convert validator with a config to Plutus script
-validatorToScript :: (config -> Validator) -> config -> PlutusScript PlutusScriptV2
-validatorToScript f config =
-  PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . serialise
-    $ f config
--}
-
-{- | Convert policy with a config to Plutus script
-policyToScript :: (config -> MintingPolicy) -> config -> PlutusScript PlutusScriptV2
-policyToScript f =
-  PlutusScriptSerialised
-    . BSS.toShort
-    . BSL.toStrict
-    . serialise
-    . Validator
-    . unMintingPolicyScript
-    . f
--}
-
--- toCardanoApiScript :: Script -> Shelly.Script Shelly.PlutusScriptV2
--- toCardanoApiScript =
---   Shelly.PlutusScript Shelly.PlutusScriptV2
---     . Shelly.PlutusScriptSerialised
---     . BSS.toShort
---     . BSL.toStrict
---     . serialise
---
--- scriptHash :: Script -> ScriptHash
--- scriptHash =
---   ScriptHash
---     . toBuiltin
---     . Shelly.serialiseToRawBytes
---     . Shelly.hashScript
---     . toCardanoApiScript
---
--- mintingPolicyHash :: MintingPolicy -> MintingPolicyHash
--- mintingPolicyHash =
---   MintingPolicyHash
---     . getScriptHash
---     . scriptHash
---     . getValidator
---     . Validator
---     . getMintingPolicy
---
--- plutonomyMintingPolicyHash :: MintingPolicy -> MintingPolicyHash
--- plutonomyMintingPolicyHash =
---   let
---     optimizerSettings =
---       Plutonomy.defaultOptimizerOptions
---         { Plutonomy.ooSplitDelay = False
---         , Plutonomy.ooFloatOutLambda = False
---         }
---    in
---     MintingPolicyHash
---       . getScriptHash
---       . scriptHash
---       . getValidator
---       . Plutonomy.optimizeUPLCWith optimizerSettings
---       . Validator
---       . getMintingPolicy
---
--- validatorHash :: Validator -> ValidatorHash
--- validatorHash = ValidatorHash . getScriptHash . scriptHash . getValidator

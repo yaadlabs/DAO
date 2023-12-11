@@ -7,12 +7,8 @@ module Dao.Treasury.Script (
   -- * Validator
   validateTreasury,
   treasuryValidatorCompiledCode,
-  -- treasuryScript,
-  -- treasuryValidator,
-  -- treasuryValidatorHash,
 ) where
 
--- import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
 import Dao.ConfigurationNft (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
@@ -27,9 +23,6 @@ import Dao.Shared (
   hasTokenInValue,
   isScriptCredential,
   lovelacesOf,
-  -- mkValidatorWithSettings,
-  -- validatorHash,
-  -- validatorToScript,
   wrapValidate,
  )
 import Dao.Types (
@@ -92,8 +85,6 @@ import PlutusLedgerApi.V2.Contexts (
   ),
   TxOutRef,
  )
-
--- import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (
   CompiledCode,
   applyCode,
@@ -374,17 +365,8 @@ onlyOneOfThisScript ins vh expectedRef = go ins
             _ -> go xs
           else go xs
 
--- treasuryValidator :: ConfigurationValidatorConfig -> Validator
--- treasuryValidator config = mkValidatorWithSettings treasuryValidatorCompiledCode False
-
 treasuryValidatorCompiledCode ::
   ConfigurationValidatorConfig ->
   CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 treasuryValidatorCompiledCode config =
   $$(PlutusTx.compile [||wrapValidate validateTreasury||]) `applyCode` liftCode config
-
--- treasuryValidatorHash :: ConfigurationValidatorConfig -> ScriptHash
--- treasuryValidatorHash = validatorHash . treasuryValidator
---
--- treasuryScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
--- treasuryScript = validatorToScript treasuryValidator

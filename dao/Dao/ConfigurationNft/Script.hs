@@ -7,15 +7,10 @@ Description: Dao configuration related scripts. It includes:
 module Dao.ConfigurationNft.Script (
   -- * Minting policy
   mkConfigurationNftPolicy,
-  -- configurationNftMintingPolicy,
-  -- configurationNftCurrencySymbol,
 
   -- * Validator
   validateConfiguration,
   configurationValidatorCompiledCode,
-  -- configurationScript,
-  -- configurationValidator,
-  -- configurationValidatorHash,
 ) where
 
 import Dao.ConfigurationNft (
@@ -26,21 +21,13 @@ import Dao.ConfigurationNft (
   ),
   NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
  )
-
--- import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
 import Dao.Shared (
-  WrappedMintingPolicyType,
   convertDatum,
   hasOneOfToken,
   hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
   hasTokenInValueNoErrors,
-  -- mintingPolicyHash,
-  -- mkValidatorWithSettings,
-  -- policyToScript,
-  -- validatorHash,
-  -- validatorToScript,
   wrapValidate,
  )
 import Dao.Types (
@@ -56,18 +43,8 @@ import Dao.Types (
   TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
 import PlutusLedgerApi.V1.Interval (before)
-
--- import Plutus.V1.Ledger.Scripts (
---   MintingPolicy,
---   Validator,
---   ValidatorHash,
---   mkMintingPolicyScript,
---  )
 import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
-import PlutusLedgerApi.V1.Value (
-  Value,
-  -- mpsSymbol,
- )
+import PlutusLedgerApi.V1.Value (Value)
 import PlutusLedgerApi.V2 (CurrencySymbol)
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
@@ -92,19 +69,16 @@ import PlutusTx (
   applyCode,
   compile,
   liftCode,
-  unsafeFromBuiltinData,
  )
 import PlutusTx.Prelude (
-  Bool (True),
+  Bool,
   BuiltinData,
   Integer,
   any,
-  check,
   divide,
   filter,
   traceError,
   traceIfFalse,
-  ($),
   (&&),
   (*),
   (+),
@@ -160,43 +134,6 @@ mkConfigurationNftPolicy
       traceIfFalse "Referenced UTXO should be spent" hasUTxO
         && traceIfFalse "Exactly one valid token should be minted" onlyOneTokenMinted
 mkConfigurationNftPolicy _ _ _ = traceError "Wrong type of script purpose!"
-
-{- | The `configurationNftMintingPolicy` script built from `mkConfigurationNftPolicy`
- Takes an `NftConfig` as its argument
--}
-
--- configurationNftMintingPolicy :: NftConfig -> PlutusScript PlutusScriptV2
--- configurationNftMintingPolicy = policyToScript policy
-
-{- | Currency symbol for the `configurationNftMintingPolicy` script
- Takes an `NftConfig` as its argument
--}
-
--- configurationNftCurrencySymbol :: NftConfig -> CurrencySymbol
--- configurationNftCurrencySymbol = mpsSymbol . mintingPolicyHash . policy
---
--- -- Build the policy
--- policy :: NftConfig -> MintingPolicy
--- policy cfg =
---   mkMintingPolicyScript
---     $ $$(compile [||\c -> wrappedPolicy c||])
---     `PlutusTx.applyCode` PlutusTx.liftCode cfg
---
--- wrappedPolicy :: NftConfig -> WrappedMintingPolicyType
--- wrappedPolicy config a b = check (mkConfigurationNftPolicy config a (unsafeFromBuiltinData b))
-
--------------------------------------------------------------------------------
--- Validator
--- The validator makes sure the config cannot be changed unless an upgrade
--- request is present
--- The idea is that
--- I need to get a reference to a tally nft
--- That includes datum that has a reference utxo
--- That Utxo includes an upgrade proposal
--- The upgrade proposal has a datum that includes a minter
--- That if everything is good unlocks the treasury
--- and makes sure a token is minted to validate the upgrade
--------------------------------------------------------------------------------
 
 {- | Validator for proposal upgrades.
 
@@ -300,15 +237,6 @@ configurationValidatorCompiledCode config =
 
 wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
 wrapValidateConfiguration = wrapValidate validateConfiguration
-
--- configurationValidator :: ConfigurationValidatorConfig -> Validator
--- configurationValidator config = mkValidatorWithSettings conifgurationCompiledCode True
-
--- configurationValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
--- configurationValidatorHash = validatorHash . configurationValidator
-
--- configurationScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
--- configurationScript = validatorToScript configurationValidator
 
 ownValue :: [TxInInfo] -> TxOutRef -> Value
 ownValue ins txOutRef = go ins
