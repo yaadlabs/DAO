@@ -52,31 +52,6 @@ import Dao.Tally (
     tncIndexNftPolicyId,
     tncIndexNftTokenName
   ),
-  TallyScriptContext (
-    TallyScriptContext,
-    tScriptContextPurpose,
-    tScriptContextTxInfo
-  ),
-  TallyScriptPurpose (TallySpend),
-  TallyTxInInfo (
-    TallyTxInInfo,
-    tTxInInfoOutRef,
-    tTxInInfoResolved
-  ),
-  TallyTxInfo (
-    TallyTxInfo,
-    tTxInfoData,
-    tTxInfoInputs,
-    tTxInfoOutputs,
-    tTxInfoReferenceInputs,
-    tTxInfoValidRange
-  ),
-  TallyTxOut (
-    TallyTxOut,
-    tTxOutAddress,
-    tTxOutDatum,
-    tTxOutValue
-  ),
   TallyValidatorConfig (
     TallyValidatorConfig,
     tvcConfigNftCurrencySymbol,
@@ -112,15 +87,16 @@ import Plutus.V1.Ledger.Value (
  )
 import Plutus.V2.Ledger.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
-  ScriptPurpose (Minting),
-  TxInInfo (TxInInfo, txInInfoResolved),
+  ScriptPurpose (Minting, Spending),
+  TxInInfo (TxInInfo, txInInfoOutRef, txInInfoResolved),
   TxInfo (
     TxInfo,
     txInfoData,
     txInfoInputs,
     txInfoMint,
     txInfoOutputs,
-    txInfoReferenceInputs
+    txInfoReferenceInputs,
+    txInfoValidRange
   ),
  )
 import Plutus.V2.Ledger.Tx (
@@ -269,19 +245,19 @@ tallyNftMinter :: TallyNftConfig -> PlutusScript PlutusScriptV2
 tallyNftMinter = policyToScript tallyNftPolicy
 
 -- | Validator
-ownValueAndValidator :: [TallyTxInInfo] -> TxOutRef -> (Value, ValidatorHash)
+ownValueAndValidator :: [TxInInfo] -> TxOutRef -> (Value, ValidatorHash)
 ownValueAndValidator ins txOutRef = go ins
   where
     go = \case
       [] -> traceError "The impossible happened"
-      TallyTxInInfo {tTxInInfoOutRef, tTxInInfoResolved = TallyTxOut {tTxOutAddress = Address {..}, ..}} : xs ->
-        if tTxInInfoOutRef == txOutRef
+      TxInInfo {txInInfoOutRef, txInInfoResolved = TxOut {txOutAddress = Address {..}, ..}} : xs ->
+        if txInInfoOutRef == txOutRef
           then case addressCredential of
-            ScriptCredential vh -> (tTxOutValue, vh)
+            ScriptCredential vh -> (txOutValue, vh)
             _ -> traceError "Impossible. Expected ScriptCredential"
           else go xs
 
-hasExpectedScripts :: [TallyTxInInfo] -> ValidatorHash -> ValidatorHash -> Bool
+hasExpectedScripts :: [TxInInfo] -> ValidatorHash -> ValidatorHash -> Bool
 hasExpectedScripts theInputs theTallyValidator voteValidator =
   let
     tallyCredential :: Credential
@@ -294,7 +270,7 @@ hasExpectedScripts theInputs theTallyValidator voteValidator =
     inputCredentials =
       filter
         isScriptCredential
-        (map (addressCredential . tTxOutAddress . tTxInInfoResolved) theInputs)
+        (map (addressCredential . txOutAddress . txInInfoResolved) theInputs)
 
     onlyTallyOrVote :: Bool
     onlyTallyOrVote =
@@ -316,12 +292,12 @@ mergePayouts :: Address -> Value -> Map Address Value -> Map Address Value
 mergePayouts = mapInsertWith (<>)
 
 -- Optimize this to accum a value
-valuePaidTo' :: [TallyTxOut] -> Address -> Value
+valuePaidTo' :: [TxOut] -> Address -> Value
 valuePaidTo' outs addr = go mempty outs
   where
     go acc [] = acc
-    go acc (TallyTxOut {tTxOutAddress, tTxOutValue} : xs)
-      | addr == tTxOutAddress = go (acc <> tTxOutValue) xs
+    go acc (TxOut {txOutAddress, txOutValue} : xs)
+      | addr == txOutAddress = go (acc <> txOutValue) xs
       | otherwise = go acc xs
 
 {- | Validator for tallying.
@@ -349,15 +325,15 @@ validateTally ::
   TallyValidatorConfig ->
   TallyStateDatum ->
   BuiltinData ->
-  TallyScriptContext ->
+  ScriptContext ->
   Bool
 validateTally
   TallyValidatorConfig {..}
   ts@TallyStateDatum {tsFor = oldFor, tsAgainst = oldAgainst, tsProposalEndTime}
   _
-  TallyScriptContext
-    { tScriptContextTxInfo = TallyTxInfo {..}
-    , tScriptContextPurpose = TallySpend thisOutRef
+  ScriptContext
+    { scriptContextTxInfo = TxInfo {..}
+    , scriptContextPurpose = Spending thisOutRef
     } =
     let
       -- Helper for filtering for config UTXO in the reference inputs
@@ -366,15 +342,15 @@ validateTally
 
       -- Get the 'TallyDynamicConfig' from the reference inputs
       TallyDynamicConfigDatum {..} =
-        case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
-          [TallyTxInInfo {tTxInInfoResolved = TallyTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
+        case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
+          [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Should be exactly one tally NFT in the reference inputs"
 
-      (!oldValue, !thisValidatorHash) :: (Value, ValidatorHash) = ownValueAndValidator tTxInfoInputs thisOutRef
+      (!oldValue, !thisValidatorHash) :: (Value, ValidatorHash) = ownValueAndValidator txInfoInputs thisOutRef
 
       -- Make sure there is only one tally and many votes
       expectedScripts :: Bool
-      !expectedScripts = hasExpectedScripts tTxInfoInputs thisValidatorHash tdcVoteValidator
+      !expectedScripts = hasExpectedScripts txInfoInputs thisValidatorHash tdcVoteValidator
 
       hasVoteToken :: Value -> Maybe Value
       hasVoteToken (Value v) =
@@ -391,16 +367,16 @@ validateTally
 
       -- Helper for loop that counts the votes
       stepVotes ::
-        TallyTxInInfo ->
+        TxInInfo ->
         (Integer, Integer, Map Address Value) ->
         (Integer, Integer, Map Address Value)
       stepVotes
-        TallyTxInInfo {tTxInInfoResolved = TallyTxOut {..}}
+        TxInInfo {txInInfoResolved = TxOut {..}}
         oldAcc@(oldForCount, oldAgainstCount, oldPayoutMap) =
-          case (hasVoteToken tTxOutValue, hasVoteWitness tTxOutValue) of
+          case (hasVoteToken txOutValue, hasVoteWitness txOutValue) of
             (Just voteNft, True) ->
               let
-                VoteDatum {..} = convertDatum tTxInfoData tTxOutDatum
+                VoteDatum {..} = convertDatum txInfoData txOutDatum
 
                 -- Count all the dcVoteFungibleCurrencySymbol
                 -- with dcVoteFungibleTokenName tokens on the vote utxo
@@ -409,7 +385,7 @@ validateTally
                   countOfTokenInValue
                     tdcVoteFungibleCurrencySymbol
                     tdcVoteFungibleTokenName
-                    tTxOutValue
+                    txOutValue
 
                 -- Calculate fungible votes using the dcFungibleVotePercent
                 fungibleVotes :: Integer
@@ -454,28 +430,28 @@ validateTally
       -- Make sure the votes are for the right proposal
       -- Make sure the votes have the vote witness
       (!forCount, !againstCount, !payoutMap) :: (Integer, Integer, Map Address Value) =
-        foldr stepVotes (0, 0, M.empty) tTxInfoInputs
+        foldr stepVotes (0, 0, M.empty) txInfoInputs
 
       -- Helper for ensuring the vote NFT and ada are returned to the owner
-      addressedIsPaid :: [TallyTxOut] -> (Address, Value) -> Bool
+      addressedIsPaid :: [TxOut] -> (Address, Value) -> Bool
       addressedIsPaid outputs (addr, value) = valuePaidTo' outputs addr `geq` value
 
       voteNftAndAdaToVoters :: Bool
-      !voteNftAndAdaToVoters = all (addressedIsPaid tTxInfoOutputs) (M.toList payoutMap)
+      !voteNftAndAdaToVoters = all (addressedIsPaid txInfoOutputs) (M.toList payoutMap)
 
       tallyingIsInactive :: Bool
-      !tallyingIsInactive = tsProposalEndTime `before` tTxInfoValidRange
+      !tallyingIsInactive = tsProposalEndTime `before` txInfoValidRange
 
       voteTokenAreAllBurned :: Bool
-      !voteTokenAreAllBurned = not $ any (hasVoteWitness . tTxOutValue) tTxInfoOutputs
+      !voteTokenAreAllBurned = not $ any (hasVoteWitness . txOutValue) txInfoOutputs
 
       (!newValue, !newDatum) :: (Value, TallyStateDatum) =
         case filter
-          ( \TallyTxOut {tTxOutAddress = Address {..}} ->
+          ( \TxOut {txOutAddress = Address {..}} ->
               addressCredential == ScriptCredential thisValidatorHash
           )
-          tTxInfoOutputs of
-          [TallyTxOut {..}] -> (tTxOutValue, convertDatum tTxInfoData tTxOutDatum)
+          txInfoOutputs of
+          [TxOut {..}] -> (txOutValue, convertDatum txInfoData txOutDatum)
           _ -> traceError "Wrong number of continuing outputs"
 
       -- Ensure the tally NFT remains at the validator
@@ -497,6 +473,7 @@ validateTally
         && traceIfFalse "Not all vote tokens are burned" voteTokenAreAllBurned
         && traceIfFalse "Tally datum is not updated" tallyDatumIsUpdated
         && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
+validateTally _ _ _ _ = traceError "Wrong script purpose"
 
 tallyValidator :: TallyValidatorConfig -> Validator
 tallyValidator config = mkValidatorWithSettings compiledCode False

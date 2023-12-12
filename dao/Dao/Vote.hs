@@ -18,33 +18,13 @@ module Dao.Vote (
   -- * Script arguments, containing relevant CurrenySymbol and TokenName
   VoteMinterConfig (..),
   VoteValidatorConfig (..),
-  -- Script context related types
-  VoteScriptContext (..),
-  VoteTxOut (..),
-  VoteTxInInfo (..),
-  VoteTxInfo (..),
-  VoteMinterTxOut (..),
-  VoteMinterTxInfo (..),
-  VoteMinterTxInInfo (..),
-  VoteMinterScriptContext (..),
-  VoteMinterScriptPurpose (..),
-  VoteAddress (..),
-  VoteMinterAddress (..),
 ) where
 
 import Plutus.V1.Ledger.Address (Address)
 import Plutus.V1.Ledger.Credential (Credential)
-import Plutus.V1.Ledger.Scripts (
-  Datum,
-  DatumHash,
-  ValidatorHash,
- )
-import Plutus.V1.Ledger.Value (
-  CurrencySymbol,
-  TokenName,
-  Value,
- )
-import Plutus.V2.Ledger.Tx hiding (Mint)
+import Plutus.V1.Ledger.Scripts (Datum, DatumHash, ValidatorHash)
+import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value)
+import Plutus.V2.Ledger.Tx (OutputDatum, TxOutRef)
 import PlutusTx (makeLift, unstableMakeIsData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (
@@ -162,7 +142,7 @@ data VoteMinterDynamicConfigDatum = VoteMinterDynamicConfigDatum
 data VoteDynamicConfigDatum = VoteDynamicConfigDatum
   { vdcTallyIndexNft :: BuiltinData
   , vdcTallyNft :: BuiltinData
-  , vdcTallyValidator :: BuiltinData
+  , vdcTallyValidator :: ValidatorHash
   , vdcTreasuryValidator :: BuiltinData
   , vdcConfigurationValidator :: BuiltinData
   , vdcVoteCurrencySymbol :: BuiltinData
@@ -185,14 +165,9 @@ data VoteDynamicConfigDatum = VoteDynamicConfigDatum
   , vdcFungibleVotePercent :: BuiltinData
   }
 
-unstableMakeIsData ''VoteMinterAddress
-unstableMakeIsData ''VoteMinterTxOut
-unstableMakeIsData ''VoteMinterTxInInfo
-unstableMakeIsData ''VoteMinterScriptPurpose
-unstableMakeIsData ''VoteMinterScriptContext
-unstableMakeIsData ''VoteMinterTxInfo
 unstableMakeIsData ''VoteMinterDynamicConfigDatum
 
+-- | Redeemer for 'Dao.Vote.Script.validateVote' validator
 data VoteAddress = VoteAddress
   { vAddressCredential :: Credential
   , vAddressStakingCredential :: BuiltinData
@@ -240,11 +215,6 @@ data VoteValidatorConfig = VoteValidatorConfig
   , vvcConfigNftTokenName :: TokenName
   }
 
-unstableMakeIsData ''VoteAddress
-unstableMakeIsData ''VoteTxOut
-unstableMakeIsData ''VoteTxInInfo
-unstableMakeIsData ''VoteScriptContext
-unstableMakeIsData ''VoteTxInfo
 unstableMakeIsData ''VoteActionRedeemer
 unstableMakeIsData ''VoteDynamicConfigDatum
 makeLift ''VoteValidatorConfig

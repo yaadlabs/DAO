@@ -24,33 +24,6 @@ import Dao.Shared (
   wrapValidate,
  )
 import Dao.Treasury (
-  Treasury,
-  TreasuryScriptContext (
-    TreasuryScriptContext,
-    tScriptContextPurpose,
-    tScriptContextTxInfo
-  ),
-  TreasuryScriptPurpose (TreasurySpend),
-  TreasuryTxInInfo (
-    TreasuryTxInInfo,
-    tTxInInfoOutRef,
-    tTxInInfoResolved
-  ),
-  TreasuryTxInfo (
-    TreasuryTxInfo,
-    tTxInfoData,
-    tTxInfoInputs,
-    tTxInfoMint,
-    tTxInfoOutputs,
-    tTxInfoReferenceInputs,
-    tTxInfoValidRange
-  ),
-  TreasuryTxOut (
-    TreasuryTxOut,
-    tTxOutAddress,
-    tTxOutDatum,
-    tTxOutValue
-  ),
   TreasuryValidatorConfig (
     TreasuryValidatorConfig,
     tvcConfigNftCurrencySymbol,
@@ -87,6 +60,34 @@ import Plutus.V1.Ledger.Value (
   adaToken,
   geq,
   singleton,
+ )
+import Plutus.V2.Ledger.Contexts (
+  ScriptContext (
+    ScriptContext,
+    scriptContextPurpose,
+    scriptContextTxInfo
+  ),
+  ScriptPurpose (Spending),
+  TxInInfo (
+    TxInInfo,
+    txInInfoOutRef,
+    txInInfoResolved
+  ),
+  TxInfo (
+    TxInfo,
+    txInfoData,
+    txInfoInputs,
+    txInfoMint,
+    txInfoOutputs,
+    txInfoReferenceInputs,
+    txInfoValidRange
+  ),
+  TxOut (
+    TxOut,
+    txOutAddress,
+    txOutDatum,
+    txOutValue
+  ),
  )
 import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (
@@ -183,21 +184,21 @@ import PlutusTx.Prelude (
 -}
 validateTreasury ::
   TreasuryValidatorConfig ->
-  Treasury ->
   BuiltinData ->
-  TreasuryScriptContext ->
+  BuiltinData ->
+  ScriptContext ->
   Bool
 validateTreasury
   TreasuryValidatorConfig {..}
   _treasury
   _action
-  TreasuryScriptContext
-    { tScriptContextTxInfo = TreasuryTxInfo {..}
-    , tScriptContextPurpose = TreasurySpend thisTxRef
+  ScriptContext
+    { scriptContextTxInfo = TxInfo {..}
+    , scriptContextPurpose = Spending thisTxRef
     } =
     let
       -- Check that there is only one of this script in the inputs
-      (!inputValue, !thisValidator) :: (Value, ValidatorHash) = ownValueAndValidator tTxInfoInputs thisTxRef
+      (!inputValue, !thisValidator) :: (Value, ValidatorHash) = ownValueAndValidator txInfoInputs thisTxRef
 
       -- Helper for filtering for config UTXO
       hasConfigurationNft :: Value -> Bool
@@ -205,8 +206,8 @@ validateTreasury
 
       -- Get the DynamicConfigDatum from the reference inputs, should be exactly one
       DynamicConfigDatum {..} =
-        case filter (hasConfigurationNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
-          [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
+        case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
+          [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Should be exactly one config in the reference inputs"
 
       -- Helper for filtering for tally UTXO
@@ -215,9 +216,9 @@ validateTreasury
 
       -- Get the TallyStateDatum from the reference inputs, should be exactly one
       TallyStateDatum {..} =
-        case filter (hasTallyNft . tTxOutValue . tTxInInfoResolved) tTxInfoReferenceInputs of
+        case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [] -> traceError "Missing tally NFT"
-          [TreasuryTxInInfo {tTxInInfoResolved = TreasuryTxOut {..}}] -> convertDatum tTxInfoData tTxOutDatum
+          [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Too many tally NFT values"
 
       -- Calculate the values needed for the corresponding checks
@@ -232,9 +233,9 @@ validateTreasury
 
       isAfterTallyEndTime :: Bool
       !isAfterTallyEndTime =
-        (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` tTxInfoValidRange
+        (tsProposalEndTime + POSIXTime dcProposalTallyEndOffset) `before` txInfoValidRange
      in
-      onlyOneOfThisScript tTxInfoInputs thisValidator thisTxRef
+      onlyOneOfThisScript txInfoInputs thisValidator thisTxRef
         && case tsProposal of
           Trip travelAgentAddress travelerAddress totalTravelCost ->
             let
@@ -256,8 +257,8 @@ validateTreasury
               -- Make sure the disbursed amount is less than the max
               -- Find the total value returned to the script address
               outputValue :: Value
-              !outputValue = case getContinuingOutputs' thisValidator tTxInfoOutputs of
-                [TreasuryTxOut {..}] -> tTxOutValue
+              !outputValue = case getContinuingOutputs' thisValidator txInfoOutputs of
+                [TxOut {..}] -> txOutValue
                 _ -> traceError "Should be exactly one continuing treasury output"
 
               outputValueIsLargeEnough :: Bool
@@ -266,11 +267,11 @@ validateTreasury
               -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
               paidToTravelAgentAddress :: Bool
               !paidToTravelAgentAddress =
-                lovelacesOf (valuePaidTo' tTxInfoOutputs travelAgentAddress) >= travelAgentLovelaces
+                lovelacesOf (valuePaidTo' txInfoOutputs travelAgentAddress) >= travelAgentLovelaces
 
               paidToTravelerAddress :: Bool
               !paidToTravelerAddress =
-                lovelacesOf (valuePaidTo' tTxInfoOutputs travelerAddress) >= travelerLovelaces
+                lovelacesOf (valuePaidTo' txInfoOutputs travelerAddress) >= travelerLovelaces
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
@@ -290,8 +291,8 @@ validateTreasury
               -- Make sure the disbursed amount is less than the max
               -- Find the total value returned to the script address
               outputValue :: Value
-              !outputValue = case getContinuingOutputs' thisValidator tTxInfoOutputs of
-                [TreasuryTxOut {..}] -> tTxOutValue
+              !outputValue = case getContinuingOutputs' thisValidator txInfoOutputs of
+                [TxOut {..}] -> txOutValue
                 _ -> traceError "expected exactly one continuing output"
 
               outputValueIsLargeEnough :: Bool
@@ -300,7 +301,7 @@ validateTreasury
               -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
               paidToAddress :: Bool
               !paidToAddress =
-                lovelacesOf (valuePaidTo' tTxInfoOutputs generalPaymentAddress) >= generalPaymentValue
+                lovelacesOf (valuePaidTo' txInfoOutputs generalPaymentAddress) >= generalPaymentValue
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
@@ -314,54 +315,55 @@ validateTreasury
 
               -- Make sure the upgrade token was minted
               hasUpgradeMinterToken :: Bool
-              !hasUpgradeMinterToken = hasTokenInValue upgradeMinter "Treasury Minter" tTxInfoMint
+              !hasUpgradeMinterToken = hasTokenInValue upgradeMinter "Treasury Minter" txInfoMint
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
                 && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
+validateTreasury _ _ _ _ = traceError "Wrong script purpose"
 
-addressOutputsAt :: Address -> [TreasuryTxOut] -> [Value]
+addressOutputsAt :: Address -> [TxOut] -> [Value]
 addressOutputsAt addr outs =
   let
-    flt TreasuryTxOut {tTxOutAddress, tTxOutValue}
-      | addr == tTxOutAddress = Just tTxOutValue
+    flt TxOut {txOutAddress, txOutValue}
+      | addr == txOutAddress = Just txOutValue
       | otherwise = Nothing
    in
     mapMaybe flt outs
 
-valuePaidTo' :: [TreasuryTxOut] -> Address -> Value
+valuePaidTo' :: [TxOut] -> Address -> Value
 valuePaidTo' outs addr = mconcat (addressOutputsAt addr outs)
 
 getContinuingOutputs' ::
   ValidatorHash ->
-  [TreasuryTxOut] ->
-  [TreasuryTxOut]
+  [TxOut] ->
+  [TxOut]
 getContinuingOutputs' vh =
   filter
-    ( \TreasuryTxOut {..} ->
-        addressCredential tTxOutAddress
+    ( \TxOut {..} ->
+        addressCredential txOutAddress
           == ScriptCredential vh
     )
 
-ownValueAndValidator :: [TreasuryTxInInfo] -> TxOutRef -> (Value, ValidatorHash)
+ownValueAndValidator :: [TxInInfo] -> TxOutRef -> (Value, ValidatorHash)
 ownValueAndValidator ins txOutRef = go ins
   where
     go = \case
       [] -> traceError "The impossible happened"
-      TreasuryTxInInfo {tTxInInfoOutRef, tTxInInfoResolved = TreasuryTxOut {tTxOutAddress = Address {..}, ..}} : xs ->
-        if tTxInInfoOutRef == txOutRef
+      TxInInfo {txInInfoOutRef, txInInfoResolved = TxOut {txOutAddress = Address {..}, ..}} : xs ->
+        if txInInfoOutRef == txOutRef
           then case addressCredential of
-            ScriptCredential vh -> (tTxOutValue, vh)
+            ScriptCredential vh -> (txOutValue, vh)
             _ -> traceError "Impossible. Expected ScriptCredential"
           else go xs
 
-onlyOneOfThisScript :: [TreasuryTxInInfo] -> ValidatorHash -> TxOutRef -> Bool
+onlyOneOfThisScript :: [TxInInfo] -> ValidatorHash -> TxOutRef -> Bool
 onlyOneOfThisScript ins vh expectedRef = go ins
   where
     go = \case
       [] -> True
-      TreasuryTxInInfo {tTxInInfoOutRef, tTxInInfoResolved = TreasuryTxOut {tTxOutAddress = Address {..}}} : xs ->
-        if isScriptCredential addressCredential && tTxInInfoOutRef /= expectedRef
+      TxInInfo {txInInfoOutRef, txInInfoResolved = TxOut {txOutAddress = Address {..}}} : xs ->
+        if isScriptCredential addressCredential && txInInfoOutRef /= expectedRef
           then case addressCredential of
             ScriptCredential vh' | vh' == vh -> False
             _ -> go xs

@@ -62,8 +62,7 @@ import Plutus.V2.Ledger.Contexts (
     txInfoData,
     txInfoInputs,
     txInfoMint,
-    txInfoOutputs,
-    txInfoReferenceInputs
+    txInfoOutputs
   ),
   findTxInByTxOutRef,
   getContinuingOutputs,
@@ -108,7 +107,7 @@ validateIndex ::
   ScriptContext ->
   Bool
 validateIndex
-  IndexValidatorConfig {..}
+  _indexValidatorConfig
   IndexNftDatum {indIndex = inputIndex}
   _
   ctx@ScriptContext

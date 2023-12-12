@@ -9,32 +9,14 @@ module Dao.Tally (
   -- * Script arguments, containing relevant CurrenySymbol and TokenName
   TallyNftConfig (..),
   TallyValidatorConfig (..),
-
-  -- * Script context related types
-  TallyTxOut (..),
-  TallyTxInInfo (..),
-  TallyTxInfo (..),
-  TallyScriptContext (..),
-  TallyScriptPurpose (..),
 ) where
 
 import Plutus.V1.Ledger.Address (Address)
-import Plutus.V1.Ledger.Scripts (
-  Datum,
-  DatumHash,
-  ValidatorHash,
- )
+import Plutus.V1.Ledger.Scripts (Datum, DatumHash, ValidatorHash)
 import Plutus.V1.Ledger.Time (POSIXTimeRange)
 import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value)
-import Plutus.V2.Ledger.Tx (
-  OutputDatum,
-  TxOutRef,
- )
-import PlutusTx (
-  makeIsDataIndexed,
-  makeLift,
-  unstableMakeIsData,
- )
+import Plutus.V2.Ledger.Tx (OutputDatum, TxOutRef)
+import PlutusTx (makeLift, unstableMakeIsData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (BuiltinData, Integer)
 
@@ -116,9 +98,4 @@ data TallyValidatorConfig = TallyValidatorConfig
   , tvcConfigNftTokenName :: TokenName
   }
 
-unstableMakeIsData ''TallyTxOut
-unstableMakeIsData ''TallyTxInInfo
-makeIsDataIndexed ''TallyScriptPurpose [('TallySpend, 1)]
-unstableMakeIsData ''TallyScriptContext
-unstableMakeIsData ''TallyTxInfo
 makeLift ''TallyValidatorConfig
