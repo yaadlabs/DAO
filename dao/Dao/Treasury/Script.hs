@@ -11,6 +11,13 @@ module Dao.Treasury.Script (
 ) where
 
 import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
+import Dao.ConfigurationNft (
+  ConfigurationValidatorConfig (
+    ConfigurationValidatorConfig,
+    cvcConfigNftCurrencySymbol,
+    cvcConfigNftTokenName
+  ),
+ )
 import Dao.Shared (
   convertDatum,
   hasOneOfToken,
@@ -22,13 +29,6 @@ import Dao.Shared (
   validatorHash,
   validatorToScript,
   wrapValidate,
- )
-import Dao.Treasury (
-  TreasuryValidatorConfig (
-    TreasuryValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
  )
 import Dao.Types (
   DynamicConfigDatum (
@@ -183,13 +183,13 @@ import PlutusTx.Prelude (
           is provided as the field of the 'Upgrade' constructor of the Proposal type.
 -}
 validateTreasury ::
-  TreasuryValidatorConfig ->
+  ConfigurationValidatorConfig ->
   BuiltinData ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateTreasury
-  TreasuryValidatorConfig {..}
+  ConfigurationValidatorConfig {..}
   _treasury
   _action
   ScriptContext
@@ -202,7 +202,7 @@ validateTreasury
 
       -- Helper for filtering for config UTXO
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft = hasOneOfToken tvcConfigNftCurrencySymbol tvcConfigNftTokenName
+      hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
 
       -- Get the DynamicConfigDatum from the reference inputs, should be exactly one
       DynamicConfigDatum {..} =
@@ -369,14 +369,14 @@ onlyOneOfThisScript ins vh expectedRef = go ins
             _ -> go xs
           else go xs
 
-treasuryValidator :: TreasuryValidatorConfig -> Validator
+treasuryValidator :: ConfigurationValidatorConfig -> Validator
 treasuryValidator config = mkValidatorWithSettings compiledCode False
   where
     wrapValidateTreasury = wrapValidate validateTreasury
     compiledCode = $$(PlutusTx.compile [||wrapValidateTreasury||]) `applyCode` liftCode config
 
-treasuryValidatorHash :: TreasuryValidatorConfig -> ValidatorHash
+treasuryValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 treasuryValidatorHash = validatorHash . treasuryValidator
 
-treasuryScript :: TreasuryValidatorConfig -> PlutusScript PlutusScriptV2
+treasuryScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
 treasuryScript = validatorToScript treasuryValidator

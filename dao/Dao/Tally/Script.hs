@@ -17,6 +17,13 @@ module Dao.Tally.Script (
 ) where
 
 import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
+import Dao.ConfigurationNft (
+  ConfigurationValidatorConfig (
+    ConfigurationValidatorConfig,
+    cvcConfigNftCurrencySymbol,
+    cvcConfigNftTokenName
+  ),
+ )
 import Dao.Index (IndexNftDatum (IndexNftDatum, indIndex))
 import Dao.Shared (
   WrappedMintingPolicyType,
@@ -36,15 +43,6 @@ import Dao.Shared (
   wrapValidate,
  )
 import Dao.Tally (
-  TallyDynamicConfigDatum (
-    TallyDynamicConfigDatum,
-    tdcFungibleVotePercent,
-    tdcTallyNft,
-    tdcVoteFungibleCurrencySymbol,
-    tdcVoteFungibleTokenName,
-    tdcVoteNft,
-    tdcVoteValidator
-  ),
   TallyNftConfig (
     TallyNftConfig,
     tncConfigNftCurrencySymbol,
@@ -52,14 +50,18 @@ import Dao.Tally (
     tncIndexNftPolicyId,
     tncIndexNftTokenName
   ),
-  TallyValidatorConfig (
-    TallyValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
  )
 import Dao.Types (
-  DynamicConfigDatum (DynamicConfigDatum, dcTallyValidator),
+  DynamicConfigDatum (
+    DynamicConfigDatum,
+    dcFungibleVotePercent,
+    dcTallyNft,
+    dcTallyValidator,
+    dcVoteFungibleCurrencySymbol,
+    dcVoteFungibleTokenName,
+    dcVoteNft,
+    dcVoteValidator
+  ),
   TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposalEndTime),
  )
 import Dao.Vote (
@@ -304,11 +306,11 @@ valuePaidTo' outs addr = go mempty outs
 
   This validator performs the following checks:
 
-    - There is exactly one 'Dao.Tally.TallyDynamicConfigDatum' in the reference inputs,
+    - There is exactly one 'Dao.Tally.DynamicConfigDatum' in the reference inputs,
       marked by the tally NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
-      provided by the 'TallyValidatorConfig' argument)
+      provided by the 'ConfigurationValidatorConfig' argument)
 
-    - That the tally NFT remains at the validadtor (the 'newValueIsAtleastAsBigAsOldValue' check)
+    - That the tally NFT remains at the validator (the 'newValueIsAtleastAsBigAsOldValue' check)
 
     - There is exactly one 'Dao.Tally.TallyStateDatum' in the outputs.
 
@@ -322,13 +324,13 @@ valuePaidTo' outs addr = go mempty outs
     - That all vote tokens are burned (there are no vote tokens in the outputs).
 -}
 validateTally ::
-  TallyValidatorConfig ->
+  ConfigurationValidatorConfig ->
   TallyStateDatum ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateTally
-  TallyValidatorConfig {..}
+  ConfigurationValidatorConfig {..}
   ts@TallyStateDatum {tsFor = oldFor, tsAgainst = oldAgainst, tsProposalEndTime}
   _
   ScriptContext
@@ -338,10 +340,10 @@ validateTally
     let
       -- Helper for filtering for config UTXO in the reference inputs
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft = hasOneOfToken tvcConfigNftCurrencySymbol tvcConfigNftTokenName
+      hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
 
-      -- Get the 'TallyDynamicConfig' from the reference inputs
-      TallyDynamicConfigDatum {..} =
+      -- Get the 'DynamicConfig' from the reference inputs
+      DynamicConfigDatum {..} =
         case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Should be exactly one tally NFT in the reference inputs"
@@ -350,20 +352,20 @@ validateTally
 
       -- Make sure there is only one tally and many votes
       expectedScripts :: Bool
-      !expectedScripts = hasExpectedScripts txInfoInputs thisValidatorHash tdcVoteValidator
+      !expectedScripts = hasExpectedScripts txInfoInputs thisValidatorHash dcVoteValidator
 
       hasVoteToken :: Value -> Maybe Value
       hasVoteToken (Value v) =
-        case filter (\(k, _) -> tdcVoteNft == k) (M.toList v) of
+        case filter (\(k, _) -> dcVoteNft == k) (M.toList v) of
           [] -> Nothing
           xs@[_] -> Just (Value (M.fromList xs))
           _ -> traceError "Too many vote nfts"
 
       hasVoteWitness :: Value -> Bool
-      hasVoteWitness = hasSymbolInValue tdcVoteFungibleCurrencySymbol
+      hasVoteWitness = hasSymbolInValue dcVoteFungibleCurrencySymbol
 
       thisTallyTokenName :: TokenName
-      !thisTallyTokenName = getTokenNameOfNft tdcTallyNft oldValue "Tally Nft"
+      !thisTallyTokenName = getTokenNameOfNft dcTallyNft oldValue "Tally Nft"
 
       -- Helper for loop that counts the votes
       stepVotes ::
@@ -383,15 +385,15 @@ validateTally
                 fungibleTokens :: Integer
                 !fungibleTokens =
                   countOfTokenInValue
-                    tdcVoteFungibleCurrencySymbol
-                    tdcVoteFungibleTokenName
+                    dcVoteFungibleCurrencySymbol
+                    dcVoteFungibleTokenName
                     txOutValue
 
                 -- Calculate fungible votes using the dcFungibleVotePercent
                 fungibleVotes :: Integer
                 !fungibleVotes
                   | fungibleTokens == 0 = 0
-                  | otherwise = (fungibleTokens * tdcFungibleVotePercent) `divide` 1000
+                  | otherwise = (fungibleTokens * dcFungibleVotePercent) `divide` 1000
 
                 -- Add the lovelaces and the NFT
                 votePayout :: Value
@@ -401,8 +403,8 @@ validateTally
                     else
                       Value $
                         M.insert
-                          tdcVoteFungibleCurrencySymbol
-                          (M.singleton tdcVoteFungibleTokenName fungibleTokens)
+                          dcVoteFungibleCurrencySymbol
+                          (M.singleton dcVoteFungibleTokenName fungibleTokens)
                           ( M.insert
                               adaSymbol
                               (M.singleton adaToken vReturnAda)
@@ -475,14 +477,14 @@ validateTally
         && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
 validateTally _ _ _ _ = traceError "Wrong script purpose"
 
-tallyValidator :: TallyValidatorConfig -> Validator
+tallyValidator :: ConfigurationValidatorConfig -> Validator
 tallyValidator config = mkValidatorWithSettings compiledCode False
   where
     wrapValidateTally = wrapValidate validateTally
     compiledCode = $$(PlutusTx.compile [||wrapValidateTally||]) `applyCode` liftCode config
 
-tallyValidatorHash :: TallyValidatorConfig -> ValidatorHash
+tallyValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
 tallyValidatorHash = validatorHash . tallyValidator
 
-tallyScript :: TallyValidatorConfig -> PlutusScript PlutusScriptV2
+tallyScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
 tallyScript = validatorToScript tallyValidator

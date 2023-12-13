@@ -3,7 +3,6 @@ Module      : Spec.Tally.SampleData
 Description : Tally sample data for tests
 -}
 module Spec.Tally.SampleData (
-  sampleTallyValidatorConfig,
   sampleUpgradeWithEndTimeInFutureTallyStateDatum,
   sampleUpgradeWithEndTimeInPastTallyStateDatum,
   sampleTripWithEndTimeInFutureTallyStateDatum,
@@ -15,13 +14,6 @@ module Spec.Tally.SampleData (
   sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum,
 ) where
 
-import Dao.Tally (
-  TallyValidatorConfig (
-    TallyValidatorConfig,
-    tvcConfigNftCurrencySymbol,
-    tvcConfigNftTokenName
-  ),
- )
 import Dao.Types (ProposalType (General, Trip, Upgrade), TallyStateDatum (..))
 import Plutus.V1.Ledger.Api (POSIXTime (POSIXTime))
 import Spec.Addresses (
@@ -30,15 +22,6 @@ import Spec.Addresses (
   dummyTravelerPaymentAddress,
  )
 import Spec.AlwaysSucceed.Script (alwaysSucceedCurrencySymbol)
-import Spec.Values (dummyTallyConfigSymbol, dummyTallyConfigTokenName)
-
--- | Sample tally config
-sampleTallyValidatorConfig :: TallyValidatorConfig
-sampleTallyValidatorConfig =
-  TallyValidatorConfig
-    { tvcConfigNftCurrencySymbol = dummyTallyConfigSymbol
-    , tvcConfigNftTokenName = dummyTallyConfigTokenName
-    }
 
 sampleUpgradeWithEndTimeInPastTallyStateDatum :: TallyStateDatum
 sampleUpgradeWithEndTimeInPastTallyStateDatum =

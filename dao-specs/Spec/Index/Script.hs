@@ -24,8 +24,7 @@ import Plutus.Model.V2 (
 import Plutus.V1.Ledger.Scripts (ValidatorHash)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
-import PlutusTx.Prelude (($), (.))
-import Spec.Index.SampleData (sampleIndexValidatorConfig)
+import PlutusTx.Prelude (const, id, ($), (.))
 import Spec.SpecUtils (mkTypedValidator')
 
 -- Policy script and info
@@ -46,7 +45,7 @@ indexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
 type IndexValidatorScript = TypedValidator IndexNftDatum ()
 
 indexNftTypedValidator :: IndexValidatorScript
-indexNftTypedValidator = mkTypedValidator' sampleIndexValidatorConfig indexValidator
+indexNftTypedValidator = mkTypedValidator' id (const indexValidator)
 
 indexValidatorHash' :: ValidatorHash
-indexValidatorHash' = indexValidatorHash sampleIndexValidatorConfig
+indexValidatorHash' = indexValidatorHash

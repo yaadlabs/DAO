@@ -78,10 +78,13 @@ instance PlutusTx.Eq TallyStateDatum where
 -- | DynamicConfig Datum holds the main info needed for the contracts.
 data DynamicConfigDatum = DynamicConfigDatum
   { dcTallyValidator :: ValidatorHash
+  -- ^ Hash of the `Dao.Types.Tally.Script.validateTally` validator
   , dcTreasuryValidator :: ValidatorHash
+  -- ^ Hash of the `Dao.Types.Treasury.Script.validateTreasury` validator
   , dcConfigurationValidator :: ValidatorHash
+  -- ^ Hash of the `Dao.Types.ConfigurationNft.Script.validateConfiguration` validator
   , dcVoteValidator :: ValidatorHash
-  -- ^ The validator scripts belonging to the DAO protocol
+  -- ^ Hash of the `Dao.Types.Vote.Script.validateVote` validator
   , dcUpgradeMajorityPercent :: Integer
   , dcUpgradeRelativeMajorityPercent :: Integer
   , dcGeneralMajorityPercent :: Integer
@@ -97,25 +100,31 @@ data DynamicConfigDatum = DynamicConfigDatum
   , dcMaxGeneralDisbursement :: Integer
   , dcMaxTripDisbursement :: Integer
   -- ^ Disbursement allowable disbursement amounts, for general and trip proposals
-  -- Checked in the `Triphut.Treasury.Script.validateTreasury` validator
+  -- Checked in the `Dao.Treasury.Script.validateTreasury` validator
   , dcAgentDisbursementPercent :: Integer
   -- ^ The percentage of the total travel cost for the agent in trip proposals
-  -- Checked in the `Triphut.Treasury.Script.validateTreasury` validator
+  -- Checked in the `Dao.Treasury.Script.validateTreasury` validator
   -- (Agent disbursement percentage is times a 1000)
   , dcProposalTallyEndOffset :: Integer
   -- ^ Like a cool down period to be added to the proposal end time
-  -- specified in the `Triphut.Types.TallyStateDatum` datum.
+  -- specified in the `Dao.Types.TallyStateDatum` datum.
   -- The treasury cannot disburse funds until
   -- after the end time plus the offset has passed
   -- (Offset is in milliseconds)
-  , dcTallyIndexNft :: CurrencySymbol
   , dcTallyNft :: CurrencySymbol
+  -- ^ Symbol of the `Dao.Tally.Script.mkTallyNftMinter` minting policy
   , dcVoteCurrencySymbol :: CurrencySymbol
+  -- ^ Symbol of the `Dao.Vote.Script.mkVoteMinter` minting policy
   , dcVoteTokenName :: TokenName
+  -- ^ Token name for the vote value minted by `Dao.Vote.Script.mkVoteMinter`
   , dcVoteNft :: CurrencySymbol
+  -- ^ Symbol of the Vote NFT
   , dcVoteFungibleCurrencySymbol :: CurrencySymbol
+  -- ^ Symbol of the fungible vote value
   , dcVoteFungibleTokenName :: TokenName
-  , dcFungibleVotePercent :: Integer -- times a 1000
+  -- ^ Token name for fungible vote value
+  , dcFungibleVotePercent :: Integer
+  -- ^ Fungible token percentage (Percentage value is times a 1000)
   }
 
 unstableMakeIsData ''DynamicConfigDatum
