@@ -113,56 +113,16 @@ data VoteMinterTxInfo = VoteMinterTxInfo
 
 -- | Vote minter config datum, representation mirrors the main 'Dao.Types.DynamicConfigDatum'
 data VoteMinterDynamicConfigDatum = VoteMinterDynamicConfigDatum
-  { vmdcTallyIndexNft :: BuiltinData
-  , vmdcTallyNft :: CurrencySymbol
-  , vmdcTallyValidator :: BuiltinData
-  , vmdcTreasuryValidator :: BuiltinData
-  , vmdcConfigurationValidator :: BuiltinData
-  , vmdcVoteCurrencySymbol :: BuiltinData
+  { vmdcTallyNft :: CurrencySymbol
   , vmdcVoteTokenName :: TokenName
   , vmdcVoteValidator :: ValidatorHash
-  , vmdcUpgradeMajorityPercent :: BuiltinData
-  , vmdcUpgradRelativeMajorityPercent :: BuiltinData
-  , vmdcGeneralMajorityPercent :: BuiltinData
-  , vmdcGeneralRelativeMajorityPercent :: BuiltinData
-  , vmdcTripMajorityPercent :: BuiltinData
-  , vmdcTripRelativeMajorityPercent :: BuiltinData
-  , vmdcTotalVotes :: BuiltinData
   , vmdcVoteNft :: CurrencySymbol
-  , vmdcVoteFungibleCurrencySymbol :: BuiltinData
-  , vmdcVoteFungibleTokenName :: BuiltinData
-  , vmdcProposalTallyEndOffset :: BuiltinData
-  , vmdcMaxGeneralDisbursement :: BuiltinData
-  , vmdcMaxTripDisbursement :: BuiltinData
-  , vmdcAgentDisbursementPercent :: BuiltinData
-  , vmdcFungibleVotePercent :: BuiltinData
   }
 
 -- | Vote config datum, representation mirrors the main 'Dao.Types.DynamicConfigDatum'
 data VoteDynamicConfigDatum = VoteDynamicConfigDatum
-  { vdcTallyIndexNft :: BuiltinData
-  , vdcTallyNft :: BuiltinData
-  , vdcTallyValidator :: ValidatorHash
-  , vdcTreasuryValidator :: BuiltinData
-  , vdcConfigurationValidator :: BuiltinData
+  { vdcTallyValidator :: ValidatorHash
   , vdcVoteCurrencySymbol :: BuiltinData
-  , vdcVoteTokenName :: BuiltinData
-  , vdcVoteValidator :: BuiltinData
-  , vdcUpgradeMajorityPercent :: BuiltinData
-  , vdcUpgradRelativeMajorityPercent :: BuiltinData
-  , vdcGeneralMajorityPercent :: BuiltinData
-  , vdcGeneralRelativeMajorityPercent :: BuiltinData
-  , vdcTripMajorityPercent :: BuiltinData
-  , vdcTripRelativeMajorityPercent :: BuiltinData
-  , vdcTotalVotes :: BuiltinData
-  , vdcVoteNft :: BuiltinData
-  , vdcVoteFungibleCurrencySymbol :: BuiltinData
-  , vdcVoteFungibleTokenName :: BuiltinData
-  , vdcProposalTallyEndOffset :: BuiltinData
-  , vdcMaxGeneralDisbursement :: BuiltinData
-  , vdcMaxTripDisbursement :: BuiltinData
-  , vdcAgentDisbursementPercent :: BuiltinData
-  , vdcFungibleVotePercent :: BuiltinData
   }
 
 unstableMakeIsData ''VoteMinterDynamicConfigDatum

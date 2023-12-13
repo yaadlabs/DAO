@@ -47,7 +47,8 @@ nftSpec config =
     ]
   where
     -- Count redeemer tests
-    positiveCountRedeemerTest = good "Valid vote validator, Cancel redeemer, test" validVoteValidatorCountRedeemerTest
+    positiveCountRedeemerTest =
+      good "Valid vote validator, Count redeemer, test" validVoteValidatorCountRedeemerTest
     negativeCountRedeemerTest1 =
       bad
         ( mconcat

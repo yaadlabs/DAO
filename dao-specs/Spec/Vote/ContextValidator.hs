@@ -45,7 +45,7 @@ import Spec.Tally.Transactions (
 import Spec.Tally.Utils (findTally, findTallyConfig)
 import Spec.Values (dummyTallyValue, dummyVoteValue)
 import Spec.Vote.Script (voteTypedValidator)
-import Spec.Vote.Transactions (runInitVote, runInitVoteConfig, runInitVoteMinterConfig, runInitVoteWithUser)
+import Spec.Vote.Transactions (runInitVote, runInitVoteConfig, runInitVoteWithUser)
 import Spec.Vote.Utils (findVote, findVoteConfig)
 import Prelude (Eq, mconcat, mempty, ($), (<>), (==))
 
@@ -137,9 +137,9 @@ mkVoteValidatorCountRedeemerTest ::
   TallyPeriod ->
   Run ()
 mkVoteValidatorCountRedeemerTest configRef voteValidator tallyValidator tallyConfigRef tallyPeriod = do
-  runInitVoteMinterConfig
-  runInitTallyConfig
   runInitVote
+  runInitVoteConfig
+  runInitTallyConfig
 
   when (tallyPeriod == TallyPeriodOver) runInitTallyWithEndTimeInPast -- Valid
   when (tallyPeriod == StillInTallyPeriod) runInitTallyWithEndTimeInFuture -- Invalid

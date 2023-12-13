@@ -1,9 +1,13 @@
-module Spec.Vote.Utils (findVoteConfig, findVote) where
+module Spec.Vote.Utils (
+  findVoteConfig,
+  findVoteMinterConfig,
+  findVote,
+) where
 
-import Dao.Vote (VoteDatum, VoteMinterDynamicConfigDatum)
+import Dao.Vote (VoteDatum, VoteDynamicConfigDatum, VoteMinterDynamicConfigDatum)
 import Plutus.Model (Run)
 import Plutus.V2.Ledger.Tx (TxOut, TxOutRef)
-import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator1)
+import Spec.AlwaysSucceed.Script (alwaysSucceedTypedValidator1, alwaysSucceedTypedValidator3)
 import Spec.SpecUtils (findConfigUtxo)
 import Spec.Values (
   dummyVoteConfigNftSymbol,
@@ -13,8 +17,15 @@ import Spec.Values (
  )
 import Spec.Vote.Script (voteTypedValidator)
 
-findVoteConfig :: Run (TxOutRef, TxOut, VoteMinterDynamicConfigDatum)
+findVoteConfig :: Run (TxOutRef, TxOut, VoteDynamicConfigDatum)
 findVoteConfig =
+  findConfigUtxo
+    alwaysSucceedTypedValidator3
+    dummyVoteConfigNftSymbol
+    dummyVoteConfigNftTokenName
+
+findVoteMinterConfig :: Run (TxOutRef, TxOut, VoteMinterDynamicConfigDatum)
+findVoteMinterConfig =
   findConfigUtxo
     alwaysSucceedTypedValidator1
     dummyVoteConfigNftSymbol

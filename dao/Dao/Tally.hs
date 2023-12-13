@@ -66,28 +66,11 @@ data TallyTxInfo = TallyTxInfo
 
 -- | Tally config datum, representation mirrors the main 'Dao.Types.DynamicConfigDatum'
 data TallyDynamicConfigDatum = TallyDynamicConfigDatum
-  { tdcTallyIndexNft :: BuiltinData
-  , tdcTallyNft :: CurrencySymbol
-  , tdcTallyValidator :: BuiltinData
-  , tdcTreasuryValidator :: BuiltinData
-  , tdcConfigurationValidator :: BuiltinData
-  , tdcVoteCurrencySymbol :: CurrencySymbol
-  , tdcVoteTokenName :: BuiltinData
-  , tdcVoteValidator :: ValidatorHash
-  , tdcUpgradeMajorityPercent :: BuiltinData
-  , tdcUpgradRelativeMajorityPercent :: BuiltinData
-  , tdcGeneralMajorityPercent :: BuiltinData
-  , tdcGeneralRelativeMajorityPercent :: BuiltinData
-  , tdcTripMajorityPercent :: BuiltinData
-  , tdcTripRelativeMajorityPercent :: BuiltinData
-  , tdcTotalVotes :: BuiltinData
+  { tdcTallyNft :: CurrencySymbol
   , tdcVoteNft :: CurrencySymbol
+  , tdcVoteValidator :: ValidatorHash
   , tdcVoteFungibleCurrencySymbol :: CurrencySymbol
   , tdcVoteFungibleTokenName :: TokenName
-  , tdcProposalTallyEndOffset :: BuiltinData
-  , tdcMaxGeneralDisbursement :: BuiltinData
-  , tdcMaxTripDisbursement :: BuiltinData
-  , tdcAgentDisbursementPercent :: BuiltinData
   , tdcFungibleVotePercent :: Integer
   }
 
