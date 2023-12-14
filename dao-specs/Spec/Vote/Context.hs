@@ -11,7 +11,7 @@ module Spec.Vote.Context (
 
 import Control.Monad (void)
 import Dao.ConfigurationNft (ConfigurationValidatorConfig)
-import Dao.Vote (VoteMinterActionRedeemer (Mint), VoteMinterConfig (VoteMinterConfig))
+import Dao.Vote (VoteMinterActionRedeemer (Mint))
 import Plutus.Model (
   Run,
   adaValue,

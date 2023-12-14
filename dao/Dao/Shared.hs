@@ -164,7 +164,7 @@ hasOneOfToken symbol tokenName (Value value) = case Map.lookup symbol value of
   Nothing -> False
 
 {-# INLINEABLE convertDatum #-}
-convertDatum :: UnsafeFromData a => Map DatumHash Datum -> OutputDatum -> a
+convertDatum :: (UnsafeFromData a) => Map DatumHash Datum -> OutputDatum -> a
 convertDatum infoData datum = unsafeFromBuiltinData $ case datum of
   OutputDatum (Datum dbs) -> dbs
   OutputDatumHash dh -> case Map.lookup dh infoData of
@@ -222,9 +222,9 @@ mkValidatorWithSettings
           , Plutonomy.ooFloatOutLambda = setFloatOutputLambda
           }
      in
-      Plutonomy.optimizeUPLCWith optimizerSettings $
-        Plutonomy.validatorToPlutus $
-          Plutonomy.mkValidatorScript compiledCode
+      Plutonomy.optimizeUPLCWith optimizerSettings
+        $ Plutonomy.validatorToPlutus
+        $ Plutonomy.mkValidatorScript compiledCode
 
 -- | Convert validator with a config to Plutus script
 validatorToScript :: (config -> Validator) -> config -> PlutusScript PlutusScriptV2

@@ -31,9 +31,9 @@ import Spec.SpecUtils (mkTypedValidator')
 -- Policy script and info
 tallyConfigNftTypedMintingPolicy :: TallyNftConfig -> TypedPolicy ()
 tallyConfigNftTypedMintingPolicy config =
-  mkTypedPolicy $
-    $$(PlutusTx.compile [||toBuiltinPolicy . mkTallyNftMinter||])
-      `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkTypedPolicy
+    $ $$(PlutusTx.compile [||toBuiltinPolicy . mkTallyNftMinter||])
+    `PlutusTx.applyCode` PlutusTx.liftCode config
 
 tallyConfigNftCurrencySymbol :: TallyNftConfig -> CurrencySymbol
 tallyConfigNftCurrencySymbol = scriptCurrencySymbol . tallyConfigNftTypedMintingPolicy

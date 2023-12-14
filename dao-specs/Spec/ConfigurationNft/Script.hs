@@ -27,9 +27,9 @@ import Spec.SpecUtils (mkTypedValidator')
 -- Policy script and info
 configNftTypedMintingPolicy :: NftConfig -> TypedPolicy ()
 configNftTypedMintingPolicy config =
-  mkTypedPolicy $
-    $$(PlutusTx.compile [||toBuiltinPolicy . mkConfigurationNftPolicy||])
-      `PlutusTx.applyCode` PlutusTx.liftCode config
+  mkTypedPolicy
+    $ $$(PlutusTx.compile [||toBuiltinPolicy . mkConfigurationNftPolicy||])
+    `PlutusTx.applyCode` PlutusTx.liftCode config
 
 configNftCurrencySymbol :: NftConfig -> CurrencySymbol
 configNftCurrencySymbol = scriptCurrencySymbol . configNftTypedMintingPolicy

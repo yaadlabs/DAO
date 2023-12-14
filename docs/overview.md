@@ -6,19 +6,19 @@ While the `Readme` serves as an outline of the general idea behind the proposal 
 
 The project is structured in the following manner:
 
-`triphut-specs` contains the unit tests written with the `plutus-simple-model` framework. It's an extensive test suite that covers all the smart contracts contained within the `triphut` directory. The suite covers the expected 'happy path' for each branch of the contracts, ensuring that a valid transaction passes validation as expected, as well as negative tests that ensure that the validation checks in the contracts will catch and reject an illegal transaction.
+`dao-specs` contains the unit tests written with the `plutus-simple-model` framework. It's an extensive test suite that covers all the smart contracts contained within the `dao` directory. The suite covers the expected 'happy path' for each branch of the contracts, ensuring that a valid transaction passes validation as expected, as well as negative tests that ensure that the validation checks in the contracts will catch and reject an illegal transaction.
 
-`triphut-test` imports all the tests from the `triphut-specs` directory and runs them using the `tasty` testing library. 
+`dao-test` imports all the tests from the `dao-specs` directory and runs them using the `tasty` testing library.
 
-`triphut` contains the core of the application, including the application's types, the DAO validator and minting policy scripts, as well as utility functions shared across the modules.
+`dao` contains the core of the application, including the application's types, the DAO validator and minting policy scripts, as well as utility functions shared across the modules.
 
-Within the `triphut` directory we have a number of outer modules which represent the logical division of the application, these modules include - `Dao.Types`, `Dao.ConfigurationNft`, `Dao.Vote`, `Dao.Treasury`, `Dao.Tally`, `Dao.Index`, which contain the application's types - as well as the `Dao.Shared` module which contains a number of utility functions for use across the other modules.
+Within the `dao` directory we have a number of outer modules which represent the logical division of the application, these modules include - `Dao.Types`, `Dao.ConfigurationNft`, `Dao.Vote`, `Dao.Treasury`, `Dao.Tally`, `Dao.Index`, which contain the application's types - as well as the `Dao.Shared` module which contains a number of utility functions for use across the other modules.
 
 Then nested a step below we have the corresponding scripts under - `Dao.ConfigurationNft.Script`, `Dao.Vote.Script`, `Dao.Treasury.Script`, `Dao.Tally.Script`, `Dao.Index.Script`.
 
 # Overview of the DAO's scripts
 
-The scripts are made up of a number of minting policies and validators contained in the modules referenced above. We have added detailed haddock-style comments to each of the scripts contained within the `triphut` directory, which we will also cover here.
+The scripts are made up of a number of minting policies and validators contained in the modules referenced above. We have added detailed haddock-style comments to each of the scripts contained within the `dao` directory, which we will also cover here.
 
 ## Dao.ConfigurationNft.Script
 
@@ -61,7 +61,7 @@ The `mkVoteMinter` script performs the following validation checks:
 
 When the `Dao.Vote.VoteMinterActionRedeemer` redeemer is set to `Mint`, this policy performs the following checks:
 
-  - There is exactly one `Dao.Types.DynamicConfigDatum` in the reference inputs, marked by the configuration NFT (The corresponding `CurrencySymbol` and `TokenName` are provided by the `VoteMinterConfig` argument).
+  - There is exactly one `Dao.Types.DynamicConfigDatum` in the reference inputs, marked by the configuration NFT (The corresponding `CurrencySymbol` and `TokenName` are provided by the `ConfigurationValidatorConfig` argument).
   - There is exactly one `Dao.Types.TallyStateDatum` in the reference inputs, marked by the Tally NFT.
   - Exactly one valid vote NFT is minted with the valid token name.
   - The token name matches the `dcVoteTokenName` field of the `DynamicConfigDatum`.
@@ -188,4 +188,4 @@ The index validator is used in conjunction with the tally minter, when minting a
 
 ## Types
 
-The `ProposalType` and `TallyStateDatum` can both be found in the `Dao.Types` module, as mentioned previously the proposal type determines what type of proposal we are dealing with, a trip, a general or an upgrade proposal. The `TallyStateDatum` contains important information about the proposal - the proposal end time, the type of the proposal as well as how many votes are for and against the proposal. The other upper-level `triphut` modules we mentioned earlier contain the types specific to their function, for example the `DynamicConfigDatum` can be found in the `Dao.ConfigurationNft` module, and contains all the application specific values, a number of which we referenced in our overview of the scripts. The `VoteDatum` is contained in the `Dao.Vote` module, and contains important information regarding the vote that was cast - such as the name of the proposal for which the vote was cast, the `direction` of the vote (for or against), and the owner of the vote (specified by an `Address`).
+The `ProposalType` and `TallyStateDatum` can both be found in the `Dao.Types` module, as mentioned previously the proposal type determines what type of proposal we are dealing with, a trip, a general or an upgrade proposal. The `TallyStateDatum` contains important information about the proposal - the proposal end time, the type of the proposal as well as how many votes are for and against the proposal. The other upper-level `dao` modules we mentioned earlier contain the types specific to their function, for example the `DynamicConfigDatum` can be found in the `Dao.ConfigurationNft` module, and contains all the application specific values, a number of which we referenced in our overview of the scripts. The `VoteDatum` is contained in the `Dao.Vote` module, and contains important information regarding the vote that was cast - such as the name of the proposal for which the vote was cast, the `direction` of the vote (for or against), and the owner of the vote (specified by an `Address`).

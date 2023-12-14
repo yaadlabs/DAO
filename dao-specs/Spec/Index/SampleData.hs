@@ -9,7 +9,6 @@ module Spec.Index.SampleData (
 import Dao.Index (
   IndexNftDatum (IndexNftDatum, indIndex),
  )
-import Plutus.V1.Ledger.Value (adaSymbol, adaToken)
 
 -- | Valid index datum with the initial index set to zero
 validSampleIndexNftDatum :: IndexNftDatum

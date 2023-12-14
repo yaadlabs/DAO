@@ -12,14 +12,11 @@ module Dao.Vote (
 
   -- * General vote related types
   VoteDirection (..),
-
-  -- * Script arguments, containing relevant CurrenySymbol and TokenName
-  VoteMinterConfig (..),
 ) where
 
 import Plutus.V1.Ledger.Address (Address)
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
-import PlutusTx (makeLift, unstableMakeIsData)
+import Plutus.V1.Ledger.Value (TokenName)
+import PlutusTx (unstableMakeIsData)
 import PlutusTx.Prelude (
   Bool (False, True),
   Integer,
@@ -27,16 +24,12 @@ import PlutusTx.Prelude (
  )
 import PlutusTx.Prelude qualified as PlutusTx
 
--- | 'Dao.Vote.Script.mkVoteMinter' argument
-data VoteMinterConfig = VoteMinterConfig
-  { vmcConfigNftCurrencySymbol :: CurrencySymbol
-  , vmcConfigNftTokenName :: TokenName
-  }
-
-makeLift ''VoteMinterConfig
-
 -- | Vote direction
-data VoteDirection = For | Against
+data VoteDirection
+  = -- | Vote in favour of the proposal
+    For
+  | -- | Vote against the proposal
+    Against
 
 instance PlutusTx.Eq VoteDirection where
   For == For = True
@@ -66,7 +59,9 @@ unstableMakeIsData ''VoteDatum
 
 -- | Redeemer for 'Dao.Vote.Script.validateVote' validator
 data VoteActionRedeemer
-  = Count
-  | Cancel
+  = -- | Vote should be counted in tallying phase
+    Count
+  | -- | Retract the vote
+    Cancel
 
 unstableMakeIsData ''VoteActionRedeemer

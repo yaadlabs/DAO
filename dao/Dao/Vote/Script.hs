@@ -40,18 +40,21 @@ import Dao.Shared (
   validatorToScript,
   wrapValidate,
  )
-import Dao.Types (DynamicConfigDatum (
-                    DynamicConfigDatum,
-                    dcFungibleVotePercent,
-                    dcTallyNft,
-                    dcTallyValidator,
-                    dcVoteCurrencySymbol,
-                    dcVoteFungibleCurrencySymbol,
-                    dcVoteFungibleTokenName,
-                    dcVoteNft,
-                    dcVoteTokenName,
-                    dcVoteValidator
-                  ), TallyStateDatum (TallyStateDatum, tsProposalEndTime))
+import Dao.Types (
+  DynamicConfigDatum (
+    DynamicConfigDatum,
+    dcFungibleVotePercent,
+    dcTallyNft,
+    dcTallyValidator,
+    dcVoteCurrencySymbol,
+    dcVoteFungibleCurrencySymbol,
+    dcVoteFungibleTokenName,
+    dcVoteNft,
+    dcVoteTokenName,
+    dcVoteValidator
+  ),
+  TallyStateDatum (TallyStateDatum, tsProposalEndTime),
+ )
 import Dao.Vote (
   VoteActionRedeemer (Cancel, Count),
   VoteDatum (VoteDatum, vOwner, vReturnAda),
@@ -123,7 +126,7 @@ import PlutusTx.Prelude (
 
         - There is exactly one 'Dao.Types.DynamicConfigDatum' in the reference inputs,
           marked by the config NFT
-          (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'VoteMinterConfig' argument)
+          (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'ConfigurationValidatorConfig' argument)
         - There is exactly one 'Dao.Types.TallyStateDatum' in the reference inputs,
           marked by the Tally NFT
         - Exactly one valid Vote NFT is minted with the valid token name.
@@ -230,9 +233,9 @@ wrappedPolicy config a b = check (mkVoteMinter config (unsafeFromBuiltinData a) 
 
 policy :: ConfigurationValidatorConfig -> MintingPolicy
 policy cfg =
-  mkMintingPolicyScript $
-    $$(compile [||\c -> wrappedPolicy c||])
-      `PlutusTx.applyCode` PlutusTx.liftCode cfg
+  mkMintingPolicyScript
+    $ $$(compile [||\c -> wrappedPolicy c||])
+    `PlutusTx.applyCode` PlutusTx.liftCode cfg
 
 voteMinterPolicyId :: ConfigurationValidatorConfig -> CurrencySymbol
 voteMinterPolicyId = mpsSymbol . plutonomyMintingPolicyHash . policy

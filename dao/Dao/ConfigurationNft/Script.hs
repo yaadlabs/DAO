@@ -172,9 +172,9 @@ configurationNftCurrencySymbol = mpsSymbol . mintingPolicyHash . policy
 -- Build the policy
 policy :: NftConfig -> MintingPolicy
 policy cfg =
-  mkMintingPolicyScript $
-    $$(compile [||\c -> wrappedPolicy c||])
-      `PlutusTx.applyCode` PlutusTx.liftCode cfg
+  mkMintingPolicyScript
+    $ $$(compile [||\c -> wrappedPolicy c||])
+    `PlutusTx.applyCode` PlutusTx.liftCode cfg
 
 wrappedPolicy :: NftConfig -> WrappedMintingPolicyType
 wrappedPolicy config a b = check (mkConfigurationNftPolicy config a (unsafeFromBuiltinData b))
