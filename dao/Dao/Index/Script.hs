@@ -7,16 +7,12 @@ Description: Dao index related scripts. It includes:
 module Dao.Index.Script (
   -- * Minting policy
   mkIndexNftMinter,
-  tallyIndexNftMinter,
-  tallyIndexNftMinterPolicyId,
 
   -- * Validator
-  indexScript,
-  indexValidator,
-  indexValidatorHash,
+  validateIndex,
+  indexValidatorCompiledCode,
 ) where
 
-import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
 import Dao.Index (
   IndexNftConfig (
     IndexNftConfig,
@@ -27,32 +23,15 @@ import Dao.Index (
   IndexNftDatum (IndexNftDatum, indIndex),
  )
 import Dao.Shared (
-  WrappedMintingPolicyType,
   convertDatum,
   hasSingleTokenWithSymbolAndTokenName,
   hasTokenInValueNoErrors,
-  mintingPolicyHash,
-  mkValidatorWithSettings,
-  policyToScript,
-  validatorHash,
-  validatorToScript,
   wrapValidate,
  )
-import Plutus.V1.Ledger.Address (Address (addressCredential))
-import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
-import Plutus.V1.Ledger.Scripts (
-  MintingPolicy,
-  Validator,
-  ValidatorHash,
-  mkMintingPolicyScript,
- )
-import Plutus.V1.Ledger.Value (
-  CurrencySymbol,
-  Value,
-  geq,
-  mpsSymbol,
- )
-import Plutus.V2.Ledger.Contexts (
+import PlutusLedgerApi.V1.Address (Address (addressCredential))
+import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
+import PlutusLedgerApi.V1.Value (Value, geq)
+import PlutusLedgerApi.V2 (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
   ScriptPurpose (Minting, Spending),
   TxInInfo (TxInInfo, txInInfoOutRef, txInInfoResolved),
@@ -63,33 +42,25 @@ import Plutus.V2.Ledger.Contexts (
     txInfoMint,
     txInfoOutputs
   ),
+  TxOut (TxOut, txOutAddress, txOutDatum, txOutValue),
+ )
+import PlutusLedgerApi.V2.Contexts (
   findTxInByTxOutRef,
   getContinuingOutputs,
  )
-import Plutus.V2.Ledger.Tx (
-  TxOut (TxOut, txOutAddress, txOutDatum, txOutValue),
- )
-import PlutusTx (
-  applyCode,
-  compile,
-  liftCode,
-  unsafeFromBuiltinData,
- )
+import PlutusTx (CompiledCode, compile)
 import PlutusTx.Prelude (
-  Bool (True),
+  Bool,
   BuiltinData,
   Maybe (Just, Nothing),
   any,
-  check,
   const,
   filter,
   mempty,
   traceError,
   traceIfFalse,
-  ($),
   (&&),
   (+),
-  (.),
   (==),
  )
 
@@ -135,20 +106,13 @@ validateIndex
         && traceIfFalse "script value is not returned" outputValueGreaterThanInputValue
 validateIndex _ _ _ = traceError "Wrong script purpose"
 
-indexValidator :: Validator
-indexValidator = mkValidatorWithSettings compiledCode True
-  where
-    -- 'mempty' in this case is in place of the config argument to wrapValidate that we
-    -- throw away here. And 'Value' is just an arbitrary legal type to satisfy the type checker
-    -- (Same for 'indexScript' below)
-    wrapValidateIndex = wrapValidate (const validateIndex) (mempty :: Value)
-    compiledCode = $$(PlutusTx.compile [||wrapValidateIndex||])
-
-indexValidatorHash :: ValidatorHash
-indexValidatorHash = validatorHash indexValidator
-
-indexScript :: PlutusScript PlutusScriptV2
-indexScript = validatorToScript (const indexValidator) (mempty :: Value)
+indexValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+indexValidatorCompiledCode =
+  -- 'mempty' in this case is in place of the config argument to wrapValidate that we
+  -- throw away here. And 'Value' is just an arbitrary legal type to satisfy the type checker
+  -- (Same for 'indexScript' below)
+  let wrapValidateIndex = wrapValidate (const validateIndex) (mempty :: Value)
+   in $$(PlutusTx.compile [||wrapValidateIndex||])
 
 {- | Policy for minting index NFT.
 
@@ -209,18 +173,3 @@ mkIndexNftMinter
         && traceIfFalse "Initial index should be set to zero" initialIndexIsZero
         && traceIfFalse "Index NFT must be sent to the Index validator" outputIsValidator
 mkIndexNftMinter _ _ _ = traceError "Wrong type of script purpose!"
-
-wrappedPolicy :: IndexNftConfig -> WrappedMintingPolicyType
-wrappedPolicy config a b = check (mkIndexNftMinter config a (unsafeFromBuiltinData b))
-
-policy :: IndexNftConfig -> MintingPolicy
-policy cfg =
-  mkMintingPolicyScript
-    $ $$(compile [||\c -> wrappedPolicy c||])
-    `PlutusTx.applyCode` PlutusTx.liftCode cfg
-
-tallyIndexNftMinterPolicyId :: IndexNftConfig -> CurrencySymbol
-tallyIndexNftMinterPolicyId = mpsSymbol . mintingPolicyHash . policy
-
-tallyIndexNftMinter :: IndexNftConfig -> PlutusScript PlutusScriptV2
-tallyIndexNftMinter = policyToScript policy

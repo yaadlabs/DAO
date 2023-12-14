@@ -34,7 +34,7 @@ import Plutus.Model.V2 (
   payToScript,
   refInputInline,
  )
-import Plutus.V1.Ledger.Interval (from)
+import PlutusLedgerApi.V1.Interval (from)
 import Spec.ConfigurationNft.Transactions (runInitConfig)
 import Spec.ConfigurationNft.Utils (findConfig)
 import Spec.SpecUtils (amountOfAda)

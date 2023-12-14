@@ -4,7 +4,7 @@ module Spec.Vote.Transactions (
 ) where
 
 import Plutus.Model (Run)
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
+import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import Spec.SpecUtils (runInitPayToScript)
 import Spec.Values (dummyVoteValue)
 import Spec.Vote.SampleData (sampleVoteDatum, sampleVoteDatumWithUser)

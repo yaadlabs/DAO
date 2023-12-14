@@ -26,15 +26,15 @@ import Plutus.Model.V2 (
   payToKey,
   payToScript,
  )
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
-import Plutus.V1.Ledger.Value (Value, singleton)
+import PlutusLedgerApi.V1.Crypto (PubKeyHash)
+import PlutusLedgerApi.V1.Value (Value, singleton)
 import PlutusTx.Prelude (Bool (False, True), ($))
 import Spec.Index.SampleData (validSampleIndexNftDatum)
 import Spec.Index.Script (
   indexConfigNftCurrencySymbol,
   indexConfigNftTypedMintingPolicy,
   indexNftTypedValidator,
-  indexValidatorHash',
+  indexValidatorScriptHash,
  )
 import Spec.SpecUtils (minAda)
 import Spec.Values (dummyIndexConfigNftTokenName)
@@ -69,7 +69,7 @@ mkIndexConfigNftTest :: (IndexNftConfig -> UserSpend -> PubKeyHash -> Tx) -> Run
 mkIndexConfigNftTest tx = do
   user <- newUser minAda
   spend' <- spend user (adaValue 2)
-  let config = IndexNftConfig (getHeadRef spend') dummyIndexConfigNftTokenName indexValidatorHash'
+  let config = IndexNftConfig (getHeadRef spend') dummyIndexConfigNftTokenName indexValidatorScriptHash
   submitTx user $ tx config spend' user
 
 {- | Helper function for building txs

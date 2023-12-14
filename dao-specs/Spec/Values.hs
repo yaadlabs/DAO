@@ -19,8 +19,8 @@ module Spec.Values (
   dummyTreasuryValue,
 ) where
 
-import Plutus.V1.Ledger.Bytes (getLedgerBytes)
-import Plutus.V1.Ledger.Value (CurrencySymbol (CurrencySymbol), TokenName (TokenName), Value, singleton)
+import PlutusLedgerApi.V1.Bytes (getLedgerBytes)
+import PlutusLedgerApi.V1.Value (CurrencySymbol (CurrencySymbol), TokenName (TokenName), Value, singleton)
 import PlutusTx.Prelude (($))
 
 -- | Dummy Configuration

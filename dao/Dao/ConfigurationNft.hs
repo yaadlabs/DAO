@@ -9,8 +9,9 @@ module Dao.ConfigurationNft (
   NftConfig (..),
 ) where
 
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
-import Plutus.V2.Ledger.Tx (TxOutRef)
+import PlutusLedgerApi.V1 (CurrencySymbol)
+import PlutusLedgerApi.V1.Tx (TxOutRef)
+import PlutusLedgerApi.V1.Value (TokenName)
 import PlutusTx (makeLift)
 
 -- | Used as an argument to the `Dao.ConfigurationNft.Script.mkConfigurationNftPolicy` minting policy script

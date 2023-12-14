@@ -5,12 +5,10 @@ Description: Dao treasury related scripts. It includes:
 -}
 module Dao.Treasury.Script (
   -- * Validator
-  treasuryScript,
-  treasuryValidator,
-  treasuryValidatorHash,
+  validateTreasury,
+  treasuryValidatorCompiledCode,
 ) where
 
-import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
 import Dao.ConfigurationNft (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
@@ -25,9 +23,6 @@ import Dao.Shared (
   hasTokenInValue,
   isScriptCredential,
   lovelacesOf,
-  mkValidatorWithSettings,
-  validatorHash,
-  validatorToScript,
   wrapValidate,
  )
 import Dao.Types (
@@ -49,19 +44,19 @@ import Dao.Types (
   ProposalType (General, Trip, Upgrade),
   TallyStateDatum (TallyStateDatum, tsAgainst, tsFor, tsProposal, tsProposalEndTime),
  )
-import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
-import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
-import Plutus.V1.Ledger.Interval (before)
-import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash)
-import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
-import Plutus.V1.Ledger.Value (
+import PlutusLedgerApi.V1.Address (Address (Address, addressCredential))
+import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
+import PlutusLedgerApi.V1.Interval (before)
+import PlutusLedgerApi.V1.Scripts (ScriptHash)
+import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
+import PlutusLedgerApi.V1.Value (
   Value,
   adaSymbol,
   adaToken,
   geq,
   singleton,
  )
-import Plutus.V2.Ledger.Contexts (
+import PlutusLedgerApi.V2.Contexts (
   ScriptContext (
     ScriptContext,
     scriptContextPurpose,
@@ -88,9 +83,10 @@ import Plutus.V2.Ledger.Contexts (
     txOutDatum,
     txOutValue
   ),
+  TxOutRef,
  )
-import Plutus.V2.Ledger.Tx hiding (Mint)
 import PlutusTx (
+  CompiledCode,
   applyCode,
   compile,
   liftCode,
@@ -198,7 +194,7 @@ validateTreasury
     } =
     let
       -- Check that there is only one of this script in the inputs
-      (!inputValue, !thisValidator) :: (Value, ValidatorHash) = ownValueAndValidator txInfoInputs thisTxRef
+      (!inputValue, !thisValidator) :: (Value, ScriptHash) = ownValueAndValidator txInfoInputs thisTxRef
 
       -- Helper for filtering for config UTXO
       hasConfigurationNft :: Value -> Bool
@@ -335,7 +331,7 @@ valuePaidTo' :: [TxOut] -> Address -> Value
 valuePaidTo' outs addr = mconcat (addressOutputsAt addr outs)
 
 getContinuingOutputs' ::
-  ValidatorHash ->
+  ScriptHash ->
   [TxOut] ->
   [TxOut]
 getContinuingOutputs' vh =
@@ -345,7 +341,7 @@ getContinuingOutputs' vh =
           == ScriptCredential vh
     )
 
-ownValueAndValidator :: [TxInInfo] -> TxOutRef -> (Value, ValidatorHash)
+ownValueAndValidator :: [TxInInfo] -> TxOutRef -> (Value, ScriptHash)
 ownValueAndValidator ins txOutRef = go ins
   where
     go = \case
@@ -357,7 +353,7 @@ ownValueAndValidator ins txOutRef = go ins
             _ -> traceError "Impossible. Expected ScriptCredential"
           else go xs
 
-onlyOneOfThisScript :: [TxInInfo] -> ValidatorHash -> TxOutRef -> Bool
+onlyOneOfThisScript :: [TxInInfo] -> ScriptHash -> TxOutRef -> Bool
 onlyOneOfThisScript ins vh expectedRef = go ins
   where
     go = \case
@@ -369,14 +365,8 @@ onlyOneOfThisScript ins vh expectedRef = go ins
             _ -> go xs
           else go xs
 
-treasuryValidator :: ConfigurationValidatorConfig -> Validator
-treasuryValidator config = mkValidatorWithSettings compiledCode False
-  where
-    wrapValidateTreasury = wrapValidate validateTreasury
-    compiledCode = $$(PlutusTx.compile [||wrapValidateTreasury||]) `applyCode` liftCode config
-
-treasuryValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
-treasuryValidatorHash = validatorHash . treasuryValidator
-
-treasuryScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
-treasuryScript = validatorToScript treasuryValidator
+treasuryValidatorCompiledCode ::
+  ConfigurationValidatorConfig ->
+  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+treasuryValidatorCompiledCode config =
+  $$(PlutusTx.compile [||wrapValidate validateTreasury||]) `applyCode` liftCode config

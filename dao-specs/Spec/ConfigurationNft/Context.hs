@@ -28,8 +28,8 @@ import Plutus.Model.V2 (
   payToKey,
   payToRef,
  )
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
-import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
+import PlutusLedgerApi.V1.Crypto (PubKeyHash)
+import PlutusLedgerApi.V1.Value (TokenName (TokenName), Value, singleton)
 import PlutusTx.Prelude (Bool (False, True), ($))
 import Spec.ConfigurationNft.Script (
   configNftCurrencySymbol,

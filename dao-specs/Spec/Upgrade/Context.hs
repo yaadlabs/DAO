@@ -25,8 +25,8 @@ import Plutus.Model.V2 (
   payToKey,
   payToScript,
  )
-import Plutus.V1.Ledger.Interval (from)
-import Plutus.V1.Ledger.Value (Value, adaToken, singleton)
+import PlutusLedgerApi.V1.Interval (from)
+import PlutusLedgerApi.V1.Value (Value, adaToken, singleton)
 import Spec.AlwaysSucceed.Script (
   alwaysSucceedCurrencySymbol,
   alwaysSucceedTypedMintingPolicy,

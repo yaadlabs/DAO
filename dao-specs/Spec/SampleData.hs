@@ -4,24 +4,24 @@ module Spec.SampleData (
 ) where
 
 import Dao.Types (DynamicConfigDatum (..))
-import Plutus.V1.Ledger.Value (TokenName (TokenName), adaToken)
-import Plutus.V2.Ledger.Api (ValidatorHash (ValidatorHash))
+import PlutusLedgerApi.V1.Scripts (ScriptHash (ScriptHash))
+import PlutusLedgerApi.V1.Value (TokenName (TokenName), adaToken)
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
-import Spec.Tally.Script (tallyValidatorHash')
+import Spec.Tally.Script (tallyValidatorScriptHash)
 import Spec.Values (dummyTallySymbol, dummyVoteFungibleSymbol)
-import Spec.Vote.Script (voteCurrencySymbol, voteValidatorHash')
+import Spec.Vote.Script (voteCurrencySymbol, voteValidatorScriptHash)
 
 -- DynamicConfigDatum samples
 sampleDynamicConfig :: DynamicConfigDatum
 sampleDynamicConfig =
   DynamicConfigDatum
     { dcTallyNft = dummyTallySymbol
-    , dcTallyValidator = tallyValidatorHash'
-    , dcTreasuryValidator = ValidatorHash ""
-    , dcConfigurationValidator = ValidatorHash ""
+    , dcTallyValidator = tallyValidatorScriptHash
+    , dcTreasuryValidator = ScriptHash ""
+    , dcConfigurationValidator = ScriptHash ""
     , dcVoteCurrencySymbol = dummyVoteFungibleSymbol
     , dcVoteTokenName = TokenName "vote"
-    , dcVoteValidator = voteValidatorHash'
+    , dcVoteValidator = voteValidatorScriptHash
     , dcUpgradeMajorityPercent = 1
     , dcUpgradeRelativeMajorityPercent = 1
     , dcGeneralMajorityPercent = 1
@@ -43,12 +43,12 @@ sampleHighRelativeMajorityHighTotalVotesDynamicConfig :: DynamicConfigDatum
 sampleHighRelativeMajorityHighTotalVotesDynamicConfig =
   DynamicConfigDatum
     { dcTallyNft = dummyTallySymbol
-    , dcTallyValidator = tallyValidatorHash'
-    , dcTreasuryValidator = ValidatorHash ""
-    , dcConfigurationValidator = ValidatorHash ""
+    , dcTallyValidator = tallyValidatorScriptHash
+    , dcTreasuryValidator = ScriptHash ""
+    , dcConfigurationValidator = ScriptHash ""
     , dcVoteCurrencySymbol = dummyVoteFungibleSymbol
     , dcVoteTokenName = TokenName "vote"
-    , dcVoteValidator = voteValidatorHash'
+    , dcVoteValidator = voteValidatorScriptHash
     , dcUpgradeMajorityPercent = 1
     , dcUpgradeRelativeMajorityPercent = 70
     , -- \^ Just set to high value for negative test for upgrading config

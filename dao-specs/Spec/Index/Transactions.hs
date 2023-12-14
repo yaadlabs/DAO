@@ -1,4 +1,4 @@
-module Spec.Index.Transactions (runInitIndex) where
+module Spec.Index.Transactions where -- (runInitIndex) where
 
 import Plutus.Model (
   Run,

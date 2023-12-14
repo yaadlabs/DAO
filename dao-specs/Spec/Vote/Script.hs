@@ -1,12 +1,14 @@
 module Spec.Vote.Script (
-  VoteValidatorScript,
+  -- * Minting policy
   VoteMintingPolicy,
-  voteTypedValidator,
-  voteValidatorHash',
   voteTypedMintingPolicy,
-  voteMintingPolicy,
   voteCurrencySymbol,
   voteValue,
+
+  -- * Validator
+  VoteValidatorScript,
+  voteTypedValidator,
+  voteValidatorScriptHash,
 )
 where
 
@@ -16,19 +18,16 @@ import Dao.Vote (
   VoteDatum,
   VoteMinterActionRedeemer,
  )
-import Dao.Vote.Script (voteValidator, voteValidatorHash, wrappedPolicy)
+import Dao.Vote.Script (voteValidatorCompiledCode, wrappedPolicy)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
   mkTypedPolicy,
   scriptCurrencySymbol,
+  scriptHash,
  )
-import Plutus.V1.Ledger.Scripts (
-  MintingPolicy,
-  ValidatorHash,
-  mkMintingPolicyScript,
- )
-import Plutus.V1.Ledger.Value (CurrencySymbol, Value, singleton)
+import PlutusLedgerApi.V1.Scripts (ScriptHash)
+import PlutusLedgerApi.V1.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
@@ -43,12 +42,6 @@ voteTypedMintingPolicy config =
     $ $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
     `PlutusTx.applyCode` PlutusTx.liftCode config
 
-voteMintingPolicy :: ConfigurationValidatorConfig -> MintingPolicy
-voteMintingPolicy config =
-  mkMintingPolicyScript
-    $ $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
-    `PlutusTx.applyCode` PlutusTx.liftCode config
-
 voteCurrencySymbol :: ConfigurationValidatorConfig -> CurrencySymbol
 voteCurrencySymbol = scriptCurrencySymbol . voteTypedMintingPolicy
 
@@ -59,7 +52,7 @@ voteValue voteCfg@(ConfigurationValidatorConfig _ tokenName) = singleton (voteCu
 type VoteValidatorScript = TypedValidator VoteDatum VoteActionRedeemer
 
 voteTypedValidator :: VoteValidatorScript
-voteTypedValidator = mkTypedValidator' sampleConfigValidatorConfig voteValidator
+voteTypedValidator = mkTypedValidator' voteValidatorCompiledCode sampleConfigValidatorConfig
 
-voteValidatorHash' :: ValidatorHash
-voteValidatorHash' = voteValidatorHash sampleConfigValidatorConfig
+voteValidatorScriptHash :: ScriptHash
+voteValidatorScriptHash = scriptHash voteTypedValidator

@@ -4,7 +4,7 @@ module Spec.Vote.Utils (
 
 import Dao.Vote (VoteDatum)
 import Plutus.Model (Run)
-import Plutus.V2.Ledger.Tx (TxOut, TxOutRef)
+import PlutusLedgerApi.V2.Tx (TxOut, TxOutRef)
 import Spec.SpecUtils (findConfigUtxo)
 import Spec.Values (
   dummyVoteSymbol,

@@ -6,7 +6,7 @@ module Spec.Upgrade (spec) where
 
 import Plutus.Model (
   MockConfig,
-  defaultBabbage,
+  defaultBabbageV2,
   testNoErrors,
  )
 import Spec.SpecUtils (amountOfAda, checkFails)
@@ -22,7 +22,7 @@ import Test.Tasty (TestTree, testGroup)
 import Prelude (mconcat)
 
 spec :: TestTree
-spec = nftSpec defaultBabbage
+spec = nftSpec defaultBabbageV2
 
 nftSpec :: MockConfig -> TestTree
 nftSpec config =

@@ -5,12 +5,11 @@ benchmarks: false
 
 test-show-details: streaming
 
-with-compiler: ghc-8.10.7
+with-compiler: 
+  ghc-9.2.5
 
 packages:
   ./
 
-flags: -scrypt
-
 package plutonomy
-  flags: +plutus-f680ac697
+  flags: +chap

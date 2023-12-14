@@ -30,7 +30,7 @@ import Plutus.Model.V2 (
   refInputInline,
   spendScript,
  )
-import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
+import PlutusLedgerApi.V1.Value (TokenName (TokenName), Value, singleton)
 import PlutusTx.Prelude (($))
 import Spec.ConfigurationNft.Transactions (runInitConfig)
 import Spec.ConfigurationNft.Utils (findConfig)

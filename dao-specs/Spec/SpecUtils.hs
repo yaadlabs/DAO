@@ -3,7 +3,6 @@ module Spec.SpecUtils (
   runInitReferenceScript,
   checkFails,
   mkTypedValidator',
-  initScriptRef,
   getFirstRefScript,
   minAda,
   amountOfAda,
@@ -12,9 +11,7 @@ module Spec.SpecUtils (
   oneSecond,
 ) where
 
-import Control.Monad (unless, void)
 import Dao.Shared (hasOneOfToken)
-import GHC.Stack (HasCallStack)
 import Plutus.Model (
   Ada (Lovelace),
   IsValidator,
@@ -25,8 +22,6 @@ import Plutus.Model (
   mustFail,
   payToRef,
   payToScript,
-  sendTx,
-  signTx,
   skipLimits,
   spend,
   submitTx,
@@ -36,45 +31,34 @@ import Plutus.Model (
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
   DatumType,
-  HasAddress,
-  HasDatum,
   TxBox,
-  TypedValidator (TypedValidator),
+  TypedValidator,
   boxAt,
   checkErrors,
-  loadRefScript,
+  mkTypedValidator,
   refScriptAt,
-  toV2,
   txBoxDatum,
   txBoxOut,
   txBoxRef,
   txBoxValue,
  )
-import Plutus.V1.Ledger.Scripts (Validator)
-import Plutus.V1.Ledger.Time (POSIXTime (POSIXTime))
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName, Value)
-import Plutus.V2.Ledger.Tx (TxOut, TxOutRef)
-import PlutusTx.Prelude (Bool, Integer, Maybe (Just, Nothing), fst, head, ($), (.), (>>=))
+import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
+import PlutusLedgerApi.V1.Value (CurrencySymbol, TokenName, Value)
+import PlutusLedgerApi.V2.Tx (TxOut, TxOutRef)
+import PlutusTx (CompiledCode)
+import PlutusTx.Prelude (Bool, BuiltinData, Integer, Maybe (Just, Nothing), fst, head, ($), (.), (>>=))
 import Test.Tasty (TestTree)
-import Prelude (Eq, String, error, mconcat, pure, show, (<$>), (<>), (==))
+import Prelude (Eq, String, error, pure, show, (<$>), (<>))
 
 checkFails :: MockConfig -> Value -> String -> Run () -> TestTree
 checkFails cfg funds msg act =
   testNoErrors funds (skipLimits cfg) msg (mustFail act)
 
-mkTypedValidator' :: config -> (config -> Validator) -> TypedValidator datum redeemer
-mkTypedValidator' config mkValidator = TypedValidator . toV2 $ mkValidator config
-
-initScriptRef :: (IsValidator script) => script -> Run ()
-initScriptRef script = do
-  admin <- getMainUser
-  sp <- spend admin minAda
-  let tx =
-        mconcat
-          [ userSpend sp
-          , loadRefScript script minAda
-          ]
-  void $ signTx admin tx >>= sendTx
+mkTypedValidator' ::
+  (config -> CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())) ->
+  config ->
+  TypedValidator datum redeemer
+mkTypedValidator' mkValidator = mkTypedValidator . mkValidator
 
 data ScriptType = Reference | Script
   deriving stock (Eq)
@@ -87,14 +71,13 @@ runInitScript ::
   Value ->
   Run ()
 runInitScript validatorScript scriptType datum token = do
-  unless (scriptType == Script) (initScriptRef validatorScript)
   admin <- getMainUser
-  let value = token <> minAda
+  let value = minAda <> token
   spend' <- spend admin value
   let payTx = case scriptType of
         Reference -> payToRef validatorScript (InlineDatum datum) value
         Script -> payToScript validatorScript (InlineDatum datum) value
-  submitTx admin $ userSpend spend' <> payTx
+  submitTx admin $ payTx <> userSpend spend'
 
 runInitPayToScript ::
   (IsValidator script) =>
@@ -120,10 +103,10 @@ minAda :: Value
 minAda = ada $ Lovelace 2_000_000
 
 amountOfAda :: Integer -> Value
-amountOfAda amount = ada $ Lovelace amount
+amountOfAda = ada . Lovelace
 
 findConfigUtxo ::
-  (HasDatum script, HasAddress script) =>
+  (IsValidator script) =>
   script ->
   CurrencySymbol ->
   TokenName ->
@@ -134,7 +117,7 @@ findConfigUtxo validatorScript symbol tokenName = findUniqueUtxo validatorScript
     check box = hasOneOfToken symbol tokenName (txBoxValue box)
 
 findUniqueUtxo ::
-  (HasCallStack, HasDatum script, HasAddress script) =>
+  (IsValidator script) =>
   script ->
   (TxBox script -> Bool) ->
   Run (TxOutRef, TxOut, DatumType script)
@@ -148,7 +131,7 @@ findUniqueUtxo validator selector =
         )
 
 findUniqueUtxo' ::
-  (HasDatum script, HasAddress script) =>
+  (IsValidator script) =>
   script ->
   (TxBox script -> Bool) ->
   Run (Maybe (TxOutRef, TxOut, DatumType script))

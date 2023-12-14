@@ -6,17 +6,12 @@ Description: Dao tally related scripts. It includes:
 -}
 module Dao.Tally.Script (
   -- * Minting policy
-  tallyNftMinter,
-  tallyNftMinterPolicyId,
   mkTallyNftMinter,
 
   -- * Validator
-  tallyScript,
-  tallyValidator,
-  tallyValidatorHash,
+  tallyValidatorCompiledCode,
 ) where
 
-import Cardano.Api.Shelley (PlutusScript, PlutusScriptV2)
 import Dao.ConfigurationNft (
   ConfigurationValidatorConfig (
     ConfigurationValidatorConfig,
@@ -26,7 +21,6 @@ import Dao.ConfigurationNft (
  )
 import Dao.Index (IndexNftDatum (IndexNftDatum, indIndex))
 import Dao.Shared (
-  WrappedMintingPolicyType,
   convertDatum,
   countOfTokenInValue,
   getTokenNameOfNft,
@@ -35,11 +29,6 @@ import Dao.Shared (
   hasSymbolInValue,
   integerToByteString,
   isScriptCredential,
-  mintingPolicyHash,
-  mkValidatorWithSettings,
-  policyToScript,
-  validatorHash,
-  validatorToScript,
   wrapValidate,
  )
 import Dao.Tally (
@@ -68,26 +57,19 @@ import Dao.Vote (
   VoteDatum (VoteDatum, vDirection, vOwner, vProposalTokenName, vReturnAda),
   VoteDirection (For),
  )
-import Plutus.V1.Ledger.Address (Address (Address, addressCredential))
-import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
-import Plutus.V1.Ledger.Interval (before)
-import Plutus.V1.Ledger.Scripts (
-  MintingPolicy,
-  Validator,
-  ValidatorHash,
-  mkMintingPolicyScript,
- )
-import Plutus.V1.Ledger.Value (
-  CurrencySymbol,
+import PlutusLedgerApi.V1.Address (Address (Address, addressCredential))
+import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
+import PlutusLedgerApi.V1.Interval (before)
+import PlutusLedgerApi.V1.Scripts (ScriptHash)
+import PlutusLedgerApi.V1.Value (
   TokenName (TokenName),
   Value (Value),
   adaSymbol,
   adaToken,
   geq,
   getValue,
-  mpsSymbol,
  )
-import Plutus.V2.Ledger.Contexts (
+import PlutusLedgerApi.V2.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
   ScriptPurpose (Minting, Spending),
   TxInInfo (TxInInfo, txInInfoOutRef, txInInfoResolved),
@@ -101,26 +83,25 @@ import Plutus.V2.Ledger.Contexts (
     txInfoValidRange
   ),
  )
-import Plutus.V2.Ledger.Tx (
+import PlutusLedgerApi.V2.Tx (
   TxOut (TxOut, txOutAddress, txOutDatum, txOutValue),
   TxOutRef,
  )
 import PlutusTx (
+  CompiledCode,
   applyCode,
   compile,
   liftCode,
-  unsafeFromBuiltinData,
  )
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
-  Bool (False, True),
+  Bool (True),
   BuiltinData,
   Integer,
   Maybe (Just, Nothing),
   all,
   any,
-  check,
   divide,
   filter,
   foldr,
@@ -231,23 +212,8 @@ mkTallyNftMinter
         && traceIfFalse "Should be exactly one valid token minted" onlyOneTokenMinted
 mkTallyNftMinter _ _ _ = traceError "Wrong type of script purpose!"
 
-wrappedPolicyTally :: TallyNftConfig -> WrappedMintingPolicyType
-wrappedPolicyTally config a b = check (mkTallyNftMinter config a (unsafeFromBuiltinData b))
-
-tallyNftPolicy :: TallyNftConfig -> MintingPolicy
-tallyNftPolicy cfg =
-  mkMintingPolicyScript
-    $ $$(compile [||\c -> wrappedPolicyTally c||])
-    `PlutusTx.applyCode` PlutusTx.liftCode cfg
-
-tallyNftMinterPolicyId :: TallyNftConfig -> CurrencySymbol
-tallyNftMinterPolicyId = mpsSymbol . mintingPolicyHash . tallyNftPolicy
-
-tallyNftMinter :: TallyNftConfig -> PlutusScript PlutusScriptV2
-tallyNftMinter = policyToScript tallyNftPolicy
-
 -- | Validator
-ownValueAndValidator :: [TxInInfo] -> TxOutRef -> (Value, ValidatorHash)
+ownValueAndValidator :: [TxInInfo] -> TxOutRef -> (Value, ScriptHash)
 ownValueAndValidator ins txOutRef = go ins
   where
     go = \case
@@ -259,7 +225,7 @@ ownValueAndValidator ins txOutRef = go ins
             _ -> traceError "Impossible. Expected ScriptCredential"
           else go xs
 
-hasExpectedScripts :: [TxInInfo] -> ValidatorHash -> ValidatorHash -> Bool
+hasExpectedScripts :: [TxInInfo] -> ScriptHash -> ScriptHash -> Bool
 hasExpectedScripts theInputs theTallyValidator voteValidator =
   let
     tallyCredential :: Credential
@@ -348,7 +314,7 @@ validateTally
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Should be exactly one tally NFT in the reference inputs"
 
-      (!oldValue, !thisValidatorHash) :: (Value, ValidatorHash) = ownValueAndValidator txInfoInputs thisOutRef
+      (!oldValue, !thisValidatorHash) :: (Value, ScriptHash) = ownValueAndValidator txInfoInputs thisOutRef
 
       -- Make sure there is only one tally and many votes
       expectedScripts :: Bool
@@ -477,14 +443,9 @@ validateTally
         && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
 validateTally _ _ _ _ = traceError "Wrong script purpose"
 
-tallyValidator :: ConfigurationValidatorConfig -> Validator
-tallyValidator config = mkValidatorWithSettings compiledCode False
-  where
-    wrapValidateTally = wrapValidate validateTally
-    compiledCode = $$(PlutusTx.compile [||wrapValidateTally||]) `applyCode` liftCode config
-
-tallyValidatorHash :: ConfigurationValidatorConfig -> ValidatorHash
-tallyValidatorHash = validatorHash . tallyValidator
-
-tallyScript :: ConfigurationValidatorConfig -> PlutusScript PlutusScriptV2
-tallyScript = validatorToScript tallyValidator
+tallyValidatorCompiledCode ::
+  ConfigurationValidatorConfig ->
+  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+tallyValidatorCompiledCode config =
+  let wrapValidateTally = wrapValidate validateTally
+   in $$(PlutusTx.compile [||wrapValidateTally||]) `applyCode` liftCode config

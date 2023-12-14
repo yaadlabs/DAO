@@ -5,13 +5,13 @@ Description : Treasury script
 module Spec.Treasury.Script (
   TreasuryValidatorScript,
   treasuryTypedValidator,
-  treasuryValidatorHash',
+  treasuryValidatorScriptHash,
 )
 where
 
-import Dao.Treasury.Script (treasuryValidator, treasuryValidatorHash)
-import Plutus.Model.V2 (TypedValidator)
-import Plutus.V1.Ledger.Scripts (ValidatorHash)
+import Dao.Treasury.Script (treasuryValidatorCompiledCode)
+import Plutus.Model.V2 (TypedValidator, scriptHash)
+import PlutusLedgerApi.V1.Scripts (ScriptHash)
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
 import Spec.SpecUtils (mkTypedValidator')
 
@@ -19,7 +19,7 @@ import Spec.SpecUtils (mkTypedValidator')
 type TreasuryValidatorScript = TypedValidator () ()
 
 treasuryTypedValidator :: TreasuryValidatorScript
-treasuryTypedValidator = mkTypedValidator' sampleConfigValidatorConfig treasuryValidator
+treasuryTypedValidator = mkTypedValidator' treasuryValidatorCompiledCode sampleConfigValidatorConfig
 
-treasuryValidatorHash' :: ValidatorHash
-treasuryValidatorHash' = treasuryValidatorHash sampleConfigValidatorConfig
+treasuryValidatorScriptHash :: ScriptHash
+treasuryValidatorScriptHash = scriptHash treasuryTypedValidator

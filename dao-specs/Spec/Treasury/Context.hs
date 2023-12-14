@@ -28,8 +28,8 @@ import Plutus.Model.V2 (
   payToScript,
   refInputInline,
  )
-import Plutus.V1.Ledger.Interval (from)
-import Plutus.V1.Ledger.Value (Value, adaToken, singleton)
+import PlutusLedgerApi.V1.Interval (from)
+import PlutusLedgerApi.V1.Value (Value, adaToken, singleton)
 import PlutusTx.Prelude (($))
 import Spec.Addresses (
   dummyGeneralPaymentAddress,

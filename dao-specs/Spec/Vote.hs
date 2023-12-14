@@ -7,7 +7,7 @@ module Spec.Vote (spec) where
 import Plutus.Model (
   MockConfig,
   adaValue,
-  defaultBabbage,
+  defaultBabbageV2,
   testNoErrors,
  )
 import Spec.SpecUtils (checkFails)
@@ -22,7 +22,7 @@ import Test.Tasty (TestTree, testGroup)
 import Prelude (mconcat, (<>))
 
 spec :: TestTree
-spec = nftSpec defaultBabbage
+spec = nftSpec defaultBabbageV2
 
 nftSpec :: MockConfig -> TestTree
 nftSpec config =

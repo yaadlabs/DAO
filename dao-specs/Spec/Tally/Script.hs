@@ -3,26 +3,30 @@ Module      : Spec.Tally.Script
 Description : Tally scripts
 -}
 module Spec.Tally.Script (
+  -- * Minting policy
   tallyConfigNftTypedMintingPolicy,
-  tallyNftTypedValidator,
   tallyConfigNftValue,
   tallyConfigNftCurrencySymbol,
-  tallyValidatorHash',
+
+  -- * Validator
+  tallyNftTypedValidator,
+  tallyValidatorScriptHash,
 )
 where
 
 import Dao.Tally (TallyNftConfig (TallyNftConfig))
-import Dao.Tally.Script (mkTallyNftMinter, tallyValidator, tallyValidatorHash)
+import Dao.Tally.Script (mkTallyNftMinter, tallyValidatorCompiledCode)
 import Dao.Types (TallyStateDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
   mkTypedPolicy,
   scriptCurrencySymbol,
+  scriptHash,
   toBuiltinPolicy,
  )
-import Plutus.V1.Ledger.Scripts (ValidatorHash)
-import Plutus.V1.Ledger.Value (CurrencySymbol, Value, singleton)
+import PlutusLedgerApi.V1.Scripts (ScriptHash)
+import PlutusLedgerApi.V1.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
@@ -46,7 +50,7 @@ tallyConfigNftValue nftCfg@(TallyNftConfig _ tokenName _ _) =
 type TallyValidatorScript = TypedValidator TallyStateDatum ()
 
 tallyNftTypedValidator :: TallyValidatorScript
-tallyNftTypedValidator = mkTypedValidator' sampleConfigValidatorConfig tallyValidator
+tallyNftTypedValidator = mkTypedValidator' tallyValidatorCompiledCode sampleConfigValidatorConfig
 
-tallyValidatorHash' :: ValidatorHash
-tallyValidatorHash' = tallyValidatorHash sampleConfigValidatorConfig
+tallyValidatorScriptHash :: ScriptHash
+tallyValidatorScriptHash = scriptHash tallyNftTypedValidator

@@ -28,8 +28,8 @@ import Plutus.Model.V2 (
   payToScript,
   refInputInline,
  )
-import Plutus.V1.Ledger.Interval (to)
-import Plutus.V1.Ledger.Value (TokenName (TokenName), Value, singleton)
+import PlutusLedgerApi.V1.Interval (to)
+import PlutusLedgerApi.V1.Value (TokenName (TokenName), Value, singleton)
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
 import Spec.ConfigurationNft.Transactions (runInitConfig)
 import Spec.ConfigurationNft.Utils (findConfig)

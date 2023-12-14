@@ -38,12 +38,11 @@ common common-options
 
 common common-depends
   build-depends:
-    , base ^>=4.14
+    , base
 
 library
   import: common-lang, common-depends, common-options, common-extensions
   exposed-modules:
-    Dao.AlwaysSucceed
     Dao.ConfigurationNft
     Dao.ConfigurationNft.Script
     Dao.Index
@@ -57,15 +56,16 @@ library
     Dao.Vote.Script
 
   build-depends:
-    , aeson
-    , bytestring
-    , containers
-    , plutus-tx
-    , plutus-tx-plugin
-    , serialise
-    , plutonomy
-    , cardano-api
-    , plutus-ledger-api
+       , lbr-prelude
+       , lbr-plutus
+       , aeson
+       , bytestring
+       , containers
+       , plutus-tx
+       , plutus-tx-plugin
+       , serialise
+       , plutonomy
+       , plutus-ledger-api
 
   hs-source-dirs:  dao
   ghc-options:
@@ -76,11 +76,12 @@ library dao-specs
   import: common-lang, common-depends, common-options, common-extensions
   hs-source-dirs: dao-specs
   build-depends:
-   , tasty-hunit
-   , plutus-simple-model
-   , plutus-ledger-api
-   , tasty
-   , plutus-tx
+      , tasty-hunit
+      , plutus-simple-model
+      , plutus-ledger-api
+      , tasty
+      , plutus-tx
+
   exposed-modules:
     Spec.Addresses
     Spec.AlwaysSucceed.Script
@@ -123,8 +124,8 @@ library dao-specs
     Spec.Vote.Transactions
     Spec.Vote.Utils
   build-depends:
-    , dao
-    , plutus-tx-plugin
+       , dao
+       , plutus-tx-plugin
 
 executable create-sc
   import: common-lang, common-depends, common-options, common-extensions
@@ -132,10 +133,8 @@ executable create-sc
   main-is:        Main.hs
   ghc-options:    -threaded -rtsopts -with-rtsopts=-T
   build-depends:
-    , dao
-    , optparse-generic
-    , plutus-ledger-api
-    , cardano-api
+       , dao
+       , plutus-ledger-api
 
 test-suite dao-test
   import: common-lang, common-depends, common-options, common-extensions
@@ -143,5 +142,5 @@ test-suite dao-test
   main-is: Spec.hs
   hs-source-dirs: dao-test
   build-depends:
-    , dao-specs
-    , tasty
+       , dao-specs
+       , tasty

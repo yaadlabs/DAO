@@ -8,7 +8,7 @@ import Control.Monad (void)
 import Plutus.Model (
   MockConfig,
   adaValue,
-  defaultBabbage,
+  defaultBabbageV2,
   testNoErrors,
  )
 import Spec.ConfigurationNft.Context (
@@ -24,7 +24,7 @@ import Test.Tasty (TestTree, testGroup)
 import Prelude ((<>))
 
 spec :: TestTree
-spec = nftSpec defaultBabbage
+spec = nftSpec defaultBabbageV2
 
 nftSpec :: MockConfig -> TestTree
 nftSpec config =

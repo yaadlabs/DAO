@@ -15,7 +15,7 @@ module Spec.Tally.SampleData (
 ) where
 
 import Dao.Types (ProposalType (General, Trip, Upgrade), TallyStateDatum (..))
-import Plutus.V1.Ledger.Api (POSIXTime (POSIXTime))
+import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
 import Spec.Addresses (
   dummyGeneralPaymentAddress,
   dummyTravelAgentAddress,

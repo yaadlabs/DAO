@@ -9,8 +9,8 @@ import Plutus.Model.V2 (
   scriptCurrencySymbol,
   toBuiltinPolicy,
  )
-import Plutus.V1.Ledger.Value (CurrencySymbol)
-import Plutus.V2.Ledger.Contexts (ScriptContext)
+import PlutusLedgerApi.V1.Value (CurrencySymbol)
+import PlutusLedgerApi.V2.Contexts (ScriptContext)
 import PlutusTx (compile)
 import PlutusTx.Prelude (Bool (True), BuiltinData)
 

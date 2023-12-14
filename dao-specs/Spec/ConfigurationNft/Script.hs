@@ -3,13 +3,16 @@ Module      : Spec.ConfigurationNft.Script
 Description : ConfigurationNft scripts
 -}
 module Spec.ConfigurationNft.Script (
+  -- * Validator
   upgradeConfigNftTypedValidator,
+
+  -- * Minting policy
   configNftTypedMintingPolicy,
   configNftCurrencySymbol,
 ) where
 
 import Dao.ConfigurationNft (NftConfig)
-import Dao.ConfigurationNft.Script (configurationValidator, mkConfigurationNftPolicy)
+import Dao.ConfigurationNft.Script (configurationValidatorCompiledCode, mkConfigurationNftPolicy)
 import Dao.Types (DynamicConfigDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
@@ -18,7 +21,7 @@ import Plutus.Model.V2 (
   scriptCurrencySymbol,
   toBuiltinPolicy,
  )
-import Plutus.V1.Ledger.Value (CurrencySymbol)
+import PlutusLedgerApi.V1.Value (CurrencySymbol)
 import PlutusTx qualified
 import PlutusTx.Prelude (($), (.))
 import Spec.ConfigurationNft.SampleData (sampleConfigValidatorConfig)
@@ -38,4 +41,4 @@ configNftCurrencySymbol = scriptCurrencySymbol . configNftTypedMintingPolicy
 type ConfigUpgradeValidatorScript = TypedValidator DynamicConfigDatum ()
 
 upgradeConfigNftTypedValidator :: ConfigUpgradeValidatorScript
-upgradeConfigNftTypedValidator = mkTypedValidator' sampleConfigValidatorConfig configurationValidator
+upgradeConfigNftTypedValidator = mkTypedValidator' configurationValidatorCompiledCode sampleConfigValidatorConfig

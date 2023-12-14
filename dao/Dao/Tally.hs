@@ -7,7 +7,8 @@ module Dao.Tally (
   TallyNftConfig (..),
 ) where
 
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
+import PlutusLedgerApi.V1.Value (TokenName)
+import PlutusLedgerApi.V2 (CurrencySymbol)
 import PlutusTx (makeLift)
 
 -- | Tally policy configuration
