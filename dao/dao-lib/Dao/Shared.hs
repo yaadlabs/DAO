@@ -19,6 +19,8 @@ module Dao.Shared (
   integerToByteString,
   isScriptCredential,
   lovelacesOf,
+  mkUntypedValidator,
+  mkUntypedPolicy,
 ) where
 
 import PlutusLedgerApi.V1 (CurrencySymbol)
@@ -29,6 +31,7 @@ import PlutusLedgerApi.V2 (
   DatumHash,
   OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash),
  )
+import PlutusLedgerApi.V2.Contexts (ScriptContext)
 import PlutusTx (FromData, UnsafeFromData, fromBuiltinData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as Map
@@ -231,3 +234,28 @@ wrapValidate validate config x y z =
         (unsafeFromBuiltinData y)
         (unsafeFromBuiltinData z)
     )
+
+mkUntypedValidator ::
+  forall d r.
+  (FromData d, PlutusTx.UnsafeFromData r) =>
+  (d -> r -> ScriptContext -> Bool) ->
+  (BuiltinData -> BuiltinData -> BuiltinData -> ())
+mkUntypedValidator f d r p =
+  let maybeDataArg = fromBuiltinData d
+   in case maybeDataArg of
+        Just dataArg ->
+          check $
+            f
+              dataArg
+              (unsafeFromBuiltinData r)
+              (unsafeFromBuiltinData p)
+        _ -> traceError "mkUntypedValidator: Error at fromBuiltinData"
+
+mkUntypedPolicy ::
+  forall r.
+  PlutusTx.UnsafeFromData r =>
+  (r -> ScriptContext -> Bool) ->
+  (BuiltinData -> BuiltinData -> ())
+mkUntypedPolicy f r p =
+  check $
+    f (PlutusTx.unsafeFromBuiltinData r) (PlutusTx.unsafeFromBuiltinData p)

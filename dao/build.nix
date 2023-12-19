@@ -1,6 +1,6 @@
 { inputs, ... }:
 {
-  perSystem = { config, system, inputs', pkgs, ... }:
+  perSystem = { config, system, inputs', ... }:
     let
       hsFlake = inputs.lbf.lib.${system}.haskellPlutusFlake {
         src = ./.;
@@ -21,6 +21,7 @@
 
           # Lambda Buffers types
           "${config.packages.dao-lb-types}"
+          "${config.packages.dao-lb-config}"
 
           # LBs PlutusTx
           "${inputs'.lbf.packages.lbf-plutus-haskell}"
@@ -42,7 +43,7 @@
       packages = {
         dao-lib = hsFlake.packages."dao:lib:dao";
 
-        dao-app = hsFlake.packages."dao:exe:create-sc";
+        dao-scripts = hsFlake.packages."dao:exe:create-scripts";
 
         dao-test = hsFlake.packages."dao:test:dao-test";
       };

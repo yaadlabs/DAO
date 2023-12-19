@@ -1,0 +1,14 @@
+-- Demo.Config contains all the protocol configurations (scripts and such)
+module ApplicationConfig.Scripts
+
+import Prelude
+
+prod Script = Bytes
+derive Eq Script
+derive Json Script
+
+record Scripts = {
+  configPolicy : Script
+}
+derive Eq Scripts
+derive Json Scripts

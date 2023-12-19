@@ -7,9 +7,11 @@ Description: Dao configuration related scripts. It includes:
 module Dao.Configuration.Script (
   -- * Minting policy
   mkConfigurationNftPolicy,
+  configPolicyUnappliedCompiledCode,
 
   -- * Validator
   validateConfiguration,
+  configurationValidatorCompiledCode,
   configurationValidatorCompiledCode,
 ) where
 
@@ -28,6 +30,8 @@ import Dao.Shared (
   hasSymbolInValue,
   hasTokenInValue,
   hasTokenInValueNoErrors,
+  mkUntypedPolicy,
+  mkUntypedValidator,
   wrapValidate',
  )
 import LambdaBuffers.ApplicationTypes.Configuration (
@@ -143,6 +147,11 @@ mkConfigurationNftPolicy
         && traceIfFalse "Exactly one valid token should be minted" onlyOneTokenMinted
 mkConfigurationNftPolicy _ _ _ = traceError "Wrong type of script purpose!"
 
+configPolicyUnappliedCompiledCode ::
+  CompiledCode (NftConfig -> BuiltinData -> BuiltinData -> ())
+configPolicyUnappliedCompiledCode =
+  $$(PlutusTx.compile [||mkUntypedPolicy . mkConfigurationNftPolicy||])
+
 {- | Validator for proposal upgrades.
 
    This validator performs the following checks:
@@ -242,6 +251,11 @@ validateConfiguration
         && traceIfFalse "Should be exactly one upgrade token minted" hasUpgradeMinterToken
         && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 validateConfiguration _ _ _ _ = traceError "Wrong script purpose"
+
+configValidatorUnappliedCompiledCode ::
+  CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+configValidatorUnappliedCompiledCode =
+  $$(PlutusTx.compile [||mkUntypedValidator . validateConfiguration||])
 
 configurationValidatorCompiledCode ::
   ConfigurationValidatorConfig ->
