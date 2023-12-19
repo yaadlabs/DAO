@@ -8,9 +8,11 @@ module Dao.Vote.Script (
   -- * Minting policy
   mkVoteMinter,
   wrappedPolicy,
+  votePolicyUnappliedCompiledCode,
 
   -- * Validator
   voteValidatorCompiledCode,
+  voteValidatorUnappliedCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
@@ -28,6 +30,8 @@ import Dao.Shared (
   hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
+  mkUntypedPolicy',
+  mkUntypedValidator',
   wrapValidate'',
  )
 import Data.ByteString.Lazy qualified as BSL
@@ -224,6 +228,11 @@ mkVoteMinter
           && traceIfFalse "Total ada is not high enough" totalAdaIsGreaterThanReturnAda
 mkVoteMinter _ _ _ = traceError "Wrong type of script purpose!"
 
+votePolicyUnappliedCompiledCode ::
+  CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> ())
+votePolicyUnappliedCompiledCode =
+  $$(PlutusTx.compile [||mkUntypedPolicy' . mkVoteMinter||])
+
 wrappedPolicy :: ConfigurationValidatorConfig -> WrappedMintingPolicyType
 wrappedPolicy config x y =
   let (maybeDataX, maybeDataY) = (fromBuiltinData x, fromBuiltinData y)
@@ -318,6 +327,11 @@ validateVote
            in
             traceIfFalse "Transaction should be signed by the vote owner" isSignedByOwner
               && traceIfFalse "All vote tokens should be burned" voteTokenAreAllBurned
+
+voteValidatorUnappliedCompiledCode ::
+  CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+voteValidatorUnappliedCompiledCode =
+  $$(PlutusTx.compile [||mkUntypedValidator' . validateVote||])
 
 voteValidatorCompiledCode ::
   ConfigurationValidatorConfig ->

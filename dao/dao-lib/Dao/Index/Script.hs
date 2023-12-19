@@ -7,6 +7,7 @@ Description: Dao index related scripts. It includes:
 module Dao.Index.Script (
   -- * Minting policy
   mkIndexNftMinter,
+  indexPolicyUnappliedCompiledCode,
 
   -- * Validator
   validateIndex,
@@ -25,6 +26,8 @@ import Dao.Shared (
   convertDatum,
   hasSingleTokenWithSymbolAndTokenName,
   hasTokenInValueNoErrors,
+  mkUntypedPolicy,
+  mkUntypedValidator,
   wrapValidate',
  )
 import LambdaBuffers.ApplicationTypes.Index (
@@ -70,6 +73,7 @@ import PlutusTx.Prelude (
   traceIfFalse,
   (&&),
   (+),
+  (.),
   (==),
  )
 
@@ -182,3 +186,8 @@ mkIndexNftMinter
         && traceIfFalse "Initial index should be set to zero" initialIndexIsZero
         && traceIfFalse "Index NFT must be sent to the Index validator" outputIsValidator
 mkIndexNftMinter _ _ _ = traceError "Wrong type of script purpose!"
+
+indexPolicyUnappliedCompiledCode ::
+  CompiledCode (IndexNftConfig -> BuiltinData -> BuiltinData -> ())
+indexPolicyUnappliedCompiledCode =
+  $$(PlutusTx.compile [||mkUntypedPolicy . mkIndexNftMinter||])

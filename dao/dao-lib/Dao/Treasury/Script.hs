@@ -7,6 +7,7 @@ module Dao.Treasury.Script (
   -- * Validator
   validateTreasury,
   treasuryValidatorCompiledCode,
+  treasuryValidatorUnappliedCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
@@ -23,6 +24,7 @@ import Dao.Shared (
   hasTokenInValue,
   isScriptCredential,
   lovelacesOf,
+  mkUntypedValidator,
   wrapValidate,
  )
 import LambdaBuffers.ApplicationTypes.Configuration (
@@ -154,7 +156,7 @@ import PlutusTx.Prelude (
 
         - The correct amount is paid to the traveler's address, specified by the
           corresponding 'Trip' field in the 'ProposalType'. The traveler's amount should
-          be greater than or equal to the total case of the travel minus the payment to
+          be greater than or equal to the total cost of the travel minus the payment to
           the travel agent.
 
         - The correct amount is paid to the travel agent's address, specified by the
@@ -394,6 +396,11 @@ onlyOneOfThisScript ins vh expectedRef = go ins
             ScriptCredential vh' | vh' == vh -> False
             _ -> go xs
           else go xs
+
+treasuryValidatorUnappliedCompiledCode ::
+  CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+treasuryValidatorUnappliedCompiledCode =
+  $$(PlutusTx.compile [||mkUntypedValidator . validateTreasury||])
 
 treasuryValidatorCompiledCode ::
   ConfigurationValidatorConfig ->

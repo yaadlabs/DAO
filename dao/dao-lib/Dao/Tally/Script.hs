@@ -7,9 +7,11 @@ Description: Dao tally related scripts. It includes:
 module Dao.Tally.Script (
   -- * Minting policy
   mkTallyNftMinter,
+  tallyPolicyUnappliedCompiledCode,
 
   -- * Validator
   tallyValidatorCompiledCode,
+  tallyValidatorUnappliedCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
@@ -35,6 +37,8 @@ import Dao.Shared (
   hasSymbolInValue,
   integerToByteString,
   isScriptCredential,
+  mkUntypedPolicy,
+  mkUntypedValidator,
   wrapValidate',
  )
 import LambdaBuffers.ApplicationTypes.Configuration (
@@ -224,6 +228,11 @@ mkTallyNftMinter
         && traceIfFalse "Tally datum vote counts are not initialized to zero" tallyIsInitializeToZero
         && traceIfFalse "Should be exactly one valid token minted" onlyOneTokenMinted
 mkTallyNftMinter _ _ _ = traceError "Wrong type of script purpose!"
+
+tallyPolicyUnappliedCompiledCode ::
+  CompiledCode (TallyNftConfig -> BuiltinData -> BuiltinData -> ())
+tallyPolicyUnappliedCompiledCode =
+  $$(PlutusTx.compile [||mkUntypedPolicy . mkTallyNftMinter||])
 
 -- | Validator
 ownValueAndValidator :: [TxInInfo] -> TxOutRef -> (Value, ScriptHash)
@@ -457,6 +466,11 @@ validateTally
         && traceIfFalse "Tally datum is not updated" tallyDatumIsUpdated
         && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
 validateTally _ _ _ _ = traceError "Wrong script purpose"
+
+tallyValidatorUnappliedCompiledCode ::
+  CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+tallyValidatorUnappliedCompiledCode =
+  $$(PlutusTx.compile [||mkUntypedValidator . validateTally||])
 
 tallyValidatorCompiledCode ::
   ConfigurationValidatorConfig ->

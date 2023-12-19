@@ -12,7 +12,7 @@ module Dao.Configuration.Script (
   -- * Validator
   validateConfiguration,
   configurationValidatorCompiledCode,
-  configurationValidatorCompiledCode,
+  configValidatorUnappliedCompiledCode,
 ) where
 
 import Dao.ScriptArgument (

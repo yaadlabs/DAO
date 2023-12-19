@@ -20,7 +20,9 @@ module Dao.Shared (
   isScriptCredential,
   lovelacesOf,
   mkUntypedValidator,
+  mkUntypedValidator',
   mkUntypedPolicy,
+  mkUntypedPolicy',
 ) where
 
 import PlutusLedgerApi.V1 (CurrencySymbol)
@@ -251,6 +253,22 @@ mkUntypedValidator f d r p =
               (unsafeFromBuiltinData p)
         _ -> traceError "mkUntypedValidator: Error at fromBuiltinData"
 
+mkUntypedValidator' ::
+  forall d r.
+  (FromData d, FromData r) =>
+  (d -> r -> ScriptContext -> Bool) ->
+  (BuiltinData -> BuiltinData -> BuiltinData -> ())
+mkUntypedValidator' f d r p =
+  let (maybeDataArg, maybeRedeemerArg) = (fromBuiltinData d, fromBuiltinData r)
+   in case (maybeDataArg, maybeRedeemerArg) of
+        (Just dataArg, Just redeemerArg) ->
+          check $
+            f
+              dataArg
+              redeemerArg
+              (unsafeFromBuiltinData p)
+        _ -> traceError "mkUntypedValidator: Error at fromBuiltinData"
+
 mkUntypedPolicy ::
   forall r.
   PlutusTx.UnsafeFromData r =>
@@ -259,3 +277,16 @@ mkUntypedPolicy ::
 mkUntypedPolicy f r p =
   check $
     f (PlutusTx.unsafeFromBuiltinData r) (PlutusTx.unsafeFromBuiltinData p)
+
+mkUntypedPolicy' ::
+  forall r.
+  FromData r =>
+  (r -> ScriptContext -> Bool) ->
+  (BuiltinData -> BuiltinData -> ())
+mkUntypedPolicy' f r p =
+  let maybeRedeemerArg = fromBuiltinData r
+   in case maybeRedeemerArg of
+        Just redeemerArg ->
+          check $
+            f redeemerArg (PlutusTx.unsafeFromBuiltinData p)
+        _ -> traceError "mkUntypedPolicy': Error at fromBuiltinData"

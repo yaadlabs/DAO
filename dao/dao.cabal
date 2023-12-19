@@ -55,28 +55,14 @@ library
   build-depends:
     , aeson
     , bytestring
-    , cardano-binary
-    , cardano-crypto
-    , cardano-crypto-wrapper
-    , cardano-ledger-alonzo
-    , cardano-ledger-core
-    , cardano-ledger-shelley
-    , cardano-ledger-shelley-ma
-    , cardano-slotting
-    , cardano-strict-containers
-    , containers
     , dao-lb-types
-    , deepseq
     , lbr-plutus
     , lbr-prelude
-    , nothunks
     , plutonomy
     , plutus-ledger-api
     , plutus-tx
     , plutus-tx-plugin
-    , serialise
     , text
-    , tree-diff
 
   hs-source-dirs:  dao-lib
   ghc-options:

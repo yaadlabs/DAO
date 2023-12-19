@@ -3,8 +3,26 @@ module Scripts.Compile (CompileOpts (..), CompileMode (..), compile) where
 import Prelude (IO, Eq, FilePath, Read, Show, print, return, ($), (.), (>>=))
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS (fromShort)
-import Dao.Configuration.Script (configPolicyUnappliedCompiledCode)
-import LambdaBuffers.ApplicationConfig.Scripts (Scripts (Scripts, scripts'configPolicy), Script (Script))
+import Dao.Configuration.Script (configPolicyUnappliedCompiledCode, configValidatorUnappliedCompiledCode)
+import Dao.Index.Script (indexPolicyUnappliedCompiledCode, indexValidatorCompiledCode)
+import Dao.Vote.Script (votePolicyUnappliedCompiledCode, voteValidatorUnappliedCompiledCode)
+import Dao.Tally.Script (tallyPolicyUnappliedCompiledCode, tallyValidatorUnappliedCompiledCode)
+import Dao.Treasury.Script (treasuryValidatorUnappliedCompiledCode)
+import LambdaBuffers.ApplicationConfig.Scripts 
+  (Scripts 
+    (Scripts
+    , scripts'configPolicy
+    , scripts'configValidator
+    , scripts'indexPolicy
+    , scripts'indexValidator
+    , scripts'tallyPolicy
+    , scripts'tallyValidator
+    , scripts'votePolicy
+    , scripts'voteValidator
+    , scripts'treasuryValidator
+    )
+  , Script (Script)
+  )
 import LambdaBuffers.Runtime.Prelude (toJsonBytes)
 import PlutusLedgerApi.V2 (serialiseCompiledCode)
 import PlutusTx (BuiltinData, CompiledCode)
@@ -27,10 +45,17 @@ compile opts = do
   let scripts =
         toJsonBytes $
           Scripts
-            { scripts'configPolicy = Script (scriptToCbor configPolicyUnappliedCompiledCode)
+            { scripts'configPolicy = Script (scriptToCborOptimised configPolicyUnappliedCompiledCode)
+            , scripts'configValidator = Script (scriptToCborOptimised configValidatorUnappliedCompiledCode)
+            , scripts'indexPolicy = Script (scriptToCborOptimised indexPolicyUnappliedCompiledCode)
+            , scripts'indexValidator = Script (scriptToCborOptimised indexValidatorCompiledCode)
+            , scripts'tallyPolicy = Script (scriptToCborOptimised tallyPolicyUnappliedCompiledCode)
+            , scripts'tallyValidator = Script (scriptToCborOptimised tallyValidatorUnappliedCompiledCode)
+            , scripts'votePolicy = Script (scriptToCborOptimised votePolicyUnappliedCompiledCode)
+            , scripts'voteValidator = Script (scriptToCborOptimised voteValidatorUnappliedCompiledCode)
+            , scripts'treasuryValidator = Script (scriptToCborOptimised treasuryValidatorUnappliedCompiledCode)
             }
-      configPolicyOptimisedCbor = scriptToCborOptimised configPolicyUnappliedCompiledCode
-  BS.writeFile (co'File opts) (toJsonBytes configPolicyOptimisedCbor)
+  BS.writeFile (co'File opts) scripts
   
 scriptToCborOptimised :: forall a. CompiledCode a -> BS.ByteString
 scriptToCborOptimised = scriptToCbor . optimiseScript
