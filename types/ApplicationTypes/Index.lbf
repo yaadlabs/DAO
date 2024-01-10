@@ -1,0 +1,14 @@
+module ApplicationTypes.Index
+
+import Prelude (Eq, Integer)
+import Plutus.V1 (PlutusData)
+
+-- | Datum that is used to keep track of number of proposals
+record IndexNftDatum = {
+  index : Integer
+  -- ^ Corresponds to the number of proposals
+  -- `Dao.Index.Script.validateIndex` ensures that this value is
+  -- incremented by one during a create proposal transaction
+  }
+derive Eq IndexNftDatum
+derive PlutusData IndexNftDatum

@@ -1,44 +1,33 @@
 {
-  description = "Triphut DAO";
+  description = "Triphut Dao";
 
   inputs = {
-    tooling.url = "github:mlabs-haskell/mlabs-tooling.nix";
-
-    plutarch.url = "github:plutonomicon/plutarch-plutus";
     lbf.url = "github:mlabs-haskell/lambda-buffers";
+    haskell-nix.follows = "lbf/haskell-nix";
+    pre-commit-hooks.follows = "lbf/pre-commit-hooks";
+    nixpkgs.follows = "lbf/nixpkgs";
+    iohk-nix.follows = "lbf/iohk-nix";
+    flake-parts.follows = "lbf/flake-parts";
+    plutarch.follows = "lbf/plutarch";
     psm.url = "github:mlabs-haskell/plutus-simple-model";
-    
     plutonomy = {
       url = "github:well-typed/plutonomy";
       flake = false;
     };
-
   };
 
-  outputs = inputs@{ self, tooling, ... }:
-    tooling.lib.mkFlake { inherit self; }
-      {
-        imports = [
-          (tooling.lib.mkHaskellFlakeModule1 {
-            project.src = ./.;
-            project.extraHackage = [
-              "${inputs.plutarch}"
-              "${inputs.plutarch}/plutarch-extra"
+  outputs = inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        ./nix/pkgs.nix
+        ./nix/settings.nix
+        ./nix/pre-commit.nix
+        ./types/build.nix
+        ./dao/build.nix
+      ];
 
-              "${inputs.plutonomy}"
+      debug = true;
 
-              "${inputs.lbf.packages.x86_64-linux.lbf-plutus-haskell}"
-              "${inputs.lbf.packages.x86_64-linux.lbr-plutus-haskell-src}"
-
-              "${inputs.lbf.packages.x86_64-linux.lbf-prelude-haskell}"
-              "${inputs.lbf.packages.x86_64-linux.lbr-prelude-haskell-src}"
-
-              "${inputs.psm}/cardano-simple"
-              "${inputs.psm}/psm"
-            ];
-          })
-        ];
-        
-      };
-
+      systems = [ "x86_64-linux" "x86_64-darwin" ];
+    };
 }

@@ -1,0 +1,19 @@
+module ApplicationTypes.Tally
+
+import Prelude (Eq, Integer)
+import Plutus.V1 (PlutusData, POSIXTime)
+import ApplicationTypes.Proposal (ProposalType)
+
+-- | Tally state datum
+record TallyStateDatum = {
+  -- | The `ProposalType` type of the proposal
+  proposal : ProposalType
+  -- | The end of the proposal period
+  , proposalEndTime : POSIXTime
+  -- | The count of votes for the proposal
+  , for : Integer
+  -- | The count of votes against the proposal
+  , against : Integer
+  }
+derive Eq TallyStateDatum
+derive PlutusData TallyStateDatum
