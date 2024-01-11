@@ -8,10 +8,12 @@ module Dao.Index.Script (
   -- * Minting policy
   mkIndexNftMinter,
   indexPolicyUnappliedCompiledCode,
+  indexPolicyCompiledCode,
 
   -- * Validator
   validateIndex,
   indexValidatorCompiledCode,
+  indexValidatorCompiledCode',
 ) where
 
 import Dao.ScriptArgument (
@@ -60,17 +62,19 @@ import PlutusLedgerApi.V2.Contexts (
   findTxInByTxOutRef,
   getContinuingOutputs,
  )
-import PlutusTx (CompiledCode, compile)
+import PlutusTx (CompiledCode, compile, fromBuiltinData, unsafeFromBuiltinData)
 import PlutusTx.Prelude (
   Bool,
   BuiltinData,
   Maybe (Just, Nothing),
   any,
+  check,
   const,
   filter,
   mempty,
   traceError,
   traceIfFalse,
+  ($),
   (&&),
   (+),
   (.),
@@ -126,6 +130,14 @@ indexValidatorCompiledCode =
   -- (Same for 'indexScript' below)
   let wrapValidateIndex = wrapValidate' (const validateIndex) (mempty :: Value)
    in $$(PlutusTx.compile [||wrapValidateIndex||])
+
+untypedIndexValidator :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedIndexValidator indexDatum r context = case fromBuiltinData indexDatum of
+  Just datum -> check $ validateIndex datum r (unsafeFromBuiltinData context)
+  _ -> traceError "Error converting indexDatum"
+
+indexValidatorCompiledCode' :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+indexValidatorCompiledCode' = $$(PlutusTx.compile [||untypedIndexValidator||])
 
 {- | Policy for minting index NFT.
 
@@ -186,6 +198,14 @@ mkIndexNftMinter
         && traceIfFalse "Initial index should be set to zero" initialIndexIsZero
         && traceIfFalse "Index NFT must be sent to the Index validator" outputIsValidator
 mkIndexNftMinter _ _ _ = traceError "Wrong type of script purpose!"
+
+untypedIndexPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedIndexPolicy indexConfig r context =
+  check $
+    mkIndexNftMinter (unsafeFromBuiltinData indexConfig) r (unsafeFromBuiltinData context)
+
+indexPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+indexPolicyCompiledCode = $$(PlutusTx.compile [||untypedIndexPolicy||])
 
 indexPolicyUnappliedCompiledCode ::
   CompiledCode (IndexNftConfig -> BuiltinData -> BuiltinData -> ())

@@ -24,7 +24,7 @@ import Options.Applicative (
   subparser,
   value,
  )
-import Scripts.Compile (CompileMode (COMPILE_DEBUG), CompileOpts (CompileOpts), compile)
+import Scripts.Compile (CompileMode (COMPILE_DEBUG, COMPILE_PROD), CompileOpts (CompileOpts), compile)
 import Prelude (IO, ($), (<$>), (<>))
 
 newtype Command = Compile CompileOpts
@@ -37,6 +37,7 @@ compileOpts =
       ( long "mode"
           <> metavar "COMPILE_MODE"
           <> help "Mode of compilation COMPILE_DEBUG|COMPILE_PROD"
+          -- <> value COMPILE_PROD
           <> value COMPILE_DEBUG
           <> showDefault
       )

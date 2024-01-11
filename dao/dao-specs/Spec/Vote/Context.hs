@@ -38,6 +38,7 @@ import Spec.Configuration.Utils (findConfig)
 import Spec.SpecUtils (minAda, oneSecond)
 import Spec.Tally.Transactions (runInitTallyWithEndTimeInFuture)
 import Spec.Tally.Utils (findTally)
+import Spec.Values (dummyVoteNFTValue)
 import Spec.Vote.SampleData (sampleVoteDatum)
 import Spec.Vote.Script (
   VoteMintingPolicy,
@@ -45,6 +46,7 @@ import Spec.Vote.Script (
   voteTypedMintingPolicy,
   voteTypedValidator,
  )
+import Spec.Vote.Transactions (runInitVoteNft)
 import Prelude (mconcat, mempty, (*), (+), (<>))
 
 validVoteConfigNftTest :: Run ()
@@ -90,13 +92,15 @@ mkVoteConfigNftTest ::
   Run ()
 mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
   runInitConfig
+  -- Simulate a voteNFT at the user's wallet
+  runInitVoteNft
   void runInitTallyWithEndTimeInFuture
 
   (configOutRef, _, _) <- findConfig
   (tallyOutRef, _, _tallyDatum) <- findTally
 
-  user <- newUser minAda
-  spend1 <- spend user (adaValue 2)
+  user <- newUser (minAda <> dummyVoteNFTValue)
+  spend' <- spend user (adaValue 2 <> dummyVoteNFTValue)
   theTimeNow <- currentTime
 
   let
@@ -111,20 +115,20 @@ mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
       mconcat
         [ mintValue votePolicy VoteMinterActionRedeemer'Mint voteValue
         , refInputInline tallyOutRef
-        , userSpend spend1
+        , userSpend spend'
         ]
 
     withVoteConfig = case voteConfigRef of
       ConfigInRefInputs -> refInputInline configOutRef
       NoConfigInRefInputs -> mempty
 
-    -- Pay the vote datum, and token,
+    -- Pay the vote datum, vote token and vote NFT,
     -- to the vote validator
     payToVoteValidator =
       payToScript
         voteTypedValidator
         (InlineDatum sampleVoteDatum)
-        (adaValue 2 <> voteValue)
+        (adaValue 2 <> voteValue <> dummyVoteNFTValue)
 
     combinedTxs = mconcat [baseTx, payToVoteValidator, withVoteConfig]
 
@@ -137,6 +141,13 @@ mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
 -- Valid token value, correct symbol and exactly one minted
 validVoteConfigValue :: ConfigurationValidatorConfig -> Value
 validVoteConfigValue config = singleton (voteCurrencySymbol config) (TokenName "vote") 1
+
+validVoteConfigValue' :: ConfigurationValidatorConfig -> Value
+validVoteConfigValue' config =
+  mconcat
+    [ singleton (voteCurrencySymbol config) (TokenName "vote") 1
+    , dummyVoteNFTValue
+    ]
 
 -- Valid token value, correct symbol and exactly one minted
 invalidMoreThanOneVoteConfigValue :: ConfigurationValidatorConfig -> Value

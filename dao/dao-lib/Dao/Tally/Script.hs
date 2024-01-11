@@ -8,6 +8,7 @@ module Dao.Tally.Script (
   -- * Minting policy
   mkTallyNftMinter,
   tallyPolicyUnappliedCompiledCode,
+  tallyPolicyCompiledCode,
 
   -- * Validator
   tallyValidatorCompiledCode,
@@ -109,6 +110,7 @@ import PlutusTx (
   applyCode,
   compile,
   liftCode,
+  unsafeFromBuiltinData,
  )
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as M
@@ -119,6 +121,7 @@ import PlutusTx.Prelude (
   Maybe (Just, Nothing),
   all,
   any,
+  check,
   divide,
   filter,
   foldr,
@@ -186,6 +189,7 @@ mkTallyNftMinter
       -- Get the index datum from the inputs
       IndexNftDatum {indexNftDatum'index} = case filter (hasIndexNft . txOutValue . txInInfoResolved) txInfoInputs of
         [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
+        [] -> traceError "No index NFT found in inputs"
         _ -> traceError "Should be exactly one valid Index NFT output"
 
       -- Helper for filtering for tally UTXO in the outputs
@@ -233,6 +237,14 @@ tallyPolicyUnappliedCompiledCode ::
   CompiledCode (TallyNftConfig -> BuiltinData -> BuiltinData -> ())
 tallyPolicyUnappliedCompiledCode =
   $$(PlutusTx.compile [||mkUntypedPolicy . mkTallyNftMinter||])
+
+untypedTallyPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedTallyPolicy nftConfig r context =
+  check $
+    mkTallyNftMinter (unsafeFromBuiltinData nftConfig) r (unsafeFromBuiltinData context)
+
+tallyPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+tallyPolicyCompiledCode = $$(PlutusTx.compile [||untypedTallyPolicy||])
 
 -- | Validator
 ownValueAndValidator :: [TxInInfo] -> TxOutRef -> (Value, ScriptHash)
@@ -334,7 +346,7 @@ validateTally
       DynamicConfigDatum {..} =
         case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
-          _ -> traceError "Should be exactly one tally NFT in the reference inputs"
+          _ -> traceError "Should be exactly one config NFT in the reference inputs"
 
       (!oldValue, !thisValidatorHash) :: (Value, ScriptHash) = ownValueAndValidator txInfoInputs thisOutRef
 

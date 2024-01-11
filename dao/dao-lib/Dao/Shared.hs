@@ -25,6 +25,9 @@ module Dao.Shared (
   mkUntypedPolicy',
 ) where
 
+-- BuiltinString(BuiltinString),
+
+import Data.Text qualified as Text
 import PlutusLedgerApi.V1 (CurrencySymbol)
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
 import PlutusLedgerApi.V1.Value (TokenName, Value (Value, getValue), adaSymbol, adaToken)
@@ -37,14 +40,16 @@ import PlutusLedgerApi.V2.Contexts (ScriptContext)
 import PlutusTx (FromData, UnsafeFromData, fromBuiltinData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as Map
+import PlutusTx.Builtins (serialiseData)
+import PlutusTx.Builtins.Internal (BuiltinString (BuiltinString))
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinByteString,
   BuiltinData,
-  BuiltinString,
   Integer,
   Maybe (Just, Nothing),
   check,
+  decodeUtf8,
   divide,
   fromMaybe,
   isJust,
@@ -59,6 +64,7 @@ import PlutusTx.Prelude (
   (<>),
   (==),
  )
+import Prelude (show)
 
 type WrappedMintingPolicyType = BuiltinData -> BuiltinData -> ()
 
@@ -147,16 +153,17 @@ hasOneOfToken symbol tokenName (Value value) = case Map.lookup symbol value of
     Nothing -> False
   Nothing -> False
 
+-- traceError (decodeUtf8 $ serialiseData dbs)
 {-# INLINEABLE convertDatum #-}
 convertDatum :: (FromData a) => Map DatumHash Datum -> OutputDatum -> a
 convertDatum infoData datum = case datum of
   OutputDatum (Datum dbs) -> case fromBuiltinData dbs of
     Just dbs' -> dbs'
-    Nothing -> traceError "convertDatum: Error at fromBuiltinData"
+    Nothing -> traceError "convertDatum: OutputDatum: Error at fromBuiltinData"
   OutputDatumHash dh -> case Map.lookup dh infoData of
     Just (Datum dbs) -> case fromBuiltinData dbs of
       Just dbs' -> dbs'
-      Nothing -> traceError "convertDatum: Error at fromBuiltinData"
+      Nothing -> traceError "convertDatum: OutputDatumHash: Error at fromBuiltinData"
     _ -> traceError "convertDatum: Missing datum"
   NoOutputDatum -> traceError "convertDatum: Missing datum hash or datum"
 

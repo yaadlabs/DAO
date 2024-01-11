@@ -17,6 +17,7 @@ import Plutus.Model (
   adaToken,
   adaValue,
   getHeadRef,
+  logInfo,
   mintValue,
   newUser,
   spend,
@@ -30,6 +31,7 @@ import Plutus.Model.V2 (
  )
 import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusLedgerApi.V1.Value (TokenName (TokenName), Value, singleton)
+import PlutusTx qualified
 import PlutusTx.Prelude (Bool (False, True), ($))
 import Spec.Configuration.Script (
   configNftCurrencySymbol,
@@ -38,7 +40,7 @@ import Spec.Configuration.Script (
  )
 import Spec.SampleData (sampleDynamicConfig)
 import Spec.SpecUtils (minAda)
-import Prelude (mconcat, (<>))
+import Prelude (error, mconcat, show, (<>))
 
 -- Test txs
 
@@ -82,6 +84,10 @@ mkConfigNftTest tx = do
   user <- newUser minAda
   spend' <- spend user (adaValue 2)
   let config = NftConfig (getHeadRef spend') (TokenName "triphut")
+  let configData = PlutusTx.toBuiltinData config
+  let configData' = PlutusTx.toData config
+  logInfo $ show configData'
+  -- error $ show configData
   submitTx user $ tx config spend' user
 
 {- | Helper function for building txs

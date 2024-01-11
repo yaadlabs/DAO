@@ -99,7 +99,7 @@ import PlutusLedgerApi.V2.Tx (
     txOutValue
   ),
  )
-import PlutusTx (CompiledCode, applyCode, compile, fromBuiltinData, liftCode)
+import PlutusTx (CompiledCode, applyCode, compile, fromBuiltinData, liftCode, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (
   Bool,
@@ -227,6 +227,21 @@ mkVoteMinter
           && traceIfFalse "Should be exactly one valid token minted" onlyMintedOne
           && traceIfFalse "Total ada is not high enough" totalAdaIsGreaterThanReturnAda
 mkVoteMinter _ _ _ = traceError "Wrong type of script purpose!"
+
+untypedVotePolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedVotePolicy validatorConfig voteActionRedeemer context =
+  check $
+    let (maybeConfig, maybeRedeemer) = (fromBuiltinData validatorConfig, fromBuiltinData voteActionRedeemer)
+     in case (maybeConfig, maybeRedeemer) of
+          (Just config, Just redeemer) ->
+            mkVoteMinter
+              config
+              redeemer
+              (unsafeFromBuiltinData context)
+          _ -> traceError "Error at fromBuiltinData function"
+
+votePolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+votePolicyCompiledCode = $$(PlutusTx.compile [||untypedVotePolicy||])
 
 votePolicyUnappliedCompiledCode ::
   CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> ())

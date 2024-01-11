@@ -9,6 +9,7 @@ module Spec.SpecUtils (
   findUniqueUtxo,
   findConfigUtxo,
   oneSecond,
+  payToPkhTx,
 ) where
 
 import Dao.Shared (hasOneOfToken)
@@ -20,6 +21,7 @@ import Plutus.Model (
   ada,
   getMainUser,
   mustFail,
+  payToKey,
   payToRef,
   payToScript,
   skipLimits,
@@ -62,6 +64,16 @@ mkTypedValidator' mkValidator = mkTypedValidator . mkValidator
 
 data ScriptType = Reference | Script
   deriving stock (Eq)
+
+payToPkhTx ::
+  Value ->
+  Run ()
+payToPkhTx token = do
+  admin <- getMainUser
+  let value = minAda <> token
+  spend' <- spend admin value
+  let payTx = payToKey admin value
+  submitTx admin $ payTx <> userSpend spend'
 
 runInitScript ::
   (IsValidator script) =>

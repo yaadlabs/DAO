@@ -16,7 +16,7 @@ import PlutusLedgerApi.V1 (CurrencySymbol)
 import PlutusLedgerApi.V1.Scripts (ScriptHash)
 import PlutusLedgerApi.V1.Tx (TxOutRef)
 import PlutusLedgerApi.V1.Value (TokenName)
-import PlutusTx (makeLift)
+import PlutusTx (makeLift, unstableMakeIsData)
 
 -- | Used as an argument to the `Dao.ConfigurationNft.Script.mkConfigurationNftPolicy` minting policy script
 data NftConfig = NftConfig
@@ -38,6 +38,9 @@ data ConfigurationValidatorConfig = ConfigurationValidatorConfig
   -- the `Dao.Types.DynamicConfigDatum` config
   }
 
+unstableMakeIsData ''NftConfig
+unstableMakeIsData ''ConfigurationValidatorConfig
+
 makeLift ''NftConfig
 makeLift ''ConfigurationValidatorConfig
 
@@ -53,6 +56,7 @@ data IndexNftConfig = IndexNftConfig
   }
 
 makeLift ''IndexNftConfig
+unstableMakeIsData ''IndexNftConfig
 
 -- | Tally policy configuration
 data TallyNftConfig = TallyNftConfig
@@ -63,3 +67,4 @@ data TallyNftConfig = TallyNftConfig
   }
 
 makeLift ''TallyNftConfig
+unstableMakeIsData ''TallyNftConfig

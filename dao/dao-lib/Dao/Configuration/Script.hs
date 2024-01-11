@@ -8,6 +8,9 @@ module Dao.Configuration.Script (
   -- * Minting policy
   mkConfigurationNftPolicy,
   configPolicyUnappliedCompiledCode,
+  configPolicyCompiledCode,
+  testValidatorCompiled,
+  alwaysMintsCompiled,
 
   -- * Validator
   validateConfiguration,
@@ -81,16 +84,19 @@ import PlutusTx (
   applyCode,
   compile,
   liftCode,
+  unsafeFromBuiltinData,
  )
 import PlutusTx.Prelude (
   Bool,
   BuiltinData,
   Integer,
   any,
+  check,
   divide,
   filter,
   traceError,
   traceIfFalse,
+  ($),
   (&&),
   (*),
   (+),
@@ -151,6 +157,29 @@ configPolicyUnappliedCompiledCode ::
   CompiledCode (NftConfig -> BuiltinData -> BuiltinData -> ())
 configPolicyUnappliedCompiledCode =
   $$(PlutusTx.compile [||mkUntypedPolicy . mkConfigurationNftPolicy||])
+
+untypedConfigPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedConfigPolicy nftConfig r context =
+  check $
+    mkConfigurationNftPolicy (unsafeFromBuiltinData nftConfig) r (unsafeFromBuiltinData context)
+
+configPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+configPolicyCompiledCode = $$(PlutusTx.compile [||untypedConfigPolicy||])
+
+testValidator :: Integer -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+testValidator _ _ _ _ = ()
+
+untypedTestValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedTestValidator p = testValidator (unsafeFromBuiltinData p)
+
+testValidatorCompiled :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+testValidatorCompiled = $$(PlutusTx.compile [||untypedTestValidator||])
+
+alwaysMints :: BuiltinData -> BuiltinData -> ()
+alwaysMints _ _ = ()
+
+alwaysMintsCompiled :: CompiledCode (BuiltinData -> BuiltinData -> ())
+alwaysMintsCompiled = $$(PlutusTx.compile [||alwaysMints||])
 
 {- | Validator for proposal upgrades.
 

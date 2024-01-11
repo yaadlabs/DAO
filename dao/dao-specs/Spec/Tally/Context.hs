@@ -31,7 +31,8 @@ import Plutus.Model.V2 (
   spendScript,
  )
 import PlutusLedgerApi.V1.Value (TokenName (TokenName), Value, singleton)
-import PlutusTx.Prelude (($))
+import PlutusTx (fromBuiltinData, toBuiltinData)
+import PlutusTx.Prelude (Maybe, ($))
 import Spec.Configuration.Transactions (runInitConfig)
 import Spec.Configuration.Utils (findConfig)
 import Spec.Index.Script (indexNftTypedValidator)
@@ -51,7 +52,7 @@ import Spec.Values (
   dummyIndexConfigNftTokenName,
   dummyIndexConfigNftValue,
  )
-import Prelude (mconcat, mempty, (+), (<>))
+import Prelude (error, mconcat, mempty, show, (+), (<>))
 
 validTallyConfigNftTest :: Run ()
 validTallyConfigNftTest =
@@ -125,6 +126,14 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
 
   (configOutRef, _, _) <- findConfig
   (indexOutRef, _, indexDatum) <- findIndex
+
+  -- logInfo' $ show indexDatum
+  let builtinIndex = toBuiltinData indexDatum
+  let
+    fromBuiltinIndex :: Maybe IndexNftDatum
+    fromBuiltinIndex = fromBuiltinData builtinIndex
+
+  -- error $ show $ fromBuiltinIndex
 
   user <- newUser $ amountOfAda 4_000_000
   spend1 <- spend user (adaValue 2_000_002)
