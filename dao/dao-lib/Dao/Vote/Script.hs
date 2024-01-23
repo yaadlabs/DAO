@@ -5,14 +5,16 @@ Description: Dao vote related scripts. It includes:
   - Vote validator script.
 -}
 module Dao.Vote.Script (
-  -- * Minting policy
+  -- * Vote minting policy
   mkVoteMinter,
   wrappedPolicy,
-  votePolicyUnappliedCompiledCode,
+  votePolicyCompiledCode,
+
+  -- * Fungible minting policy
+  fungiblePolicyCompiledCode,
 
   -- * Validator
   voteValidatorCompiledCode,
-  voteValidatorUnappliedCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
@@ -32,6 +34,7 @@ import Dao.Shared (
   hasTokenInValue,
   mkUntypedPolicy',
   mkUntypedValidator',
+  wrapValidate',
   wrapValidate'',
  )
 import Data.ByteString.Lazy qualified as BSL
@@ -66,6 +69,7 @@ import PlutusLedgerApi.V1.Address (addressCredential)
 import PlutusLedgerApi.V1.Credential (Credential (PubKeyCredential, ScriptCredential))
 import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusLedgerApi.V1.Interval (after)
+import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
 import PlutusLedgerApi.V1.Value (
   Value,
   adaSymbol,
@@ -102,8 +106,9 @@ import PlutusLedgerApi.V2.Tx (
 import PlutusTx (CompiledCode, applyCode, compile, fromBuiltinData, liftCode, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (
-  Bool,
+  Bool (True),
   BuiltinData,
+  Integer,
   any,
   check,
   filter,
@@ -113,6 +118,7 @@ import PlutusTx.Prelude (
   ($),
   (&&),
   (.),
+  (<),
   (==),
   (>),
  )
@@ -199,8 +205,8 @@ mkVoteMinter
             _ -> traceError "Should be exactly one tally state datum in the reference inputs"
 
         -- Ensure the proposal end time is after the transaction's validity range
-        proposalIsActive :: Bool
-        !proposalIsActive = tallyStateDatum'proposalEndTime `after` txInfoValidRange
+        -- proposalIsActive :: Bool
+        -- !proposalIsActive = tallyStateDatum'proposalEndTime `after` txInfoValidRange
 
         -- Ensure the vote value contains exactly one valid witness token
         hasWitness :: Bool
@@ -214,6 +220,10 @@ mkVoteMinter
             thisCurrencySymbol
             dynamicConfigDatum'voteTokenName
 
+        -- Ensure the 'voteValue' contains a 'vote NFT' matching the
+        -- 'voteNft' CurrencySymbol in the dynamic config.
+        -- This token acts as a 'voting pass' for the user,
+        -- and is required in order for them to vote on a proposal.
         hasVoteNft :: Bool
         !hasVoteNft = hasTokenInValue dynamicConfigDatum'voteNft "Vote NFT" voteValue
 
@@ -221,8 +231,8 @@ mkVoteMinter
         totalAdaIsGreaterThanReturnAda :: Bool
         !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > voteDatum'returnAda
        in
-        traceIfFalse "Proposal has expired" proposalIsActive
-          && traceIfFalse "Vote Nft is missing" hasVoteNft
+        -- traceIfFalse "Proposal has expired" proposalIsActive
+        traceIfFalse "Vote Nft is missing" hasVoteNft
           && traceIfFalse "Missing witness on output" hasWitness
           && traceIfFalse "Should be exactly one valid token minted" onlyMintedOne
           && traceIfFalse "Total ada is not high enough" totalAdaIsGreaterThanReturnAda
@@ -230,23 +240,12 @@ mkVoteMinter _ _ _ = traceError "Wrong type of script purpose!"
 
 untypedVotePolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
 untypedVotePolicy validatorConfig voteActionRedeemer context =
-  check $
-    let (maybeConfig, maybeRedeemer) = (fromBuiltinData validatorConfig, fromBuiltinData voteActionRedeemer)
-     in case (maybeConfig, maybeRedeemer) of
-          (Just config, Just redeemer) ->
-            mkVoteMinter
-              config
-              redeemer
-              (unsafeFromBuiltinData context)
-          _ -> traceError "Error at fromBuiltinData function"
+  case fromBuiltinData voteActionRedeemer of
+    Just redeemer -> check $ mkVoteMinter (unsafeFromBuiltinData validatorConfig) redeemer (unsafeFromBuiltinData context)
+    _ -> traceError "Error at fromBuiltinData (VoteActionRedeemer - policy)"
 
 votePolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 votePolicyCompiledCode = $$(PlutusTx.compile [||untypedVotePolicy||])
-
-votePolicyUnappliedCompiledCode ::
-  CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> ())
-votePolicyUnappliedCompiledCode =
-  $$(PlutusTx.compile [||mkUntypedPolicy' . mkVoteMinter||])
 
 wrappedPolicy :: ConfigurationValidatorConfig -> WrappedMintingPolicyType
 wrappedPolicy config x y =
@@ -254,6 +253,19 @@ wrappedPolicy config x y =
    in case (maybeDataX, maybeDataY) of
         (Just dataX, Just dataY) -> check (mkVoteMinter config dataX dataY)
         _ -> traceError "Error at fromBuiltinData function"
+
+{- Validator for creating an amount of fungible tokens with just one check.
+  Acts as a placeholder for this idea for now for off-chain use.
+-}
+mkFungibleMinter :: Integer -> BuiltinData -> BuiltinData -> Bool
+mkFungibleMinter tokenAmount _ _ = traceIfFalse "Incorrect number of tokens" $ tokenAmount > 0 && tokenAmount < 500
+
+untypedFungiblePolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedFungiblePolicy amount redeemer context =
+  check $ mkFungibleMinter (unsafeFromBuiltinData amount) redeemer context
+
+fungiblePolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+fungiblePolicyCompiledCode = $$(PlutusTx.compile [||untypedFungiblePolicy||])
 
 {- | Validator for votes.
 
@@ -343,13 +355,12 @@ validateVote
             traceIfFalse "Transaction should be signed by the vote owner" isSignedByOwner
               && traceIfFalse "All vote tokens should be burned" voteTokenAreAllBurned
 
-voteValidatorUnappliedCompiledCode ::
-  CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ())
-voteValidatorUnappliedCompiledCode =
-  $$(PlutusTx.compile [||mkUntypedValidator' . validateVote||])
+voteValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+voteValidatorCompiledCode = $$(PlutusTx.compile [||untypedVoteValidator||])
 
-voteValidatorCompiledCode ::
-  ConfigurationValidatorConfig ->
-  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
-voteValidatorCompiledCode config =
-  $$(PlutusTx.compile [||wrapValidate'' validateVote||]) `applyCode` liftCode config
+untypedVoteValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedVoteValidator validatorConfig voteDatum voteActionRedeemer context =
+  case (fromBuiltinData voteDatum, fromBuiltinData voteActionRedeemer) of
+    (Just datum, Just redeemer) ->
+      check $ validateVote (unsafeFromBuiltinData validatorConfig) datum redeemer (unsafeFromBuiltinData context)
+    _ -> traceError "Error at fromBuiltinData (VoteActionRedeemer - validator)"

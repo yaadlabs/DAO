@@ -3,11 +3,20 @@ module Scripts.Compile (CompileOpts (..), CompileMode (..), compile) where
 import Prelude (IO, Eq, FilePath, Read, Show, print, return, ($), (.), (>>=))
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS (fromShort)
-import Dao.Configuration.Script (configPolicyCompiledCode, configValidatorUnappliedCompiledCode, testValidatorCompiled, alwaysMintsCompiled)
-import Dao.Index.Script (indexPolicyUnappliedCompiledCode, indexPolicyCompiledCode, indexValidatorCompiledCode, indexValidatorCompiledCode')
-import Dao.Vote.Script (votePolicyUnappliedCompiledCode, voteValidatorUnappliedCompiledCode)
-import Dao.Tally.Script (tallyPolicyUnappliedCompiledCode, tallyValidatorUnappliedCompiledCode, tallyPolicyCompiledCode)
-import Dao.Treasury.Script (treasuryValidatorUnappliedCompiledCode)
+import Dao.Configuration.Script 
+  ( configPolicyCompiledCode
+  , configValidatorCompiledCode
+  , testValidatorCompiled
+  , alwaysMintsCompiled
+  )
+import Dao.Index.Script (indexPolicyCompiledCode, indexValidatorCompiledCode)
+import Dao.Vote.Script 
+  ( votePolicyCompiledCode
+  , voteValidatorCompiledCode
+  , fungiblePolicyCompiledCode
+  )
+import Dao.Tally.Script (tallyPolicyCompiledCode, tallyValidatorCompiledCode)
+import Dao.Treasury.Script (treasuryValidatorCompiledCode)
 import LambdaBuffers.ApplicationConfig.Scripts 
   (Scripts 
     (Scripts
@@ -31,6 +40,8 @@ import LambdaBuffers.ApplicationConfig.Scripts
     , scripts'voteValidatorDebug
     , scripts'treasuryValidator
     , scripts'treasuryValidatorDebug
+    , scripts'fungiblePolicy
+    , scripts'fungiblePolicyDebug
     )
   , Script (Script)
   )
@@ -56,30 +67,28 @@ compile opts = do
   let scripts =
         toJsonBytes $
           Scripts
-            { -- scripts'configPolicy = Script (scriptToCborOptimised configPolicyUnappliedCompiledCode)
-              scripts'testValidator = Script (scriptToCborOptimised testValidatorCompiled)
+            { scripts'testValidator = Script (scriptToCborOptimised testValidatorCompiled)
             , scripts'alwaysMints = Script (scriptToCborOptimised alwaysMintsCompiled)
             , scripts'configPolicy = Script (scriptToCborOptimised configPolicyCompiledCode)
             , scripts'configPolicyDebug = Script (scriptToCbor configPolicyCompiledCode)
-            , scripts'configValidator = Script (scriptToCborOptimised configValidatorUnappliedCompiledCode)
-            , scripts'configValidatorDebug = Script (scriptToCbor configValidatorUnappliedCompiledCode)
+            , scripts'configValidator = Script (scriptToCborOptimised configValidatorCompiledCode)
+            , scripts'configValidatorDebug = Script (scriptToCbor configValidatorCompiledCode)
             , scripts'indexPolicy = Script (scriptToCborOptimised indexPolicyCompiledCode)
             , scripts'indexPolicyDebug = Script (scriptToCbor indexPolicyCompiledCode)
-            -- , scripts'indexValidator = Script (scriptToCborOptimised indexValidatorCompiledCode')
-            -- , scripts'indexPolicy = Script (scriptToCborOptimised indexPolicyUnappliedCompiledCode)
             , scripts'indexValidator = Script (scriptToCborOptimised indexValidatorCompiledCode)
             , scripts'indexValidatorDebug = Script (scriptToCbor indexValidatorCompiledCode)
             , scripts'tallyPolicy = Script (scriptToCborOptimised tallyPolicyCompiledCode)
             , scripts'tallyPolicyDebug = Script (scriptToCbor tallyPolicyCompiledCode)
-            -- , scripts'tallyPolicy = Script (scriptToCborOptimised tallyPolicyUnappliedCompiledCode)
-            , scripts'tallyValidator = Script (scriptToCborOptimised tallyValidatorUnappliedCompiledCode)
-            , scripts'tallyValidatorDebug = Script (scriptToCbor tallyValidatorUnappliedCompiledCode)
-            , scripts'votePolicy = Script (scriptToCborOptimised votePolicyUnappliedCompiledCode)
-            , scripts'votePolicyDebug = Script (scriptToCbor votePolicyUnappliedCompiledCode)
-            , scripts'voteValidator = Script (scriptToCborOptimised voteValidatorUnappliedCompiledCode)
-            , scripts'voteValidatorDebug = Script (scriptToCbor voteValidatorUnappliedCompiledCode)
-            , scripts'treasuryValidator = Script (scriptToCborOptimised treasuryValidatorUnappliedCompiledCode)
-            , scripts'treasuryValidatorDebug = Script (scriptToCbor treasuryValidatorUnappliedCompiledCode)
+            , scripts'tallyValidator = Script (scriptToCborOptimised tallyValidatorCompiledCode)
+            , scripts'tallyValidatorDebug = Script (scriptToCbor tallyValidatorCompiledCode)
+            , scripts'votePolicy = Script (scriptToCborOptimised votePolicyCompiledCode)
+            , scripts'votePolicyDebug = Script (scriptToCbor votePolicyCompiledCode)
+            , scripts'voteValidator = Script (scriptToCborOptimised voteValidatorCompiledCode)
+            , scripts'voteValidatorDebug = Script (scriptToCbor voteValidatorCompiledCode)
+            , scripts'treasuryValidator = Script (scriptToCborOptimised treasuryValidatorCompiledCode)
+            , scripts'treasuryValidatorDebug = Script (scriptToCbor treasuryValidatorCompiledCode)
+            , scripts'fungiblePolicy = Script (scriptToCborOptimised fungiblePolicyCompiledCode)
+            , scripts'fungiblePolicyDebug = Script (scriptToCbor fungiblePolicyCompiledCode)
             }
   BS.writeFile (co'File opts) scripts
   

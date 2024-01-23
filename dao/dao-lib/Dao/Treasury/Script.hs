@@ -7,7 +7,6 @@ module Dao.Treasury.Script (
   -- * Validator
   validateTreasury,
   treasuryValidatorCompiledCode,
-  treasuryValidatorUnappliedCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
@@ -106,12 +105,14 @@ import PlutusTx (
   applyCode,
   compile,
   liftCode,
+  unsafeFromBuiltinData,
  )
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinData,
   Integer,
   Maybe (Just, Nothing),
+  check,
   divide,
   filter,
   mapMaybe,
@@ -120,6 +121,7 @@ import PlutusTx.Prelude (
   otherwise,
   traceError,
   traceIfFalse,
+  ($),
   (&&),
   (*),
   (+),
@@ -397,13 +399,10 @@ onlyOneOfThisScript ins vh expectedRef = go ins
             _ -> go xs
           else go xs
 
-treasuryValidatorUnappliedCompiledCode ::
-  CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ())
-treasuryValidatorUnappliedCompiledCode =
-  $$(PlutusTx.compile [||mkUntypedValidator . validateTreasury||])
+treasuryValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+treasuryValidatorCompiledCode = $$(PlutusTx.compile [||untypedTreasuryValidator||])
 
-treasuryValidatorCompiledCode ::
-  ConfigurationValidatorConfig ->
-  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
-treasuryValidatorCompiledCode config =
-  $$(PlutusTx.compile [||wrapValidate validateTreasury||]) `applyCode` liftCode config
+untypedTreasuryValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedTreasuryValidator validatorConfig datum redeemer context =
+  check $
+    validateTreasury (unsafeFromBuiltinData validatorConfig) datum redeemer (unsafeFromBuiltinData context)

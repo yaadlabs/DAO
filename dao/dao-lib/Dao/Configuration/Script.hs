@@ -7,15 +7,13 @@ Description: Dao configuration related scripts. It includes:
 module Dao.Configuration.Script (
   -- * Minting policy
   mkConfigurationNftPolicy,
-  configPolicyUnappliedCompiledCode,
   configPolicyCompiledCode,
   testValidatorCompiled,
   alwaysMintsCompiled,
 
   -- * Validator
   validateConfiguration,
-  configurationValidatorCompiledCode,
-  configValidatorUnappliedCompiledCode,
+  configValidatorCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
@@ -83,6 +81,7 @@ import PlutusTx (
   CompiledCode,
   applyCode,
   compile,
+  fromBuiltinData,
   liftCode,
   unsafeFromBuiltinData,
  )
@@ -90,6 +89,7 @@ import PlutusTx.Prelude (
   Bool,
   BuiltinData,
   Integer,
+  Maybe (Just),
   any,
   check,
   divide,
@@ -153,18 +153,13 @@ mkConfigurationNftPolicy
         && traceIfFalse "Exactly one valid token should be minted" onlyOneTokenMinted
 mkConfigurationNftPolicy _ _ _ = traceError "Wrong type of script purpose!"
 
-configPolicyUnappliedCompiledCode ::
-  CompiledCode (NftConfig -> BuiltinData -> BuiltinData -> ())
-configPolicyUnappliedCompiledCode =
-  $$(PlutusTx.compile [||mkUntypedPolicy . mkConfigurationNftPolicy||])
+configPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+configPolicyCompiledCode = $$(PlutusTx.compile [||untypedConfigPolicy||])
 
 untypedConfigPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
 untypedConfigPolicy nftConfig r context =
   check $
     mkConfigurationNftPolicy (unsafeFromBuiltinData nftConfig) r (unsafeFromBuiltinData context)
-
-configPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
-configPolicyCompiledCode = $$(PlutusTx.compile [||untypedConfigPolicy||])
 
 testValidator :: Integer -> BuiltinData -> BuiltinData -> BuiltinData -> ()
 testValidator _ _ _ _ = ()
@@ -281,20 +276,6 @@ validateConfiguration
         && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 validateConfiguration _ _ _ _ = traceError "Wrong script purpose"
 
-configValidatorUnappliedCompiledCode ::
-  CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ())
-configValidatorUnappliedCompiledCode =
-  $$(PlutusTx.compile [||mkUntypedValidator . validateConfiguration||])
-
-configurationValidatorCompiledCode ::
-  ConfigurationValidatorConfig ->
-  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
-configurationValidatorCompiledCode config =
-  $$(PlutusTx.compile [||wrapValidateConfiguration||]) `applyCode` liftCode config
-
-wrapValidateConfiguration :: ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-wrapValidateConfiguration = wrapValidate' validateConfiguration
-
 ownValue :: [TxInInfo] -> TxOutRef -> Value
 ownValue ins txOutRef = go ins
   where
@@ -304,3 +285,18 @@ ownValue ins txOutRef = go ins
         if txInInfoOutRef == txOutRef
           then txOutValue
           else go xs
+
+configValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+configValidatorCompiledCode = $$(PlutusTx.compile [||untypedConfigValidator||])
+
+untypedConfigValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedConfigValidator validatorConfig configDatum redeemer context =
+  case fromBuiltinData configDatum of
+    Just datum ->
+      check $
+        validateConfiguration
+          (unsafeFromBuiltinData validatorConfig)
+          datum
+          redeemer
+          (unsafeFromBuiltinData context)
+    _ -> traceError "Error at fromBuiltinData (DynamicConfigDatum - config validator)"

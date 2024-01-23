@@ -94,6 +94,7 @@ hasSingleTokenWithSymbolAndTokenName (Value value) symbol tokenName = case Map.l
 {- | Return True if the value contains exactly one of the given token
   Same as `hasTokenInValue` but contains error traces (traceError)
 -}
+{-# INLINEABLE hasTokenInValueNoErrors #-}
 hasTokenInValueNoErrors :: CurrencySymbol -> Value -> Bool
 hasTokenInValueNoErrors symbol (Value value) = case Map.lookup symbol value of
   Nothing -> False
@@ -119,6 +120,8 @@ hasTokenInValue :: CurrencySymbol -> BuiltinString -> Value -> Bool
 hasTokenInValue symbol errorMessage = isJust . getTokenNameOfNftMaybe symbol errorMessage
 
 -- | Retrieve the token name of corresponding symbol from value
+
+{- INLINEABLE getTokenNameOfNft -}
 getTokenNameOfNft :: CurrencySymbol -> Value -> BuiltinString -> TokenName
 getTokenNameOfNft symbol value errorMessage =
   fromMaybe (traceError $ errorMessage <> ": not found") (getTokenNameOfNftMaybe symbol errorMessage value)
@@ -135,6 +138,7 @@ hasBurnedTokens symbol (Value value) errorMessage =
 {- | Get the count of tokens with the given `CurrencySymbol`
  and `TokenName` in the given `Value`
 -}
+{-# INLINEABLE countOfTokenInValue #-}
 countOfTokenInValue :: CurrencySymbol -> TokenName -> Value -> Integer
 countOfTokenInValue symbol tokenName (Value value) =
   case Map.lookup symbol value of
