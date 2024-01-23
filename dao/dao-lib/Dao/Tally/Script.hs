@@ -7,12 +7,10 @@ Description: Dao tally related scripts. It includes:
 module Dao.Tally.Script (
   -- * Minting policy
   mkTallyNftMinter,
-  tallyPolicyUnappliedCompiledCode,
   tallyPolicyCompiledCode,
 
   -- * Validator
   tallyValidatorCompiledCode,
-  tallyValidatorUnappliedCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
@@ -48,9 +46,11 @@ import LambdaBuffers.ApplicationTypes.Configuration (
     dynamicConfigDatum'fungibleVotePercent,
     dynamicConfigDatum'tallyNft,
     dynamicConfigDatum'tallyValidator,
+    dynamicConfigDatum'voteCurrencySymbol,
     dynamicConfigDatum'voteFungibleCurrencySymbol,
     dynamicConfigDatum'voteFungibleTokenName,
     dynamicConfigDatum'voteNft,
+    dynamicConfigDatum'voteTokenName,
     dynamicConfigDatum'voteValidator
   ),
  )
@@ -109,13 +109,14 @@ import PlutusTx (
   CompiledCode,
   applyCode,
   compile,
+  fromBuiltinData,
   liftCode,
   unsafeFromBuiltinData,
  )
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
-  Bool (True),
+  Bool (False, True),
   BuiltinData,
   Integer,
   Maybe (Just, Nothing),
@@ -200,6 +201,7 @@ mkTallyNftMinter
       TxOut {txOutDatum = outputDatum, txOutAddress = outputAddress} =
         case filter (hasTallyNft . txOutValue) txInfoOutputs of
           [tallyTxOut] -> tallyTxOut
+          [] -> traceError "No tally NFT found in outputs"
           _ -> traceError "Should be exactly one valid Tally NFT output"
 
       -- Unwrap the 'OutputDatum' to get the 'TallyStateDatum'
@@ -228,15 +230,10 @@ mkTallyNftMinter
           thisCurrencySymbol
           theTokenName
      in
-      traceIfFalse "Tally NFT must be sent to the Tally validator" outputOnTallyValidator
-        && traceIfFalse "Tally datum vote counts are not initialized to zero" tallyIsInitializeToZero
+      traceIfFalse "Tally datum vote counts are not initialized to zero" tallyIsInitializeToZero
+        && traceIfFalse "Tally NFT must be sent to the Tally validator" outputOnTallyValidator
         && traceIfFalse "Should be exactly one valid token minted" onlyOneTokenMinted
 mkTallyNftMinter _ _ _ = traceError "Wrong type of script purpose!"
-
-tallyPolicyUnappliedCompiledCode ::
-  CompiledCode (TallyNftConfig -> BuiltinData -> BuiltinData -> ())
-tallyPolicyUnappliedCompiledCode =
-  $$(PlutusTx.compile [||mkUntypedPolicy . mkTallyNftMinter||])
 
 untypedTallyPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
 untypedTallyPolicy nftConfig r context =
@@ -354,15 +351,22 @@ validateTally
       expectedScripts :: Bool
       !expectedScripts = hasExpectedScripts txInfoInputs thisValidatorHash dynamicConfigDatum'voteValidator
 
-      hasVoteToken :: Value -> Maybe Value
-      hasVoteToken (Value v) =
+      -- Check that Value contains the 'voteNft' token
+      -- This acts like a pass token that allows the user to vote
+      hasVotePassToken :: Value -> Maybe Value
+      hasVotePassToken (Value v) =
         case filter (\(k, _) -> dynamicConfigDatum'voteNft == k) (M.toList v) of
           [] -> Nothing
           xs@[_] -> Just (Value (M.fromList xs))
           _ -> traceError "Too many vote nfts"
 
+      -- hasVoteWitness :: Value -> Bool
+      -- hasVoteWitness = hasSymbolInValue dynamicConfigDatum'voteFungibleCurrencySymbol
+
+      -- Check for the presence of the vote token minted by
+      -- the 'mkVoteMinter' policy when casting a vote on a proposal
       hasVoteWitness :: Value -> Bool
-      hasVoteWitness = hasSymbolInValue dynamicConfigDatum'voteFungibleCurrencySymbol
+      hasVoteWitness = hasOneOfToken dynamicConfigDatum'voteCurrencySymbol dynamicConfigDatum'voteTokenName
 
       thisTallyTokenName :: TokenName
       !thisTallyTokenName = getTokenNameOfNft dynamicConfigDatum'tallyNft oldValue "Tally Nft"
@@ -375,7 +379,7 @@ validateTally
       stepVotes
         TxInInfo {txInInfoResolved = TxOut {..}}
         oldAcc@(oldForCount, oldAgainstCount, oldPayoutMap) =
-          case (hasVoteToken txOutValue, hasVoteWitness txOutValue) of
+          case (hasVotePassToken txOutValue, hasVoteWitness txOutValue) of
             (Just voteNft, True) ->
               let
                 VoteDatum {..} = convertDatum txInfoData txOutDatum
@@ -443,8 +447,8 @@ validateTally
       voteNftAndAdaToVoters :: Bool
       !voteNftAndAdaToVoters = all (addressedIsPaid txInfoOutputs) (M.toList payoutMap)
 
-      tallyingIsInactive :: Bool
-      !tallyingIsInactive = tallyStateDatum'proposalEndTime `before` txInfoValidRange
+      -- tallyingIsInactive :: Bool
+      -- !tallyingIsInactive = tallyStateDatum'proposalEndTime `before` txInfoValidRange
 
       voteTokenAreAllBurned :: Bool
       !voteTokenAreAllBurned = not $ any (hasVoteWitness . txOutValue) txInfoOutputs
@@ -471,22 +475,20 @@ validateTally
             , tallyStateDatum'against = oldAgainst + againstCount
             }
      in
-      traceIfFalse "Tally is active" tallyingIsInactive
-        && traceIfFalse "Unexpected scripts" expectedScripts
+      -- traceIfFalse "Tally is active" tallyingIsInactive
+      traceIfFalse "Unexpected scripts" expectedScripts
         && traceIfFalse "Not all vote tokens and Ada returned" voteNftAndAdaToVoters
         && traceIfFalse "Not all vote tokens are burned" voteTokenAreAllBurned
         && traceIfFalse "Tally datum is not updated" tallyDatumIsUpdated
         && traceIfFalse "Old value is not as big as new value" newValueIsAtleastAsBigAsOldValue
 validateTally _ _ _ _ = traceError "Wrong script purpose"
 
-tallyValidatorUnappliedCompiledCode ::
-  CompiledCode (ConfigurationValidatorConfig -> BuiltinData -> BuiltinData -> BuiltinData -> ())
-tallyValidatorUnappliedCompiledCode =
-  $$(PlutusTx.compile [||mkUntypedValidator . validateTally||])
+tallyValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+tallyValidatorCompiledCode = $$(PlutusTx.compile [||untypedTallyValidator||])
 
-tallyValidatorCompiledCode ::
-  ConfigurationValidatorConfig ->
-  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
-tallyValidatorCompiledCode config =
-  let wrapValidateTally = wrapValidate' validateTally
-   in $$(PlutusTx.compile [||wrapValidateTally||]) `applyCode` liftCode config
+untypedTallyValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedTallyValidator validatorConfig tallyDatum redeemer context =
+  case fromBuiltinData tallyDatum of
+    Just datum ->
+      check $ validateTally (unsafeFromBuiltinData validatorConfig) datum redeemer (unsafeFromBuiltinData context)
+    _ -> traceError "Error at fromBuiltinData (TallyDatum - validator)"
