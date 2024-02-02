@@ -6,22 +6,19 @@ import Data.ByteString.Short qualified as SBS (fromShort)
 import Dao.Configuration.Script 
   ( configPolicyCompiledCode
   , configValidatorCompiledCode
-  , testValidatorCompiled
-  , alwaysMintsCompiled
   )
 import Dao.Index.Script (indexPolicyCompiledCode, indexValidatorCompiledCode)
 import Dao.Vote.Script 
   ( votePolicyCompiledCode
   , voteValidatorCompiledCode
   , fungiblePolicyCompiledCode
+  , voteNftPolicyCompiledCode
   )
 import Dao.Tally.Script (tallyPolicyCompiledCode, tallyValidatorCompiledCode)
-import Dao.Treasury.Script (treasuryValidatorCompiledCode)
+import Dao.Treasury.Script (treasuryValidatorCompiledCode, treasuryPolicyCompiledCode)
 import LambdaBuffers.ApplicationConfig.Scripts 
   (Scripts 
     (Scripts
-    , scripts'alwaysMints
-    , scripts'testValidator
     , scripts'configPolicy
     , scripts'configPolicyDebug
     , scripts'configValidator
@@ -40,8 +37,11 @@ import LambdaBuffers.ApplicationConfig.Scripts
     , scripts'voteValidatorDebug
     , scripts'treasuryValidator
     , scripts'treasuryValidatorDebug
+    , scripts'treasuryPolicy
+    , scripts'treasuryPolicyDebug
     , scripts'fungiblePolicy
-    , scripts'fungiblePolicyDebug
+    , scripts'voteNftPolicy
+    , scripts'voteNftPolicyDebug
     )
   , Script (Script)
   )
@@ -67,9 +67,7 @@ compile opts = do
   let scripts =
         toJsonBytes $
           Scripts
-            { scripts'testValidator = Script (scriptToCborOptimised testValidatorCompiled)
-            , scripts'alwaysMints = Script (scriptToCborOptimised alwaysMintsCompiled)
-            , scripts'configPolicy = Script (scriptToCborOptimised configPolicyCompiledCode)
+            { scripts'configPolicy = Script (scriptToCborOptimised configPolicyCompiledCode)
             , scripts'configPolicyDebug = Script (scriptToCbor configPolicyCompiledCode)
             , scripts'configValidator = Script (scriptToCborOptimised configValidatorCompiledCode)
             , scripts'configValidatorDebug = Script (scriptToCbor configValidatorCompiledCode)
@@ -87,8 +85,11 @@ compile opts = do
             , scripts'voteValidatorDebug = Script (scriptToCbor voteValidatorCompiledCode)
             , scripts'treasuryValidator = Script (scriptToCborOptimised treasuryValidatorCompiledCode)
             , scripts'treasuryValidatorDebug = Script (scriptToCbor treasuryValidatorCompiledCode)
+            , scripts'treasuryPolicyDebug = Script (scriptToCbor treasuryPolicyCompiledCode)
+            , scripts'treasuryPolicy = Script (scriptToCborOptimised treasuryPolicyCompiledCode)
             , scripts'fungiblePolicy = Script (scriptToCborOptimised fungiblePolicyCompiledCode)
-            , scripts'fungiblePolicyDebug = Script (scriptToCbor fungiblePolicyCompiledCode)
+            , scripts'voteNftPolicy = Script (scriptToCborOptimised voteNftPolicyCompiledCode)
+            , scripts'voteNftPolicyDebug = Script (scriptToCbor voteNftPolicyCompiledCode)
             }
   BS.writeFile (co'File opts) scripts
   

@@ -7,8 +7,6 @@ derive Eq Script
 derive Json Script
 
 record Scripts = {
-  alwaysMints : Script,
-  testValidator : Script,
   configPolicy : Script,
   configPolicyDebug : Script,
   configValidator : Script,
@@ -27,8 +25,11 @@ record Scripts = {
   voteValidatorDebug : Script,
   treasuryValidator : Script,
   treasuryValidatorDebug : Script,
-  fungiblePolicy: Script,
-  fungiblePolicyDebug: Script
+  treasuryPolicy : Script,
+  treasuryPolicyDebug : Script,
+  fungiblePolicy : Script,
+  voteNftPolicy : Script,
+  voteNftPolicyDebug : Script
 }
 derive Eq Scripts
 derive Json Scripts

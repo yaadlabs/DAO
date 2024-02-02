@@ -8,8 +8,6 @@ module Dao.Configuration.Script (
   -- * Minting policy
   mkConfigurationNftPolicy,
   configPolicyCompiledCode,
-  testValidatorCompiled,
-  alwaysMintsCompiled,
 
   -- * Validator
   validateConfiguration,
@@ -160,21 +158,6 @@ untypedConfigPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
 untypedConfigPolicy nftConfig r context =
   check $
     mkConfigurationNftPolicy (unsafeFromBuiltinData nftConfig) r (unsafeFromBuiltinData context)
-
-testValidator :: Integer -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-testValidator _ _ _ _ = ()
-
-untypedTestValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedTestValidator p = testValidator (unsafeFromBuiltinData p)
-
-testValidatorCompiled :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ())
-testValidatorCompiled = $$(PlutusTx.compile [||untypedTestValidator||])
-
-alwaysMints :: BuiltinData -> BuiltinData -> ()
-alwaysMints _ _ = ()
-
-alwaysMintsCompiled :: CompiledCode (BuiltinData -> BuiltinData -> ())
-alwaysMintsCompiled = $$(PlutusTx.compile [||alwaysMints||])
 
 {- | Validator for proposal upgrades.
 

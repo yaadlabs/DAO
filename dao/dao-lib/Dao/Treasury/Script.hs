@@ -4,9 +4,12 @@ Description: Dao treasury related scripts. It includes:
   - Treasury validator script
 -}
 module Dao.Treasury.Script (
-  -- * Validator
+  -- * Treasury validator
   validateTreasury,
   treasuryValidatorCompiledCode,
+
+  -- * Treasury policy (Placeholder for off-chain use)
+  treasuryPolicyCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
@@ -19,6 +22,7 @@ import Dao.ScriptArgument (
 import Dao.Shared (
   convertDatum,
   hasOneOfToken,
+  hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
   isScriptCredential,
@@ -70,6 +74,7 @@ import PlutusLedgerApi.V1.Value (
   adaToken,
   geq,
   singleton,
+  valueOf,
  )
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (
@@ -77,7 +82,7 @@ import PlutusLedgerApi.V2.Contexts (
     scriptContextPurpose,
     scriptContextTxInfo
   ),
-  ScriptPurpose (Spending),
+  ScriptPurpose (Minting, Spending),
   TxInInfo (
     TxInInfo,
     txInInfoOutRef,
@@ -112,6 +117,7 @@ import PlutusTx.Prelude (
   BuiltinData,
   Integer,
   Maybe (Just, Nothing),
+  any,
   check,
   divide,
   filter,
@@ -128,7 +134,9 @@ import PlutusTx.Prelude (
   (-),
   (.),
   (/=),
+  (<),
   (==),
+  (>),
   (>=),
  )
 
@@ -406,3 +414,41 @@ untypedTreasuryValidator :: BuiltinData -> BuiltinData -> BuiltinData -> Builtin
 untypedTreasuryValidator validatorConfig datum redeemer context =
   check $
     validateTreasury (unsafeFromBuiltinData validatorConfig) datum redeemer (unsafeFromBuiltinData context)
+
+{- A one-shot minting policy. (Placeholder)
+
+  Used in the off-chain when creating a new UTXO at the treasury validator
+  and sending funds to that UTXO.
+-}
+mkTreasuryMinter :: TxOutRef -> BuiltinData -> ScriptContext -> Bool
+mkTreasuryMinter
+  txOutRef
+  _
+  ScriptContext
+    { scriptContextTxInfo = TxInfo {..}
+    , scriptContextPurpose = Minting thisCurrencySymbol
+    } =
+    let
+      -- Ensure that the reference UTXO is spent
+      hasUTxO :: Bool
+      !hasUTxO = any (\i -> txInInfoOutRef i == txOutRef) txInfoInputs
+
+      -- Ensure exactly one valid index token is minted
+      onlyOneTokenMinted :: Bool
+      !onlyOneTokenMinted =
+        hasSingleTokenWithSymbolAndTokenName
+          txInfoMint
+          thisCurrencySymbol
+          adaToken
+     in
+      traceIfFalse "Reference UTXO should be spent" hasUTxO
+        && traceIfFalse "Exactly one valid token should be minted" onlyOneTokenMinted
+mkTreasuryMinter _ _ _ = traceError "Wrong type of script purpose!"
+
+untypedTreasuryPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedTreasuryPolicy txOutRef r context =
+  check $
+    mkTreasuryMinter (unsafeFromBuiltinData txOutRef) r (unsafeFromBuiltinData context)
+
+treasuryPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+treasuryPolicyCompiledCode = $$(PlutusTx.compile [||untypedTreasuryPolicy||])

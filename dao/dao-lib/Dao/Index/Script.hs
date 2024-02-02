@@ -7,7 +7,6 @@ Description: Dao index related scripts. It includes:
 module Dao.Index.Script (
   -- * Minting policy
   mkIndexNftMinter,
-  indexPolicyUnappliedCompiledCode,
   indexPolicyCompiledCode,
 
   -- * Validator
@@ -206,8 +205,3 @@ untypedIndexPolicy indexConfig r context =
 
 indexPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 indexPolicyCompiledCode = $$(PlutusTx.compile [||untypedIndexPolicy||])
-
-indexPolicyUnappliedCompiledCode ::
-  CompiledCode (IndexNftConfig -> BuiltinData -> BuiltinData -> ())
-indexPolicyUnappliedCompiledCode =
-  $$(PlutusTx.compile [||mkUntypedPolicy . mkIndexNftMinter||])

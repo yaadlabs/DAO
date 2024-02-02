@@ -10,11 +10,14 @@ module Dao.Vote.Script (
   wrappedPolicy,
   votePolicyCompiledCode,
 
-  -- * Fungible minting policy
+  -- * Vote validator
+  voteValidatorCompiledCode,
+
+  -- * Fungible minting policy (placeholder)
   fungiblePolicyCompiledCode,
 
-  -- * Validator
-  voteValidatorCompiledCode,
+  -- * Vote NFT policy (placeholder)
+  voteNftPolicyCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
@@ -71,6 +74,7 @@ import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusLedgerApi.V1.Interval (after)
 import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
 import PlutusLedgerApi.V1.Value (
+  TokenName (TokenName),
   Value,
   adaSymbol,
   adaToken,
@@ -205,8 +209,8 @@ mkVoteMinter
             _ -> traceError "Should be exactly one tally state datum in the reference inputs"
 
         -- Ensure the proposal end time is after the transaction's validity range
-        -- proposalIsActive :: Bool
-        -- !proposalIsActive = tallyStateDatum'proposalEndTime `after` txInfoValidRange
+        proposalIsActive :: Bool
+        !proposalIsActive = tallyStateDatum'proposalEndTime `after` txInfoValidRange
 
         -- Ensure the vote value contains exactly one valid witness token
         hasWitness :: Bool
@@ -231,8 +235,8 @@ mkVoteMinter
         totalAdaIsGreaterThanReturnAda :: Bool
         !totalAdaIsGreaterThanReturnAda = valueOf voteValue adaSymbol adaToken > voteDatum'returnAda
        in
-        -- traceIfFalse "Proposal has expired" proposalIsActive
-        traceIfFalse "Vote Nft is missing" hasVoteNft
+        traceIfFalse "Proposal has expired" proposalIsActive
+          && traceIfFalse "Vote Nft is missing" hasVoteNft
           && traceIfFalse "Missing witness on output" hasWitness
           && traceIfFalse "Should be exactly one valid token minted" onlyMintedOne
           && traceIfFalse "Total ada is not high enough" totalAdaIsGreaterThanReturnAda
@@ -253,19 +257,6 @@ wrappedPolicy config x y =
    in case (maybeDataX, maybeDataY) of
         (Just dataX, Just dataY) -> check (mkVoteMinter config dataX dataY)
         _ -> traceError "Error at fromBuiltinData function"
-
-{- Validator for creating an amount of fungible tokens with just one check.
-  Acts as a placeholder for this idea for now for off-chain use.
--}
-mkFungibleMinter :: Integer -> BuiltinData -> BuiltinData -> Bool
-mkFungibleMinter tokenAmount _ _ = traceIfFalse "Incorrect number of tokens" $ tokenAmount > 0 && tokenAmount < 500
-
-untypedFungiblePolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedFungiblePolicy amount redeemer context =
-  check $ mkFungibleMinter (unsafeFromBuiltinData amount) redeemer context
-
-fungiblePolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
-fungiblePolicyCompiledCode = $$(PlutusTx.compile [||untypedFungiblePolicy||])
 
 {- | Validator for votes.
 
@@ -364,3 +355,40 @@ untypedVoteValidator validatorConfig voteDatum voteActionRedeemer context =
     (Just datum, Just redeemer) ->
       check $ validateVote (unsafeFromBuiltinData validatorConfig) datum redeemer (unsafeFromBuiltinData context)
     _ -> traceError "Error at fromBuiltinData (VoteActionRedeemer - validator)"
+
+{- A placeholder script for the 'voteNft' token in the off-chain.
+  The 'voteNft' acts as a required pass which a user requires in order to cast a vote.
+-}
+mkVoteNftMinter :: BuiltinData -> ScriptContext -> Bool
+mkVoteNftMinter
+  _
+  ( ScriptContext
+      { scriptContextPurpose = Minting thisCurrencySymbol
+      , scriptContextTxInfo = TxInfo {txInfoMint}
+      }
+    ) =
+    let
+      onlyOneTokenMinted :: Bool
+      onlyOneTokenMinted =
+        hasSingleTokenWithSymbolAndTokenName
+          txInfoMint
+          thisCurrencySymbol
+          (TokenName "vote_pass")
+     in
+      traceIfFalse "Only one token should be minted" onlyOneTokenMinted
+
+untypedVoteNftPolicy :: BuiltinData -> BuiltinData -> ()
+untypedVoteNftPolicy redeemer context =
+  check $ mkVoteNftMinter redeemer (unsafeFromBuiltinData context)
+
+voteNftPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> ())
+voteNftPolicyCompiledCode = $$(PlutusTx.compile [||untypedVoteNftPolicy||])
+
+{- An always-succeeds placeholder script for the fungible token for use in the off-chain.
+  The fungible token acts as a multiplier of the user's vote weight.
+-}
+mkFungibleMinter :: BuiltinData -> BuiltinData -> ()
+mkFungibleMinter _ _ = ()
+
+fungiblePolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> ())
+fungiblePolicyCompiledCode = $$(PlutusTx.compile [||mkFungibleMinter||])

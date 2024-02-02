@@ -360,9 +360,6 @@ validateTally
           xs@[_] -> Just (Value (M.fromList xs))
           _ -> traceError "Too many vote nfts"
 
-      -- hasVoteWitness :: Value -> Bool
-      -- hasVoteWitness = hasSymbolInValue dynamicConfigDatum'voteFungibleCurrencySymbol
-
       -- Check for the presence of the vote token minted by
       -- the 'mkVoteMinter' policy when casting a vote on a proposal
       hasVoteWitness :: Value -> Bool
@@ -447,8 +444,8 @@ validateTally
       voteNftAndAdaToVoters :: Bool
       !voteNftAndAdaToVoters = all (addressedIsPaid txInfoOutputs) (M.toList payoutMap)
 
-      -- tallyingIsInactive :: Bool
-      -- !tallyingIsInactive = tallyStateDatum'proposalEndTime `before` txInfoValidRange
+      tallyingIsInactive :: Bool
+      !tallyingIsInactive = tallyStateDatum'proposalEndTime `before` txInfoValidRange
 
       voteTokenAreAllBurned :: Bool
       !voteTokenAreAllBurned = not $ any (hasVoteWitness . txOutValue) txInfoOutputs
@@ -475,8 +472,8 @@ validateTally
             , tallyStateDatum'against = oldAgainst + againstCount
             }
      in
-      -- traceIfFalse "Tally is active" tallyingIsInactive
-      traceIfFalse "Unexpected scripts" expectedScripts
+      traceIfFalse "Tally is active" tallyingIsInactive
+        && traceIfFalse "Unexpected scripts" expectedScripts
         && traceIfFalse "Not all vote tokens and Ada returned" voteNftAndAdaToVoters
         && traceIfFalse "Not all vote tokens are burned" voteTokenAreAllBurned
         && traceIfFalse "Tally datum is not updated" tallyDatumIsUpdated
