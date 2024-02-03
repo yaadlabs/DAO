@@ -13,7 +13,8 @@ module Spec.Vote.Script (
 where
 
 import Dao.ScriptArgument (ConfigurationValidatorConfig (ConfigurationValidatorConfig))
-import Dao.Vote.Script (voteValidatorCompiledCode, wrappedPolicy)
+import Dao.Shared (mkUntypedValidator')
+import Dao.Vote.Script (validateVote, wrappedPolicy)
 import LambdaBuffers.ApplicationTypes.Vote (
   VoteActionRedeemer,
   VoteDatum,
@@ -23,15 +24,15 @@ import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
   mkTypedPolicy,
+  mkTypedValidator,
   scriptCurrencySymbol,
   scriptHash,
  )
 import PlutusLedgerApi.V1.Scripts (ScriptHash)
 import PlutusLedgerApi.V1.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
-import PlutusTx.Prelude (($), (.))
+import PlutusTx.Prelude (BuiltinData, ($), (.))
 import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
-import Spec.SpecUtils (mkTypedValidator')
 
 -- Policy script and info
 type VoteMintingPolicy = TypedPolicy VoteMinterActionRedeemer
@@ -39,7 +40,7 @@ type VoteMintingPolicy = TypedPolicy VoteMinterActionRedeemer
 voteTypedMintingPolicy :: ConfigurationValidatorConfig -> VoteMintingPolicy
 voteTypedMintingPolicy config =
   mkTypedPolicy $
-    $$(PlutusTx.compile [||\c -> wrappedPolicy c||])
+    $$(PlutusTx.compile [||wrappedPolicy||])
       `PlutusTx.applyCode` PlutusTx.liftCode config
 
 voteCurrencySymbol :: ConfigurationValidatorConfig -> CurrencySymbol
@@ -52,7 +53,17 @@ voteValue voteCfg@(ConfigurationValidatorConfig _ tokenName) = singleton (voteCu
 type VoteValidatorScript = TypedValidator VoteDatum VoteActionRedeemer
 
 voteTypedValidator :: VoteValidatorScript
-voteTypedValidator = mkTypedValidator' voteValidatorCompiledCode sampleConfigValidatorConfig
+voteTypedValidator = voteTypedValidator' sampleConfigValidatorConfig
 
 voteValidatorScriptHash :: ScriptHash
 voteValidatorScriptHash = scriptHash voteTypedValidator
+
+voteTypedValidator' :: ConfigurationValidatorConfig -> VoteValidatorScript
+voteTypedValidator' config =
+  mkTypedValidator
+    (compiledVoteValidator `PlutusTx.applyCode` PlutusTx.liftCode config)
+
+compiledVoteValidator ::
+  PlutusTx.CompiledCode (ConfigurationValidatorConfig -> (BuiltinData -> BuiltinData -> BuiltinData -> ()))
+compiledVoteValidator =
+  $$(PlutusTx.compile [||mkUntypedValidator' . validateVote||])

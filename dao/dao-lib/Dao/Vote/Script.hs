@@ -11,6 +11,7 @@ module Dao.Vote.Script (
   votePolicyCompiledCode,
 
   -- * Vote validator
+  validateVote,
   voteValidatorCompiledCode,
 
   -- * Fungible minting policy (placeholder)

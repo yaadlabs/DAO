@@ -14,13 +14,15 @@ module Spec.Tally.Script (
 )
 where
 
-import Dao.ScriptArgument (TallyNftConfig (TallyNftConfig))
-import Dao.Tally.Script (mkTallyNftMinter, tallyValidatorCompiledCode)
+import Dao.ScriptArgument (ConfigurationValidatorConfig, TallyNftConfig (TallyNftConfig))
+import Dao.Shared (mkUntypedValidator)
+import Dao.Tally.Script (mkTallyNftMinter, validateTally)
 import LambdaBuffers.ApplicationTypes.Tally (TallyStateDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
   mkTypedPolicy,
+  mkTypedValidator,
   scriptCurrencySymbol,
   scriptHash,
   toBuiltinPolicy,
@@ -28,9 +30,8 @@ import Plutus.Model.V2 (
 import PlutusLedgerApi.V1.Scripts (ScriptHash)
 import PlutusLedgerApi.V1.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
-import PlutusTx.Prelude (($), (.))
+import PlutusTx.Prelude (BuiltinData, ($), (.))
 import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
-import Spec.SpecUtils (mkTypedValidator')
 
 -- Policy script and info
 tallyConfigNftTypedMintingPolicy :: TallyNftConfig -> TypedPolicy ()
@@ -50,7 +51,17 @@ tallyConfigNftValue nftCfg@(TallyNftConfig _ tokenName _ _) =
 type TallyValidatorScript = TypedValidator TallyStateDatum ()
 
 tallyNftTypedValidator :: TallyValidatorScript
-tallyNftTypedValidator = mkTypedValidator' tallyValidatorCompiledCode sampleConfigValidatorConfig
+tallyNftTypedValidator = tallyTypedValidator' sampleConfigValidatorConfig
 
 tallyValidatorScriptHash :: ScriptHash
 tallyValidatorScriptHash = scriptHash tallyNftTypedValidator
+
+tallyTypedValidator' :: ConfigurationValidatorConfig -> TallyValidatorScript
+tallyTypedValidator' config =
+  mkTypedValidator
+    (compiledTallyValidator `PlutusTx.applyCode` PlutusTx.liftCode config)
+
+compiledTallyValidator ::
+  PlutusTx.CompiledCode (ConfigurationValidatorConfig -> (BuiltinData -> BuiltinData -> BuiltinData -> ()))
+compiledTallyValidator =
+  $$(PlutusTx.compile [||mkUntypedValidator . validateTally||])

@@ -11,19 +11,21 @@ module Spec.Configuration.Script (
   configNftCurrencySymbol,
 ) where
 
-import Dao.Configuration.Script (configurationValidatorCompiledCode, mkConfigurationNftPolicy)
-import Dao.ScriptArgument (NftConfig)
+import Dao.Configuration.Script (mkConfigurationNftPolicy, validateConfiguration)
+import Dao.ScriptArgument (ConfigurationValidatorConfig, NftConfig)
+import Dao.Shared (mkUntypedValidator)
 import LambdaBuffers.ApplicationTypes.Configuration (DynamicConfigDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
   mkTypedPolicy,
+  mkTypedValidator,
   scriptCurrencySymbol,
   toBuiltinPolicy,
  )
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 import PlutusTx qualified
-import PlutusTx.Prelude (($), (.))
+import PlutusTx.Prelude (BuiltinData, ($), (.))
 import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
 import Spec.SpecUtils (mkTypedValidator')
 
@@ -41,4 +43,14 @@ configNftCurrencySymbol = scriptCurrencySymbol . configNftTypedMintingPolicy
 type ConfigUpgradeValidatorScript = TypedValidator DynamicConfigDatum ()
 
 upgradeConfigNftTypedValidator :: ConfigUpgradeValidatorScript
-upgradeConfigNftTypedValidator = mkTypedValidator' configurationValidatorCompiledCode sampleConfigValidatorConfig
+upgradeConfigNftTypedValidator = upgradeConfigTypedValidator' sampleConfigValidatorConfig
+
+upgradeConfigTypedValidator' :: ConfigurationValidatorConfig -> ConfigUpgradeValidatorScript
+upgradeConfigTypedValidator' config =
+  mkTypedValidator
+    (compiledConfigValidator `PlutusTx.applyCode` PlutusTx.liftCode config)
+
+compiledConfigValidator ::
+  PlutusTx.CompiledCode (ConfigurationValidatorConfig -> (BuiltinData -> BuiltinData -> BuiltinData -> ()))
+compiledConfigValidator =
+  $$(PlutusTx.compile [||mkUntypedValidator . validateConfiguration||])

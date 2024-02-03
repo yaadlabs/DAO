@@ -11,6 +11,7 @@ module Dao.Tally.Script (
 
   -- * Validator
   tallyValidatorCompiledCode,
+  validateTally,
 ) where
 
 import Dao.ScriptArgument (
@@ -366,7 +367,7 @@ validateTally
       hasVoteWitness = hasOneOfToken dynamicConfigDatum'voteCurrencySymbol dynamicConfigDatum'voteTokenName
 
       thisTallyTokenName :: TokenName
-      !thisTallyTokenName = getTokenNameOfNft dynamicConfigDatum'tallyNft oldValue "Tally Nft"
+      thisTallyTokenName = getTokenNameOfNft dynamicConfigDatum'tallyNft oldValue "Tally Nft"
 
       -- Helper for loop that counts the votes
       stepVotes ::

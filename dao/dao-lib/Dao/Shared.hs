@@ -157,7 +157,6 @@ hasOneOfToken symbol tokenName (Value value) = case Map.lookup symbol value of
     Nothing -> False
   Nothing -> False
 
--- traceError (decodeUtf8 $ serialiseData dbs)
 {-# INLINEABLE convertDatum #-}
 convertDatum :: (FromData a) => Map DatumHash Datum -> OutputDatum -> a
 convertDatum infoData datum = case datum of
@@ -248,6 +247,7 @@ wrapValidate validate config x y z =
         (unsafeFromBuiltinData z)
     )
 
+{-# INLINEABLE mkUntypedValidator #-}
 mkUntypedValidator ::
   forall d r.
   (FromData d, PlutusTx.UnsafeFromData r) =>
