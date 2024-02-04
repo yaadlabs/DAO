@@ -11,7 +11,6 @@
             "ApplicationTypes/Configuration.lbf"
             "ApplicationTypes/Index.lbf"
             "ApplicationTypes/Tally.lbf"
-            "ApplicationTypes/Arguments.lbf"
           ];
       };
 
@@ -25,7 +24,6 @@
             "ApplicationTypes/Configuration.lbf"
             "ApplicationTypes/Index.lbf"
             "ApplicationTypes/Tally.lbf"
-            "ApplicationTypes/Arguments.lbf"
           ];
       };
 

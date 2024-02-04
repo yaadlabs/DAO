@@ -10,7 +10,7 @@ module Spec.Vote.Context (
 ) where
 
 import Control.Monad (void)
-import Dao.ScriptArgument (ConfigurationValidatorConfig)
+import Dao.ScriptArgument (ValidatorParams)
 import LambdaBuffers.ApplicationTypes.Vote (
   VoteMinterActionRedeemer (VoteMinterActionRedeemer'Mint),
  )
@@ -32,7 +32,7 @@ import Plutus.Model.V2 (
  )
 import PlutusLedgerApi.V1.Interval (to)
 import PlutusLedgerApi.V1.Value (TokenName (TokenName), Value, singleton)
-import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
+import Spec.Configuration.SampleData (sampleValidatorParams)
 import Spec.Configuration.Transactions (runInitConfig)
 import Spec.Configuration.Utils (findConfig)
 import Spec.SpecUtils (minAda, oneSecond)
@@ -86,7 +86,7 @@ data ValidityRange
   | NoSpecificRange
 
 mkVoteConfigNftTest ::
-  (ConfigurationValidatorConfig -> Value) ->
+  (ValidatorParams -> Value) ->
   VoteConfigRef ->
   ValidityRange ->
   Run ()
@@ -105,10 +105,10 @@ mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
 
   let
     voteValue :: Value
-    voteValue = voteConfigValue sampleConfigValidatorConfig
+    voteValue = voteConfigValue sampleValidatorParams
 
     votePolicy :: VoteMintingPolicy
-    votePolicy = voteTypedMintingPolicy sampleConfigValidatorConfig
+    votePolicy = voteTypedMintingPolicy sampleValidatorParams
 
     -- Set up the txs
     baseTx =
@@ -139,10 +139,10 @@ mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
     NoSpecificRange -> submitTx user combinedTxs -- Should (will) fail
 
 -- Valid token value, correct symbol and exactly one minted
-validVoteConfigValue :: ConfigurationValidatorConfig -> Value
+validVoteConfigValue :: ValidatorParams -> Value
 validVoteConfigValue config = singleton (voteCurrencySymbol config) (TokenName "vote") 1
 
-validVoteConfigValue' :: ConfigurationValidatorConfig -> Value
+validVoteConfigValue' :: ValidatorParams -> Value
 validVoteConfigValue' config =
   mconcat
     [ singleton (voteCurrencySymbol config) (TokenName "vote") 1
@@ -150,5 +150,5 @@ validVoteConfigValue' config =
     ]
 
 -- Valid token value, correct symbol and exactly one minted
-invalidMoreThanOneVoteConfigValue :: ConfigurationValidatorConfig -> Value
+invalidMoreThanOneVoteConfigValue :: ValidatorParams -> Value
 invalidMoreThanOneVoteConfigValue config = singleton (voteCurrencySymbol config) (TokenName "vote") 2

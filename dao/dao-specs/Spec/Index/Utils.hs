@@ -1,15 +1,15 @@
 module Spec.Index.Utils (findIndex) where
 
-import LambdaBuffers.ApplicationTypes.Index (IndexNftDatum)
+import LambdaBuffers.ApplicationTypes.Index (IndexDatum)
 import Plutus.Model (Run)
 import PlutusLedgerApi.V2.Tx (TxOut, TxOutRef)
-import Spec.Index.Script (indexNftTypedValidator)
+import Spec.Index.Script (indexTypedValidator)
 import Spec.SpecUtils (findConfigUtxo)
 import Spec.Values (dummyIndexConfigNftSymbol, dummyIndexConfigNftTokenName)
 
-findIndex :: Run (TxOutRef, TxOut, IndexNftDatum)
+findIndex :: Run (TxOutRef, TxOut, IndexDatum)
 findIndex =
   findConfigUtxo
-    indexNftTypedValidator
+    indexTypedValidator
     dummyIndexConfigNftSymbol
     dummyIndexConfigNftTokenName

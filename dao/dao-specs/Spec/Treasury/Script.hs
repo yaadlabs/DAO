@@ -9,13 +9,13 @@ module Spec.Treasury.Script (
 )
 where
 
-import Dao.ScriptArgument (ConfigurationValidatorConfig)
+import Dao.ScriptArgument (ValidatorParams)
 import Dao.Treasury.Script (validateTreasury)
 import Plutus.Model.V2 (TypedValidator, mkTypedValidator, scriptHash, toBuiltinValidator)
 import PlutusLedgerApi.V1.Scripts (ScriptHash)
 import PlutusTx qualified
 import PlutusTx.Prelude (BuiltinData)
-import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
+import Spec.Configuration.SampleData (sampleValidatorParams)
 import Prelude ((.))
 
 -- Validator script and info
@@ -25,14 +25,14 @@ treasuryValidatorScriptHash :: ScriptHash
 treasuryValidatorScriptHash = scriptHash treasuryTypedValidator
 
 treasuryTypedValidator :: TreasuryValidatorScript
-treasuryTypedValidator = treasuryTypedValidator' sampleConfigValidatorConfig
+treasuryTypedValidator = treasuryTypedValidator' sampleValidatorParams
 
-treasuryTypedValidator' :: ConfigurationValidatorConfig -> TreasuryValidatorScript
+treasuryTypedValidator' :: ValidatorParams -> TreasuryValidatorScript
 treasuryTypedValidator' config =
   mkTypedValidator
     (compiledTreasuryValidator `PlutusTx.applyCode` PlutusTx.liftCode config)
 
 compiledTreasuryValidator ::
-  PlutusTx.CompiledCode (ConfigurationValidatorConfig -> (BuiltinData -> BuiltinData -> BuiltinData -> ()))
+  PlutusTx.CompiledCode (ValidatorParams -> (BuiltinData -> BuiltinData -> BuiltinData -> ()))
 compiledTreasuryValidator =
   $$(PlutusTx.compile [||toBuiltinValidator . validateTreasury||])

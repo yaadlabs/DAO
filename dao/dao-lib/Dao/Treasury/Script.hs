@@ -13,10 +13,10 @@ module Dao.Treasury.Script (
 ) where
 
 import Dao.ScriptArgument (
-  ConfigurationValidatorConfig (
-    ConfigurationValidatorConfig,
-    cvcConfigNftCurrencySymbol,
-    cvcConfigNftTokenName
+  ValidatorParams (
+    ValidatorParams,
+    vpConfigSymbol,
+    vpConfigTokenName
   ),
  )
 import Dao.Shared (
@@ -205,13 +205,13 @@ import PlutusTx.Prelude (
           is provided as the field of the 'Upgrade' constructor of the Proposal type.
 -}
 validateTreasury ::
-  ConfigurationValidatorConfig ->
+  ValidatorParams ->
   BuiltinData ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateTreasury
-  ConfigurationValidatorConfig {..}
+  ValidatorParams {..}
   _treasury
   _action
   ScriptContext
@@ -224,7 +224,7 @@ validateTreasury
 
       -- Helper for filtering for config UTXO
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
+      hasConfigurationNft = hasOneOfToken vpConfigSymbol vpConfigTokenName
 
       -- Get the DynamicConfigDatum from the reference inputs, should be exactly one
       DynamicConfigDatum {..} =

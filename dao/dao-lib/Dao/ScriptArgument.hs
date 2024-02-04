@@ -4,12 +4,12 @@ Description: Contains the types that are passed to scripts as an argument
 -}
 module Dao.ScriptArgument (
   -- * Validator script arguments
-  ConfigurationValidatorConfig (..),
+  ValidatorParams (..),
 
   -- * Minting policy script arguments
-  NftConfig (..),
-  IndexNftConfig (..),
-  TallyNftConfig (..),
+  ConfigPolicyParams (..),
+  IndexPolicyParams (..),
+  TallyPolicyParams (..),
 ) where
 
 import PlutusLedgerApi.V1 (CurrencySymbol)
@@ -19,52 +19,52 @@ import PlutusLedgerApi.V1.Value (TokenName)
 import PlutusTx (makeLift, unstableMakeIsData)
 
 -- | Used as an argument to the `Dao.ConfigurationNft.Script.mkConfigurationNftPolicy` minting policy script
-data NftConfig = NftConfig
-  { ncInitialUtxo :: TxOutRef
+data ConfigPolicyParams = ConfigPolicyParams
+  { cpInitialUtxo :: TxOutRef
   -- ^ The UTXO to be spent in the transaction
-  , ncTokenName :: TokenName
+  , cpTokenName :: TokenName
   -- ^ The expected token name of the newly minted config NFT
   }
 
 {- | Used as an argument to the validator scripts that need access
  to the `Dao.Types.DynamicConfigDatum` config in their reference inputs
 -}
-data ConfigurationValidatorConfig = ConfigurationValidatorConfig
-  { cvcConfigNftCurrencySymbol :: CurrencySymbol
+data ValidatorParams = ValidatorParams
+  { vpConfigSymbol :: CurrencySymbol
   -- ^ The symbol of the NFT that marks the UTXO that contains
   -- the `Dao.Types.DynamicConfigDatum` config
-  , cvcConfigNftTokenName :: TokenName
+  , vpConfigTokenName :: TokenName
   -- ^ The token name of the NFT that marks the UTXO that contains
   -- the `Dao.Types.DynamicConfigDatum` config
   }
 
-unstableMakeIsData ''NftConfig
-unstableMakeIsData ''ConfigurationValidatorConfig
+unstableMakeIsData ''ConfigPolicyParams
+unstableMakeIsData ''ValidatorParams
 
-makeLift ''NftConfig
-makeLift ''ConfigurationValidatorConfig
+makeLift ''ConfigPolicyParams
+makeLift ''ValidatorParams
 
 -- | Used as an argument to the `Dao.Index.Script.mkIndexNftMinter` minting policy script
-data IndexNftConfig = IndexNftConfig
-  { incInitialUtxo :: TxOutRef
+data IndexPolicyParams = IndexPolicyParams
+  { ipInitialUtxo :: TxOutRef
   -- ^ The UTXO to be spent in the transaction
-  , incTokenName :: TokenName
+  , ipTokenName :: TokenName
   -- ^ The expected token name of the newly minted config NFT
-  , incIndexValidator :: ScriptHash
+  , ipIndexValidator :: ScriptHash
   -- ^ The hash of the `Dao.Index.Script.validateIndex` script,
   -- the policy uses this to ensure the newly minted token is sent to this index validator
   }
 
-makeLift ''IndexNftConfig
-unstableMakeIsData ''IndexNftConfig
+makeLift ''IndexPolicyParams
+unstableMakeIsData ''IndexPolicyParams
 
 -- | Tally policy configuration
-data TallyNftConfig = TallyNftConfig
-  { tncIndexNftPolicyId :: CurrencySymbol
-  , tncIndexNftTokenName :: TokenName
-  , tncConfigNftCurrencySymbol :: CurrencySymbol
-  , tncConfigNftTokenName :: TokenName
+data TallyPolicyParams = TallyPolicyParams
+  { tpIndexSymbol :: CurrencySymbol
+  , tpIndexTokenName :: TokenName
+  , tpConfigSymbol :: CurrencySymbol
+  , tpConfigTokenName :: TokenName
   }
 
-makeLift ''TallyNftConfig
-unstableMakeIsData ''TallyNftConfig
+makeLift ''TallyPolicyParams
+unstableMakeIsData ''TallyPolicyParams

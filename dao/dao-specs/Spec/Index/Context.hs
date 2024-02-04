@@ -8,7 +8,7 @@ module Spec.Index.Context (
   invalidNoDatumSentToValidadtorIndexConfigNftTest,
 ) where
 
-import Dao.ScriptArgument (IndexNftConfig (IndexNftConfig))
+import Dao.ScriptArgument (IndexPolicyParams (IndexPolicyParams))
 import Plutus.Model (
   Run,
   Tx,
@@ -29,11 +29,11 @@ import Plutus.Model.V2 (
 import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusLedgerApi.V1.Value (Value, singleton)
 import PlutusTx.Prelude (Bool (False, True), ($))
-import Spec.Index.SampleData (validSampleIndexNftDatum)
+import Spec.Index.SampleData (validSampleIndexDatum)
 import Spec.Index.Script (
-  indexConfigNftCurrencySymbol,
-  indexConfigNftTypedMintingPolicy,
-  indexNftTypedValidator,
+  indexCurrencySymbol,
+  indexTypedMintingPolicy,
+  indexTypedValidator,
   indexValidatorScriptHash,
  )
 import Spec.SpecUtils (minAda)
@@ -52,41 +52,41 @@ invalidNoDatumSentToValidadtorIndexConfigNftTest =
   mkIndexConfigNftTest invalidNftNoDatumSentToValidatorTx
 
 -- | A valid tx, corresponding test should pass
-validIndexNftTx :: IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
+validIndexNftTx :: IndexPolicyParams -> UserSpend -> PubKeyHash -> Tx
 validIndexNftTx = mkIndexConfigNftTx True validIndexConfigNftValue
 
-invalidMoreThanOneTokenMintedIndexNftTx :: IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
+invalidMoreThanOneTokenMintedIndexNftTx :: IndexPolicyParams -> UserSpend -> PubKeyHash -> Tx
 invalidMoreThanOneTokenMintedIndexNftTx =
   mkIndexConfigNftTx
     True
     invalidMoreThanOneTokenMintedIndexConfigNftValue
 
-invalidNftNoDatumSentToValidatorTx :: IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
+invalidNftNoDatumSentToValidatorTx :: IndexPolicyParams -> UserSpend -> PubKeyHash -> Tx
 invalidNftNoDatumSentToValidatorTx = mkIndexConfigNftTx False validIndexConfigNftValue
 
 -- | Helper function for making tests
-mkIndexConfigNftTest :: (IndexNftConfig -> UserSpend -> PubKeyHash -> Tx) -> Run ()
+mkIndexConfigNftTest :: (IndexPolicyParams -> UserSpend -> PubKeyHash -> Tx) -> Run ()
 mkIndexConfigNftTest tx = do
   user <- newUser minAda
   spend' <- spend user (adaValue 2)
-  let config = IndexNftConfig (getHeadRef spend') dummyIndexConfigNftTokenName indexValidatorScriptHash
+  let config = IndexPolicyParams (getHeadRef spend') dummyIndexConfigNftTokenName indexValidatorScriptHash
   submitTx user $ tx config spend' user
 
 {- | Helper function for building txs
  Set the `hasDatum` flag to False to create an invalid tx that
  doesn't pay the datum to the validator script
 -}
-mkIndexConfigNftTx :: Bool -> (IndexNftConfig -> Value) -> IndexNftConfig -> UserSpend -> PubKeyHash -> Tx
+mkIndexConfigNftTx :: Bool -> (IndexPolicyParams -> Value) -> IndexPolicyParams -> UserSpend -> PubKeyHash -> Tx
 mkIndexConfigNftTx hasDatum configValue config spend' user =
   let
     -- Set up the value and scripts
     mintVal = configValue config
-    policy = indexConfigNftTypedMintingPolicy config
-    validator = indexNftTypedValidator
+    policy = indexTypedMintingPolicy config
+    validator = indexTypedValidator
 
     -- Set up the txs
     baseTx = mconcat [mintValue policy () mintVal, userSpend spend']
-    withDatum = payToScript validator (InlineDatum validSampleIndexNftDatum) (adaValue 2 <> mintVal)
+    withDatum = payToScript validator (InlineDatum validSampleIndexDatum) (adaValue 2 <> mintVal)
     withNoDatumToUser = payToKey user (adaValue 2 <> mintVal)
    in
     -- If hasDatum is set to False we want the withNoDatumToUser tx
@@ -94,10 +94,10 @@ mkIndexConfigNftTx hasDatum configValue config spend' user =
     if hasDatum then baseTx <> withDatum else baseTx <> withNoDatumToUser
 
 -- | Valid value to be used in valid tx
-validIndexConfigNftValue :: IndexNftConfig -> Value
-validIndexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
-  singleton (indexConfigNftCurrencySymbol nftCfg) tokenName 1
+validIndexConfigNftValue :: IndexPolicyParams -> Value
+validIndexConfigNftValue nftCfg@(IndexPolicyParams _ tokenName _) =
+  singleton (indexCurrencySymbol nftCfg) tokenName 1
 
-invalidMoreThanOneTokenMintedIndexConfigNftValue :: IndexNftConfig -> Value
-invalidMoreThanOneTokenMintedIndexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
-  singleton (indexConfigNftCurrencySymbol nftCfg) tokenName 2
+invalidMoreThanOneTokenMintedIndexConfigNftValue :: IndexPolicyParams -> Value
+invalidMoreThanOneTokenMintedIndexConfigNftValue nftCfg@(IndexPolicyParams _ tokenName _) =
+  singleton (indexCurrencySymbol nftCfg) tokenName 2

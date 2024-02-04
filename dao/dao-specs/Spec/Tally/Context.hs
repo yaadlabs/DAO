@@ -12,8 +12,8 @@ module Spec.Tally.Context (
 ) where
 
 import Control.Monad (void)
-import Dao.ScriptArgument (TallyNftConfig (TallyNftConfig))
-import LambdaBuffers.ApplicationTypes.Index (IndexNftDatum (IndexNftDatum))
+import Dao.ScriptArgument (TallyPolicyParams (TallyPolicyParams))
+import LambdaBuffers.ApplicationTypes.Index (IndexDatum (IndexDatum))
 import Plutus.Model (
   Run,
   TypedPolicy,
@@ -35,7 +35,7 @@ import PlutusTx (fromBuiltinData, toBuiltinData)
 import PlutusTx.Prelude (Maybe, ($))
 import Spec.Configuration.Transactions (runInitConfig)
 import Spec.Configuration.Utils (findConfig)
-import Spec.Index.Script (indexNftTypedValidator)
+import Spec.Index.Script (indexTypedValidator)
 import Spec.Index.Transactions (runInitIndex)
 import Spec.Index.Utils (findIndex)
 import Spec.SpecUtils (amountOfAda)
@@ -115,7 +115,7 @@ data SpendIndexInput
   | DoNotSpendInput
 
 mkTallyConfigTest ::
-  (TallyNftConfig -> Value) ->
+  (TallyPolicyParams -> Value) ->
   IncrementIndex ->
   ConfigRef ->
   SpendIndexInput ->
@@ -130,7 +130,7 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
   -- logInfo' $ show indexDatum
   let builtinIndex = toBuiltinData indexDatum
   let
-    fromBuiltinIndex :: Maybe IndexNftDatum
+    fromBuiltinIndex :: Maybe IndexDatum
     fromBuiltinIndex = fromBuiltinData builtinIndex
 
   -- error $ show $ fromBuiltinIndex
@@ -140,7 +140,7 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
   spend2 <- spend user (adaValue 4_000_000)
 
   let config =
-        TallyNftConfig
+        TallyPolicyParams
           dummyIndexConfigNftSymbol
           dummyIndexConfigNftTokenName
           dummyConfigNftSymbol
@@ -155,9 +155,9 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
     tallyPolicy = tallyConfigNftTypedMintingPolicy config
 
     -- Valid output index datum should have index field incremented by one
-    updateIndexDatum :: IndexNftDatum -> IndexNftDatum
-    updateIndexDatum oldDatum@(IndexNftDatum indexNftDatum'index) = case incrementIndex of
-      ValidIncrement -> IndexNftDatum $ indexNftDatum'index + 1
+    updateIndexDatum :: IndexDatum -> IndexDatum
+    updateIndexDatum oldDatum@(IndexDatum indexDatum'index) = case incrementIndex of
+      ValidIncrement -> IndexDatum $ indexDatum'index + 1
       DoNotIncrement -> oldDatum
 
     -- Set up the txs
@@ -177,7 +177,7 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
 
     -- Valid tx spends the input at the index validator with the old datum,
     withIndexInput = case spendIndex of
-      SpendInput -> spendScript indexNftTypedValidator indexOutRef () indexDatum
+      SpendInput -> spendScript indexTypedValidator indexOutRef () indexDatum
       DoNotSpendInput -> mempty
 
     -- Pay the tally datum, and token,
@@ -192,7 +192,7 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
     -- index field, and token, to the index validator
     payToIndexValidator =
       payToScript
-        indexNftTypedValidator
+        indexTypedValidator
         (InlineDatum $ updateIndexDatum indexDatum)
         (amountOfAda 4_000_000 <> dummyIndexConfigNftValue)
 
@@ -209,13 +209,13 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
   submitTx user allTxs
 
 -- Valid token value, exactly one minted, correct symbol and token name set to index field of index datum
-validTallyConfigValue :: TallyNftConfig -> Value
+validTallyConfigValue :: TallyPolicyParams -> Value
 validTallyConfigValue config = singleton (tallyConfigNftCurrencySymbol config) (TokenName "0") 1
 
-invalidWrongTokenNameTallyConfigValue :: TallyNftConfig -> Value
+invalidWrongTokenNameTallyConfigValue :: TallyPolicyParams -> Value
 invalidWrongTokenNameTallyConfigValue config =
   singleton (tallyConfigNftCurrencySymbol config) (TokenName "some_wrong_name") 1
 
-invalidMoreThanOneTokenMintedTallyConfigValue :: TallyNftConfig -> Value
+invalidMoreThanOneTokenMintedTallyConfigValue :: TallyPolicyParams -> Value
 invalidMoreThanOneTokenMintedTallyConfigValue config =
   singleton (tallyConfigNftCurrencySymbol config) (TokenName "some_wrong_name") 2

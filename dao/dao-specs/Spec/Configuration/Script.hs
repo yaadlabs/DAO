@@ -12,7 +12,7 @@ module Spec.Configuration.Script (
 ) where
 
 import Dao.Configuration.Script (mkConfigurationNftPolicy, validateConfiguration)
-import Dao.ScriptArgument (ConfigurationValidatorConfig, NftConfig)
+import Dao.ScriptArgument (ConfigPolicyParams, ValidatorParams)
 import Dao.Shared (mkUntypedValidator)
 import LambdaBuffers.ApplicationTypes.Configuration (DynamicConfigDatum)
 import Plutus.Model.V2 (
@@ -26,31 +26,31 @@ import Plutus.Model.V2 (
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 import PlutusTx qualified
 import PlutusTx.Prelude (BuiltinData, ($), (.))
-import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
+import Spec.Configuration.SampleData (sampleValidatorParams)
 import Spec.SpecUtils (mkTypedValidator')
 
 -- Policy script and info
-configNftTypedMintingPolicy :: NftConfig -> TypedPolicy ()
+configNftTypedMintingPolicy :: ConfigPolicyParams -> TypedPolicy ()
 configNftTypedMintingPolicy config =
   mkTypedPolicy $
     $$(PlutusTx.compile [||toBuiltinPolicy . mkConfigurationNftPolicy||])
       `PlutusTx.applyCode` PlutusTx.liftCode config
 
-configNftCurrencySymbol :: NftConfig -> CurrencySymbol
+configNftCurrencySymbol :: ConfigPolicyParams -> CurrencySymbol
 configNftCurrencySymbol = scriptCurrencySymbol . configNftTypedMintingPolicy
 
 -- Validator script and info
 type ConfigUpgradeValidatorScript = TypedValidator DynamicConfigDatum ()
 
 upgradeConfigNftTypedValidator :: ConfigUpgradeValidatorScript
-upgradeConfigNftTypedValidator = upgradeConfigTypedValidator' sampleConfigValidatorConfig
+upgradeConfigNftTypedValidator = upgradeConfigTypedValidator' sampleValidatorParams
 
-upgradeConfigTypedValidator' :: ConfigurationValidatorConfig -> ConfigUpgradeValidatorScript
+upgradeConfigTypedValidator' :: ValidatorParams -> ConfigUpgradeValidatorScript
 upgradeConfigTypedValidator' config =
   mkTypedValidator
     (compiledConfigValidator `PlutusTx.applyCode` PlutusTx.liftCode config)
 
 compiledConfigValidator ::
-  PlutusTx.CompiledCode (ConfigurationValidatorConfig -> (BuiltinData -> BuiltinData -> BuiltinData -> ()))
+  PlutusTx.CompiledCode (ValidatorParams -> (BuiltinData -> BuiltinData -> BuiltinData -> ()))
 compiledConfigValidator =
   $$(PlutusTx.compile [||mkUntypedValidator . validateConfiguration||])

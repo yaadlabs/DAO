@@ -6,7 +6,7 @@ Description: Dao index related scripts. It includes:
 -}
 module Dao.Index.Script (
   -- * Minting policy
-  mkIndexNftMinter,
+  mkIndexMinter,
   indexPolicyCompiledCode,
 
   -- * Validator
@@ -16,11 +16,11 @@ module Dao.Index.Script (
 ) where
 
 import Dao.ScriptArgument (
-  IndexNftConfig (
-    IndexNftConfig,
-    incIndexValidator,
-    incInitialUtxo,
-    incTokenName
+  IndexPolicyParams (
+    IndexPolicyParams,
+    ipIndexValidator,
+    ipInitialUtxo,
+    ipTokenName
   ),
  )
 import Dao.Shared (
@@ -32,9 +32,9 @@ import Dao.Shared (
   wrapValidate',
  )
 import LambdaBuffers.ApplicationTypes.Index (
-  IndexNftDatum (
-    IndexNftDatum,
-    indexNftDatum'index
+  IndexDatum (
+    IndexDatum,
+    indexDatum'index
   ),
  )
 import PlutusLedgerApi.V1.Address (Address (addressCredential))
@@ -84,17 +84,17 @@ import PlutusTx.Prelude (
 
    This validator performs the following checks:
 
-    - The 'index' field of the 'LambdaBuffers.ApplicationTypes.Index.IndexNftDatum' is incremented when we
+    - The 'index' field of the 'LambdaBuffers.ApplicationTypes.Index.IndexDatum' is incremented when we
       create a new proposal (a new 'TallyStateDatum' is created and paid to the tally validator)
     - The index NFT stays at the validator
 -}
 validateIndex ::
-  IndexNftDatum ->
+  IndexDatum ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateIndex
-  IndexNftDatum {indexNftDatum'index = inputIndex}
+  IndexDatum {indexDatum'index = inputIndex}
   _
   ctx@ScriptContext
     { scriptContextTxInfo = info@TxInfo {..}
@@ -107,7 +107,7 @@ validateIndex
         Just TxInInfo {txInInfoResolved = TxOut {..}} -> txOutValue
 
       outputValue :: Value
-      (!outputValue, !IndexNftDatum {indexNftDatum'index = outputIndex}) =
+      (!outputValue, !IndexDatum {indexDatum'index = outputIndex}) =
         case getContinuingOutputs ctx of
           [TxOut {..}] -> (txOutValue, convertDatum txInfoData txOutDatum)
           _ -> traceError "wrong number of continuing outputs"
@@ -142,20 +142,20 @@ indexValidatorCompiledCode' = $$(PlutusTx.compile [||untypedIndexValidator||])
 
    This policy performs the following checks:
 
-    - The UTXO, referenced in the `incInitialUtxo` field of
-      the `IndexNftConfig` argument, is spent in the transaction.
-    - The token name matches the `incTokenName` field of the `NftConfig` argument.
+    - The UTXO, referenced in the `ipInitialUtxo` field of
+      the `IndexPolicyParams` argument, is spent in the transaction.
+    - The token name matches the `ipTokenName` field of the `NftConfig` argument.
     - Exactly one valid config NFT is minted with the valid token name.
     - There is exactly one output containing the NFT.
-    - This output contains a valid 'Dao.Index.IndexNftDatum' datum.
+    - This output contains a valid 'Dao.Index.IndexDatum' datum.
     - This 'index' field of this datum is set to zero.
     - The index output is at the index validator
-      (Corresponding to the index script provided by the 'incIndexValidator'
-       field of the 'IndexNftConfig' parameter)
+      (Corresponding to the index script provided by the 'ipIndexValidator'
+       field of the 'IndexPolicyParams' parameter)
 -}
-mkIndexNftMinter :: IndexNftConfig -> BuiltinData -> ScriptContext -> Bool
-mkIndexNftMinter
-  IndexNftConfig {..}
+mkIndexMinter :: IndexPolicyParams -> BuiltinData -> ScriptContext -> Bool
+mkIndexMinter
+  IndexPolicyParams {..}
   _
   ScriptContext
     { scriptContextTxInfo = TxInfo {..}
@@ -164,25 +164,25 @@ mkIndexNftMinter
     let
       -- Ensure that the reference UTXO is spent
       hasUTxO :: Bool
-      !hasUTxO = any (\i -> txInInfoOutRef i == incInitialUtxo) txInfoInputs
+      !hasUTxO = any (\i -> txInInfoOutRef i == ipInitialUtxo) txInfoInputs
 
       -- Helper for filtering for index UTXO in the outputs
       hasWitness :: Value -> Bool
       hasWitness = hasTokenInValueNoErrors thisCurrencySymbol
 
       -- Get the index datum at the output marked by the index NFT
-      (!IndexNftDatum {indexNftDatum'index}, !outputAddress) :: (IndexNftDatum, Address) =
+      (!IndexDatum {indexDatum'index}, !outputAddress) :: (IndexDatum, Address) =
         case filter (\TxOut {..} -> hasWitness txOutValue) txInfoOutputs of
           [TxOut {..}] -> (convertDatum txInfoData txOutDatum, txOutAddress)
           _ -> traceError "Should be exactly one valid minted output."
 
-      -- Ensure that the initial index in the IndexNftDatum is set to zero
+      -- Ensure that the initial index in the IndexDatum is set to zero
       initialIndexIsZero :: Bool
-      !initialIndexIsZero = indexNftDatum'index == 0
+      !initialIndexIsZero = indexDatum'index == 0
 
       -- The NFT must be at the address of the index validator
       outputIsValidator :: Bool
-      outputIsValidator = addressCredential outputAddress == ScriptCredential incIndexValidator
+      outputIsValidator = addressCredential outputAddress == ScriptCredential ipIndexValidator
 
       -- Ensure exactly one valid index token is minted
       onlyOneTokenMinted :: Bool
@@ -190,18 +190,18 @@ mkIndexNftMinter
         hasSingleTokenWithSymbolAndTokenName
           txInfoMint
           thisCurrencySymbol
-          incTokenName
+          ipTokenName
      in
       traceIfFalse "Reference UTXO should be spent" hasUTxO
         && traceIfFalse "Exactly one valid token should be minted" onlyOneTokenMinted
         && traceIfFalse "Initial index should be set to zero" initialIndexIsZero
         && traceIfFalse "Index NFT must be sent to the Index validator" outputIsValidator
-mkIndexNftMinter _ _ _ = traceError "Wrong type of script purpose!"
+mkIndexMinter _ _ _ = traceError "Wrong type of script purpose!"
 
 untypedIndexPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
 untypedIndexPolicy indexConfig r context =
   check $
-    mkIndexNftMinter (unsafeFromBuiltinData indexConfig) r (unsafeFromBuiltinData context)
+    mkIndexMinter (unsafeFromBuiltinData indexConfig) r (unsafeFromBuiltinData context)
 
 indexPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 indexPolicyCompiledCode = $$(PlutusTx.compile [||untypedIndexPolicy||])

@@ -15,12 +15,12 @@ module Dao.Configuration.Script (
 ) where
 
 import Dao.ScriptArgument (
-  ConfigurationValidatorConfig (
-    ConfigurationValidatorConfig,
-    cvcConfigNftCurrencySymbol,
-    cvcConfigNftTokenName
+  ConfigPolicyParams (ConfigPolicyParams, cpInitialUtxo, cpTokenName),
+  ValidatorParams (
+    ValidatorParams,
+    vpConfigSymbol,
+    vpConfigTokenName
   ),
-  NftConfig (NftConfig, ncInitialUtxo, ncTokenName),
  )
 import Dao.Shared (
   convertDatum,
@@ -107,16 +107,16 @@ import PlutusTx.Prelude (
 
    This policy performs the following checks:
 
-    - The UTXO, referenced in the `ncInitialUtxo` field of
-      the `NftConfig` argument, is spent in the transaction.
-    - The token name matches the `ncTokenName` field of the `NftConfig` argument.
+    - The UTXO, referenced in the `cpInitialUtxo` field of
+      the `ConfigPolicyParams` argument, is spent in the transaction.
+    - The token name matches the `cpTokenName` field of the `ConfigPolicyParams` argument.
     - Exactly one config NFT is minted with the valid token name.
     - There is exactly one output containing the NFT.
     - This output contains a valid 'LambdaBuffers.ApplicationTypes.Configuration.DynamicConfigDatum' datum.
 -}
-mkConfigurationNftPolicy :: NftConfig -> BuiltinData -> ScriptContext -> Bool
+mkConfigurationNftPolicy :: ConfigPolicyParams -> BuiltinData -> ScriptContext -> Bool
 mkConfigurationNftPolicy
-  NftConfig {..}
+  ConfigPolicyParams {..}
   _
   ScriptContext
     { scriptContextTxInfo = TxInfo {..}
@@ -136,16 +136,16 @@ mkConfigurationNftPolicy
 
       -- Ensure that the reference UTXO is spent
       hasUTxO :: Bool
-      !hasUTxO = any (\i -> txInInfoOutRef i == ncInitialUtxo) txInfoInputs
+      !hasUTxO = any (\i -> txInInfoOutRef i == cpInitialUtxo) txInfoInputs
 
       -- Ensure that only one valid token is minted
-      -- The token name must match the `ncTokenName` from `NftConfig` argument
+      -- The token name must match the `cpTokenName` from `ConfigPolicyParams` argument
       onlyOneTokenMinted :: Bool
       !onlyOneTokenMinted =
         hasSingleTokenWithSymbolAndTokenName
           txInfoMint
           thisCurrencySymbol
-          ncTokenName
+          cpTokenName
      in
       traceIfFalse "Referenced UTXO should be spent" hasUTxO
         && traceIfFalse "Exactly one valid token should be minted" onlyOneTokenMinted
@@ -180,13 +180,13 @@ untypedConfigPolicy nftConfig r context =
         sum to a time before the transaction's validity range.
 -}
 validateConfiguration ::
-  ConfigurationValidatorConfig ->
+  ValidatorParams ->
   DynamicConfigDatum ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateConfiguration
-  ConfigurationValidatorConfig {..}
+  ValidatorParams {..}
   DynamicConfigDatum {..}
   _
   ScriptContext
@@ -199,7 +199,7 @@ validateConfiguration
 
       -- Ensure there is a config token in the inputs
       hasConfigurationNft :: Bool
-      !hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName thisScriptValue
+      !hasConfigurationNft = hasOneOfToken vpConfigSymbol vpConfigTokenName thisScriptValue
 
       -- Helper for filtering for tally UTXO in the reference inputs
       hasTallyNft :: Value -> Bool

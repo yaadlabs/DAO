@@ -49,7 +49,7 @@ import LambdaBuffers.Runtime.Prelude (toJsonBytes)
 import PlutusLedgerApi.V2 (serialiseCompiledCode)
 import PlutusTx (BuiltinData, CompiledCode)
 import PlutusTx.Plugin ()
-import Dao.ScriptArgument (NftConfig)
+import Dao.ScriptArgument (ConfigPolicyParams)
 import Plutonomy
 import Data.Either (Either (Left, Right), either)
 import Data.Maybe (Maybe (Just, Nothing))

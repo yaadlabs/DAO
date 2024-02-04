@@ -3,11 +3,11 @@ Module      : Spec.Index.SampleData
 Description : Index sample data for tests
 -}
 module Spec.Index.SampleData (
-  validSampleIndexNftDatum,
+  validSampleIndexDatum,
 ) where
 
-import LambdaBuffers.ApplicationTypes.Index (IndexNftDatum (IndexNftDatum, indexNftDatum'index))
+import LambdaBuffers.ApplicationTypes.Index (IndexDatum (IndexDatum, indexDatum'index))
 
 -- | Valid index datum with the initial index set to zero
-validSampleIndexNftDatum :: IndexNftDatum
-validSampleIndexNftDatum = IndexNftDatum {indexNftDatum'index = 0}
+validSampleIndexDatum :: IndexDatum
+validSampleIndexDatum = IndexDatum {indexDatum'index = 0}

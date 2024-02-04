@@ -49,7 +49,6 @@ import PlutusTx.Prelude (
   Integer,
   Maybe (Just, Nothing),
   check,
-  decodeUtf8,
   divide,
   fromMaybe,
   isJust,

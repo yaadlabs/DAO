@@ -15,17 +15,17 @@ module Dao.Tally.Script (
 ) where
 
 import Dao.ScriptArgument (
-  ConfigurationValidatorConfig (
-    ConfigurationValidatorConfig,
-    cvcConfigNftCurrencySymbol,
-    cvcConfigNftTokenName
+  TallyPolicyParams (
+    TallyPolicyParams,
+    tpConfigSymbol,
+    tpConfigTokenName,
+    tpIndexSymbol,
+    tpIndexTokenName
   ),
-  TallyNftConfig (
-    TallyNftConfig,
-    tncConfigNftCurrencySymbol,
-    tncConfigNftTokenName,
-    tncIndexNftPolicyId,
-    tncIndexNftTokenName
+  ValidatorParams (
+    ValidatorParams,
+    vpConfigSymbol,
+    vpConfigTokenName
   ),
  )
 import Dao.Shared (
@@ -56,7 +56,7 @@ import LambdaBuffers.ApplicationTypes.Configuration (
   ),
  )
 import LambdaBuffers.ApplicationTypes.Index (
-  IndexNftDatum (IndexNftDatum, indexNftDatum'index),
+  IndexDatum (IndexDatum, indexDatum'index),
  )
 import LambdaBuffers.ApplicationTypes.Tally (
   TallyStateDatum (
@@ -151,12 +151,12 @@ import PlutusTx.Prelude qualified as PlutusTx
 
     - There is exactly one 'DynamicConfigDatum' in the reference inputs,
       marked by the config NFT
-      (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'TallyNftConfig' argument)
+      (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'TallyPolicyParams' argument)
     - There is exactly one Index UTXO spent (contained in the 'txInfoInputs')
-    - This index UTXO contains a valid 'IndexNftDatum'
+    - This index UTXO contains a valid 'IndexDatum'
       (The 'Dao.Index.Script.validateIndex' validator ensures the datum's index is incremented by one)
     - Exactly one valid Tally NFT is minted with the valid token name.
-    - The token name matches the 'indexNftDatum'index' field of the 'IndexNftDatum'
+    - The token name matches the 'indexDatum'index' field of the 'IndexDatum'
     - There is exactly one output containing the tally NFT.
     - This output contains a valid 'Dao.Types.TallyStateDatum' datum.
     - The initial vote count fields `tallyStateDatum'for` and `tallyStateDatum'against` of
@@ -165,9 +165,9 @@ import PlutusTx.Prelude qualified as PlutusTx
       (Corresponding to the tally script provided by the 'dynamicConfigDatum'tallyValidator'
        field of the 'Dao.Types.DynamicConfigDatum')
 -}
-mkTallyNftMinter :: TallyNftConfig -> BuiltinData -> ScriptContext -> Bool
+mkTallyNftMinter :: TallyPolicyParams -> BuiltinData -> ScriptContext -> Bool
 mkTallyNftMinter
-  TallyNftConfig {..}
+  TallyPolicyParams {..}
   _
   ScriptContext
     { scriptContextTxInfo = TxInfo {..}
@@ -176,7 +176,7 @@ mkTallyNftMinter
     let
       -- Helper for filtering for config UTXO in the reference inputs
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft = hasOneOfToken tncConfigNftCurrencySymbol tncConfigNftTokenName
+      hasConfigurationNft = hasOneOfToken tpConfigSymbol tpConfigTokenName
 
       -- Get the configuration from the reference inputs
       DynamicConfigDatum {dynamicConfigDatum'tallyValidator} =
@@ -186,10 +186,10 @@ mkTallyNftMinter
 
       -- Helper for filtering for index UTXO in the inputs
       hasIndexNft :: Value -> Bool
-      hasIndexNft = hasOneOfToken tncIndexNftPolicyId tncIndexNftTokenName
+      hasIndexNft = hasOneOfToken tpIndexSymbol tpIndexTokenName
 
       -- Get the index datum from the inputs
-      IndexNftDatum {indexNftDatum'index} = case filter (hasIndexNft . txOutValue . txInInfoResolved) txInfoInputs of
+      IndexDatum {indexDatum'index} = case filter (hasIndexNft . txOutValue . txInInfoResolved) txInfoInputs of
         [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
         [] -> traceError "No index NFT found in inputs"
         _ -> traceError "Should be exactly one valid Index NFT output"
@@ -219,9 +219,9 @@ mkTallyNftMinter
       !outputOnTallyValidator = addressCredential outputAddress == ScriptCredential dynamicConfigDatum'tallyValidator
 
       -- The token name must be set to the index value,
-      -- contained in the 'IndexNftDatum' ("0" initially)
+      -- contained in the 'IndexDatum' ("0" initially)
       theTokenName :: TokenName
-      !theTokenName = TokenName $ integerToByteString indexNftDatum'index
+      !theTokenName = TokenName $ integerToByteString indexDatum'index
 
       -- Ensure exactly one valid tally token is minted
       onlyOneTokenMinted :: Bool
@@ -306,7 +306,7 @@ valuePaidTo' outs addr = go mempty outs
 
     - There is exactly one 'LambdaBuffers.ApplicationTypes.Configuration.DynamicConfigDatum' in the reference inputs,
       marked by the tally NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
-      provided by the 'ConfigurationValidatorConfig' argument)
+      provided by the 'ValidatorParams' argument)
 
     - That the tally NFT remains at the validator (the 'newValueIsAtleastAsBigAsOldValue' check)
 
@@ -322,13 +322,13 @@ valuePaidTo' outs addr = go mempty outs
     - That all vote tokens are burned (there are no vote tokens in the outputs).
 -}
 validateTally ::
-  ConfigurationValidatorConfig ->
+  ValidatorParams ->
   TallyStateDatum ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateTally
-  ConfigurationValidatorConfig {..}
+  ValidatorParams {..}
   ts@TallyStateDatum {tallyStateDatum'for = oldFor, tallyStateDatum'against = oldAgainst, tallyStateDatum'proposalEndTime}
   _
   ScriptContext
@@ -338,7 +338,7 @@ validateTally
     let
       -- Helper for filtering for config UTXO in the reference inputs
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
+      hasConfigurationNft = hasOneOfToken vpConfigSymbol vpConfigTokenName
 
       -- Get the 'DynamicConfig' from the reference inputs
       DynamicConfigDatum {..} =

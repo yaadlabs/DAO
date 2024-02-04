@@ -22,10 +22,10 @@ module Dao.Vote.Script (
 ) where
 
 import Dao.ScriptArgument (
-  ConfigurationValidatorConfig (
-    ConfigurationValidatorConfig,
-    cvcConfigNftCurrencySymbol,
-    cvcConfigNftTokenName
+  ValidatorParams (
+    ValidatorParams,
+    vpConfigSymbol,
+    vpConfigTokenName
   ),
  )
 import Dao.Shared (
@@ -137,7 +137,7 @@ import PlutusTx.Prelude (
 
         - There is exactly one 'LambdaBuffers.ApplicationTypes.Configuration.DynamicConfigDatum' in the reference inputs,
           marked by the config NFT
-          (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'ConfigurationValidatorConfig' argument)
+          (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'ValidatorParams' argument)
         - There is exactly one 'Dao.Types.TallyStateDatum' in the reference inputs,
           marked by the Tally NFT
         - Exactly one valid Vote NFT is minted with the valid token name.
@@ -156,9 +156,9 @@ import PlutusTx.Prelude (
 
         - That one vote token is burned
 -}
-mkVoteMinter :: ConfigurationValidatorConfig -> VoteMinterActionRedeemer -> ScriptContext -> Bool
+mkVoteMinter :: ValidatorParams -> VoteMinterActionRedeemer -> ScriptContext -> Bool
 mkVoteMinter
-  ConfigurationValidatorConfig {..}
+  ValidatorParams {..}
   action
   ScriptContext
     { scriptContextTxInfo = TxInfo {..}
@@ -175,7 +175,7 @@ mkVoteMinter
       let
         -- Helper for filtering for config UTXO in the reference inputs
         hasConfigurationNft :: Value -> Bool
-        hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
+        hasConfigurationNft = hasOneOfToken vpConfigSymbol vpConfigTokenName
 
         -- The datums
         theData :: Map DatumHash Datum
@@ -252,7 +252,7 @@ untypedVotePolicy validatorConfig voteActionRedeemer context =
 votePolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 votePolicyCompiledCode = $$(PlutusTx.compile [||untypedVotePolicy||])
 
-wrappedPolicy :: ConfigurationValidatorConfig -> WrappedMintingPolicyType
+wrappedPolicy :: ValidatorParams -> WrappedMintingPolicyType
 wrappedPolicy config x y =
   let (maybeDataX, maybeDataY) = (fromBuiltinData x, fromBuiltinData y)
    in case (maybeDataX, maybeDataY) of
@@ -267,7 +267,7 @@ wrappedPolicy config x y =
 
        - There is exactly one 'DynamicConfigDatum' in the reference inputs,
          marked by the config NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
-         provided by the 'ConfigurationValidatorConfig' argument)
+         provided by the 'ValidatorParams' argument)
 
    == Count vote
 
@@ -289,13 +289,13 @@ wrappedPolicy config x y =
           in the 'DynamicConfigDatum'
 -}
 validateVote ::
-  ConfigurationValidatorConfig ->
+  ValidatorParams ->
   VoteDatum ->
   VoteActionRedeemer ->
   ScriptContext ->
   Bool
 validateVote
-  ConfigurationValidatorConfig {..}
+  ValidatorParams {..}
   VoteDatum {..}
   action
   ScriptContext
@@ -304,7 +304,7 @@ validateVote
     let
       -- Helper for filtering for config UTXO in the reference inputs
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
+      hasConfigurationNft = hasOneOfToken vpConfigSymbol vpConfigTokenName
 
       -- Get the configuration from the reference inputs
       DynamicConfigDatum {..} =
