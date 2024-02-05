@@ -38,7 +38,6 @@ import LambdaBuffers.ApplicationTypes.Index (
 import PlutusLedgerApi.V1.Address (Address (addressCredential))
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
 import PlutusLedgerApi.V1.Value (
-  CurrencySymbol,
   Value,
   geq,
  )
@@ -70,10 +69,8 @@ import PlutusTx.Prelude (
   mempty,
   traceError,
   traceIfFalse,
-  ($),
   (&&),
   (+),
-  (.),
   (==),
  )
 

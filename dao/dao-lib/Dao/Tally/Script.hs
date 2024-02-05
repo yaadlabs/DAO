@@ -34,7 +34,6 @@ import Dao.Shared (
   getTokenNameOfNft,
   hasOneOfToken,
   hasSingleTokenWithSymbolAndTokenName,
-  hasSymbolInValue,
   integerToByteString,
   isScriptCredential,
   untypedPolicy,
@@ -107,14 +106,12 @@ import PlutusLedgerApi.V2.Tx (
  )
 import PlutusTx (
   CompiledCode,
-  applyCode,
   compile,
-  liftCode,
  )
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as M
 import PlutusTx.Prelude (
-  Bool (False, True),
+  Bool (True),
   BuiltinData,
   Integer,
   Maybe (Just, Nothing),

@@ -76,21 +76,17 @@ import PlutusLedgerApi.V2.Tx (
  )
 import PlutusTx (
   CompiledCode,
-  applyCode,
   compile,
-  liftCode,
  )
 import PlutusTx.Prelude (
   Bool,
   BuiltinData,
   Integer,
-  Maybe (Just),
   any,
   divide,
   filter,
   traceError,
   traceIfFalse,
-  ($),
   (&&),
   (*),
   (+),

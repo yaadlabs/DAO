@@ -23,7 +23,6 @@ module Dao.Shared (
 ) where
 
 import Dao.ScriptArgument (ValidatorParams)
-import Data.Text qualified as Text
 import PlutusLedgerApi.V1 (CurrencySymbol)
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
 import PlutusLedgerApi.V1.Value (TokenName, Value (Value, getValue), adaSymbol, adaToken)
@@ -36,8 +35,7 @@ import PlutusLedgerApi.V2.Contexts (ScriptContext)
 import PlutusTx (FromData, UnsafeFromData, fromBuiltinData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as Map
-import PlutusTx.Builtins (serialiseData)
-import PlutusTx.Builtins.Internal (BuiltinString (BuiltinString))
+import PlutusTx.Builtins.Internal (BuiltinString)
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinByteString,
@@ -59,7 +57,6 @@ import PlutusTx.Prelude (
   (<>),
   (==),
  )
-import Prelude (show)
 
 {-# INLINEABLE isScriptCredential #-}
 isScriptCredential :: Credential -> Bool

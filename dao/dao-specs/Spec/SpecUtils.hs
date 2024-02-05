@@ -190,10 +190,10 @@ findConfigUtxo ::
   CurrencySymbol ->
   TokenName ->
   Run (TxOutRef, TxOut, DatumType script)
-findConfigUtxo validatorScript symbol tokenName = findUniqueUtxo validatorScript check
+findConfigUtxo validatorScript symbol tokenName = findUniqueUtxo validatorScript check'
   where
-    check :: TxBox script -> Bool
-    check box = hasOneOfToken symbol tokenName (txBoxValue box)
+    check' :: TxBox script -> Bool
+    check' box = hasOneOfToken symbol tokenName (txBoxValue box)
 
 findUniqueUtxo ::
   (IsValidator script) =>

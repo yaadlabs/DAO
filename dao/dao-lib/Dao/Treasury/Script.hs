@@ -74,7 +74,6 @@ import PlutusLedgerApi.V1.Value (
   adaToken,
   geq,
   singleton,
-  valueOf,
  )
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (
@@ -107,9 +106,7 @@ import PlutusLedgerApi.V2.Contexts (
  )
 import PlutusTx (
   CompiledCode,
-  applyCode,
   compile,
-  liftCode,
  )
 import PlutusTx.Prelude (
   Bool (False, True),
@@ -125,16 +122,13 @@ import PlutusTx.Prelude (
   otherwise,
   traceError,
   traceIfFalse,
-  ($),
   (&&),
   (*),
   (+),
   (-),
   (.),
   (/=),
-  (<),
   (==),
-  (>),
   (>=),
  )
 

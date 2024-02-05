@@ -26,7 +26,7 @@ import PlutusLedgerApi.V1.Value (CurrencySymbol)
 import PlutusTx qualified
 import PlutusTx.Prelude (BuiltinData, ($), (.))
 import Spec.Configuration.SampleData (sampleValidatorParams)
-import Spec.SpecUtils (mkTypedValidator', mkUntypedValidator)
+import Spec.SpecUtils (mkUntypedValidator)
 
 -- Policy script and info
 configNftTypedMintingPolicy :: ConfigPolicyParams -> TypedPolicy ()

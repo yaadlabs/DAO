@@ -1,58 +1,55 @@
 module Scripts.Compile (CompileOpts (..), CompileMode (..), compile) where
 
-import Prelude (IO, Eq, FilePath, Read, Show, print, return, ($), (.), (>>=))
+import Dao.Configuration.Script (
+  configPolicyCompiledCode,
+  configValidatorCompiledCode,
+ )
+import Dao.Index.Script (indexPolicyCompiledCode, indexValidatorCompiledCode)
+import Dao.Tally.Script (tallyPolicyCompiledCode, tallyValidatorCompiledCode)
+import Dao.Treasury.Script (treasuryPolicyCompiledCode, treasuryValidatorCompiledCode)
+import Dao.Vote.Script (
+  fungiblePolicyCompiledCode,
+  voteNftPolicyCompiledCode,
+  votePolicyCompiledCode,
+  voteValidatorCompiledCode,
+ )
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS (fromShort)
-import Dao.Configuration.Script 
-  ( configPolicyCompiledCode
-  , configValidatorCompiledCode
-  )
-import Dao.Index.Script (indexPolicyCompiledCode, indexValidatorCompiledCode)
-import Dao.Vote.Script 
-  ( votePolicyCompiledCode
-  , voteValidatorCompiledCode
-  , fungiblePolicyCompiledCode
-  , voteNftPolicyCompiledCode
-  )
-import Dao.Tally.Script (tallyPolicyCompiledCode, tallyValidatorCompiledCode)
-import Dao.Treasury.Script (treasuryValidatorCompiledCode, treasuryPolicyCompiledCode)
-import LambdaBuffers.ApplicationConfig.Scripts 
-  (Scripts 
-    (Scripts
-    , scripts'configPolicy
-    , scripts'configPolicyDebug
-    , scripts'configValidator
-    , scripts'configValidatorDebug
-    , scripts'indexPolicy
-    , scripts'indexPolicyDebug
-    , scripts'indexValidator
-    , scripts'indexValidatorDebug
-    , scripts'tallyPolicy
-    , scripts'tallyPolicyDebug
-    , scripts'tallyValidator
-    , scripts'tallyValidatorDebug
-    , scripts'votePolicy
-    , scripts'votePolicyDebug
-    , scripts'voteValidator
-    , scripts'voteValidatorDebug
-    , scripts'treasuryValidator
-    , scripts'treasuryValidatorDebug
-    , scripts'treasuryPolicy
-    , scripts'treasuryPolicyDebug
-    , scripts'fungiblePolicy
-    , scripts'voteNftPolicy
-    , scripts'voteNftPolicyDebug
-    )
-  , Script (Script)
-  )
+import LambdaBuffers.ApplicationConfig.Scripts (
+  Script (Script),
+  Scripts (
+    Scripts,
+    scripts'configPolicy,
+    scripts'configPolicyDebug,
+    scripts'configValidator,
+    scripts'configValidatorDebug,
+    scripts'fungiblePolicy,
+    scripts'indexPolicy,
+    scripts'indexPolicyDebug,
+    scripts'indexValidator,
+    scripts'indexValidatorDebug,
+    scripts'tallyPolicy,
+    scripts'tallyPolicyDebug,
+    scripts'tallyValidator,
+    scripts'tallyValidatorDebug,
+    scripts'treasuryPolicy,
+    scripts'treasuryPolicyDebug,
+    scripts'treasuryValidator,
+    scripts'treasuryValidatorDebug,
+    scripts'voteNftPolicy,
+    scripts'voteNftPolicyDebug,
+    scripts'votePolicy,
+    scripts'votePolicyDebug,
+    scripts'voteValidator,
+    scripts'voteValidatorDebug
+  ),
+ )
 import LambdaBuffers.Runtime.Prelude (toJsonBytes)
-import PlutusLedgerApi.V2 (serialiseCompiledCode)
-import PlutusTx (BuiltinData, CompiledCode)
-import PlutusTx.Plugin ()
-import Dao.ScriptArgument (ConfigPolicyParams)
 import Plutonomy
-import Data.Either (Either (Left, Right), either)
-import Data.Maybe (Maybe (Just, Nothing))
+import PlutusLedgerApi.V2 (serialiseCompiledCode)
+import PlutusTx (CompiledCode)
+import PlutusTx.Plugin ()
+import Prelude (Eq, FilePath, IO, Read, Show, ($), (.))
 
 data CompileMode = COMPILE_PROD | COMPILE_DEBUG deriving stock (Show, Read, Eq)
 
@@ -92,7 +89,7 @@ compile opts = do
             , scripts'voteNftPolicyDebug = Script (scriptToCbor voteNftPolicyCompiledCode)
             }
   BS.writeFile (co'File opts) scripts
-  
+
 scriptToCborOptimised :: forall a. CompiledCode a -> BS.ByteString
 scriptToCborOptimised = scriptToCbor . optimiseScript
 

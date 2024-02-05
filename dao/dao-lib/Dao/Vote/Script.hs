@@ -37,9 +37,6 @@ import Dao.Shared (
   untypedPolicy',
   wrapValidate'',
  )
-import Data.ByteString.Lazy qualified as BSL
-import Data.ByteString.Short qualified as BSS
-import Data.Maybe (Maybe (Just))
 import LambdaBuffers.ApplicationTypes.Configuration (
   DynamicConfigDatum (
     DynamicConfigDatum,
@@ -69,7 +66,6 @@ import PlutusLedgerApi.V1.Address (addressCredential)
 import PlutusLedgerApi.V1.Credential (Credential (PubKeyCredential, ScriptCredential))
 import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusLedgerApi.V1.Interval (after)
-import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
 import PlutusLedgerApi.V1.Value (
   TokenName (TokenName),
   Value,
@@ -104,12 +100,11 @@ import PlutusLedgerApi.V2.Tx (
     txOutValue
   ),
  )
-import PlutusTx (CompiledCode, applyCode, compile, fromBuiltinData, liftCode, unsafeFromBuiltinData)
+import PlutusTx (CompiledCode, compile, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (
-  Bool (True),
+  Bool,
   BuiltinData,
-  Integer,
   any,
   check,
   filter,
@@ -119,7 +114,6 @@ import PlutusTx.Prelude (
   ($),
   (&&),
   (.),
-  (<),
   (==),
   (>),
  )
@@ -359,6 +353,7 @@ mkVoteNftMinter
           (TokenName "vote_pass")
      in
       traceIfFalse "Only one token should be minted" onlyOneTokenMinted
+mkVoteNftMinter _ _ = traceError "Wrong type of script purpose!"
 
 untypedVoteNftPolicy :: BuiltinData -> BuiltinData -> ()
 untypedVoteNftPolicy redeemer context =

@@ -1,7 +1,6 @@
 module Main (main) where
 
 import Control.Applicative ((<*), (<**>), (<*>))
-import Data.Kind (Type)
 import Options.Applicative (
   Parser,
   ParserInfo,
@@ -37,7 +36,7 @@ compileOpts =
       ( long "mode"
           <> metavar "COMPILE_MODE"
           <> help "Mode of compilation COMPILE_DEBUG|COMPILE_PROD"
-          -- <> value COMPILE_PROD
+          <> value COMPILE_PROD
           <> value COMPILE_DEBUG
           <> showDefault
       )
