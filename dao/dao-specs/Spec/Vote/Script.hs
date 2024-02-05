@@ -13,8 +13,7 @@ module Spec.Vote.Script (
 where
 
 import Dao.ScriptArgument (ValidatorParams (ValidatorParams))
-import Dao.Shared (mkUntypedValidator')
-import Dao.Vote.Script (validateVote, wrappedPolicy)
+import Dao.Vote.Script (mkVoteMinter, validateVote)
 import LambdaBuffers.ApplicationTypes.Vote (
   VoteActionRedeemer,
   VoteDatum,
@@ -31,8 +30,16 @@ import Plutus.Model.V2 (
 import PlutusLedgerApi.V1.Scripts (ScriptHash)
 import PlutusLedgerApi.V1.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
-import PlutusTx.Prelude (BuiltinData, ($), (.))
+import PlutusTx.Prelude (
+  BuiltinData,
+  Maybe (Just),
+  check,
+  traceError,
+  ($),
+  (.),
+ )
 import Spec.Configuration.SampleData (sampleValidatorParams)
+import Spec.SpecUtils (mkUntypedValidator')
 
 -- Policy script and info
 type VoteMintingPolicy = TypedPolicy VoteMinterActionRedeemer
@@ -42,6 +49,13 @@ voteTypedMintingPolicy config =
   mkTypedPolicy $
     $$(PlutusTx.compile [||wrappedPolicy||])
       `PlutusTx.applyCode` PlutusTx.liftCode config
+
+wrappedPolicy :: ValidatorParams -> (BuiltinData -> BuiltinData -> ())
+wrappedPolicy config x y =
+  let (maybeDataX, maybeDataY) = (PlutusTx.fromBuiltinData x, PlutusTx.fromBuiltinData y)
+   in case (maybeDataX, maybeDataY) of
+        (Just dataX, Just dataY) -> check (mkVoteMinter config dataX dataY)
+        _ -> traceError "Error at fromBuiltinData function"
 
 voteCurrencySymbol :: ValidatorParams -> CurrencySymbol
 voteCurrencySymbol = scriptCurrencySymbol . voteTypedMintingPolicy

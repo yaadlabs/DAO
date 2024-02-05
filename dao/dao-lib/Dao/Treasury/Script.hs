@@ -27,8 +27,8 @@ import Dao.Shared (
   hasTokenInValue,
   isScriptCredential,
   lovelacesOf,
-  mkUntypedValidator,
-  wrapValidate,
+  untypedPolicy,
+  untypedValidator,
  )
 import LambdaBuffers.ApplicationTypes.Configuration (
   DynamicConfigDatum (
@@ -110,7 +110,6 @@ import PlutusTx (
   applyCode,
   compile,
   liftCode,
-  unsafeFromBuiltinData,
  )
 import PlutusTx.Prelude (
   Bool (False, True),
@@ -118,7 +117,6 @@ import PlutusTx.Prelude (
   Integer,
   Maybe (Just, Nothing),
   any,
-  check,
   divide,
   filter,
   mapMaybe,
@@ -411,9 +409,7 @@ treasuryValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> Bui
 treasuryValidatorCompiledCode = $$(PlutusTx.compile [||untypedTreasuryValidator||])
 
 untypedTreasuryValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedTreasuryValidator validatorConfig datum redeemer context =
-  check $
-    validateTreasury (unsafeFromBuiltinData validatorConfig) datum redeemer (unsafeFromBuiltinData context)
+untypedTreasuryValidator = untypedValidator validateTreasury
 
 {- A one-shot minting policy. (Placeholder)
 
@@ -446,9 +442,7 @@ mkTreasuryMinter
 mkTreasuryMinter _ _ _ = traceError "Wrong type of script purpose!"
 
 untypedTreasuryPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedTreasuryPolicy txOutRef r context =
-  check $
-    mkTreasuryMinter (unsafeFromBuiltinData txOutRef) r (unsafeFromBuiltinData context)
+untypedTreasuryPolicy = untypedPolicy mkTreasuryMinter
 
 treasuryPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 treasuryPolicyCompiledCode = $$(PlutusTx.compile [||untypedTreasuryPolicy||])

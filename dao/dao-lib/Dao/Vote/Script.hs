@@ -7,7 +7,6 @@ Description: Dao vote related scripts. It includes:
 module Dao.Vote.Script (
   -- * Vote minting policy
   mkVoteMinter,
-  wrappedPolicy,
   votePolicyCompiledCode,
 
   -- * Vote validator
@@ -29,16 +28,13 @@ import Dao.ScriptArgument (
   ),
  )
 import Dao.Shared (
-  WrappedMintingPolicyType,
   convertDatum,
   hasBurnedTokens,
   hasOneOfToken,
   hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
-  mkUntypedPolicy',
-  mkUntypedValidator',
-  wrapValidate',
+  untypedPolicy',
   wrapValidate'',
  )
 import Data.ByteString.Lazy qualified as BSL
@@ -244,20 +240,10 @@ mkVoteMinter
 mkVoteMinter _ _ _ = traceError "Wrong type of script purpose!"
 
 untypedVotePolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedVotePolicy validatorConfig voteActionRedeemer context =
-  case fromBuiltinData voteActionRedeemer of
-    Just redeemer -> check $ mkVoteMinter (unsafeFromBuiltinData validatorConfig) redeemer (unsafeFromBuiltinData context)
-    _ -> traceError "Error at fromBuiltinData (VoteActionRedeemer - policy)"
+untypedVotePolicy = untypedPolicy' mkVoteMinter
 
 votePolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 votePolicyCompiledCode = $$(PlutusTx.compile [||untypedVotePolicy||])
-
-wrappedPolicy :: ValidatorParams -> WrappedMintingPolicyType
-wrappedPolicy config x y =
-  let (maybeDataX, maybeDataY) = (fromBuiltinData x, fromBuiltinData y)
-   in case (maybeDataX, maybeDataY) of
-        (Just dataX, Just dataY) -> check (mkVoteMinter config dataX dataY)
-        _ -> traceError "Error at fromBuiltinData function"
 
 {- | Validator for votes.
 
@@ -351,11 +337,7 @@ voteValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> Builtin
 voteValidatorCompiledCode = $$(PlutusTx.compile [||untypedVoteValidator||])
 
 untypedVoteValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedVoteValidator validatorConfig voteDatum voteActionRedeemer context =
-  case (fromBuiltinData voteDatum, fromBuiltinData voteActionRedeemer) of
-    (Just datum, Just redeemer) ->
-      check $ validateVote (unsafeFromBuiltinData validatorConfig) datum redeemer (unsafeFromBuiltinData context)
-    _ -> traceError "Error at fromBuiltinData (VoteActionRedeemer - validator)"
+untypedVoteValidator = wrapValidate'' validateVote
 
 {- A placeholder script for the 'voteNft' token in the off-chain.
   The 'voteNft' acts as a required pass which a user requires in order to cast a vote.

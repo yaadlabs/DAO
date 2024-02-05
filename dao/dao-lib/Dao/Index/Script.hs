@@ -12,7 +12,6 @@ module Dao.Index.Script (
   -- * Validator
   validateIndex,
   indexValidatorCompiledCode,
-  indexValidatorCompiledCode',
 ) where
 
 import Dao.ScriptArgument (
@@ -27,8 +26,7 @@ import Dao.Shared (
   convertDatum,
   hasSingleTokenWithSymbolAndTokenName,
   hasTokenInValueNoErrors,
-  mkUntypedPolicy,
-  mkUntypedValidator,
+  untypedPolicy,
   wrapValidate',
  )
 import LambdaBuffers.ApplicationTypes.Index (
@@ -61,13 +59,12 @@ import PlutusLedgerApi.V2.Contexts (
   findTxInByTxOutRef,
   getContinuingOutputs,
  )
-import PlutusTx (CompiledCode, compile, fromBuiltinData, unsafeFromBuiltinData)
+import PlutusTx (CompiledCode, compile)
 import PlutusTx.Prelude (
   Bool,
   BuiltinData,
   Maybe (Just, Nothing),
   any,
-  check,
   const,
   filter,
   mempty,
@@ -130,14 +127,6 @@ indexValidatorCompiledCode =
   let wrapValidateIndex = wrapValidate' (const validateIndex) (mempty :: Value)
    in $$(PlutusTx.compile [||wrapValidateIndex||])
 
-untypedIndexValidator :: BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedIndexValidator indexDatum r context = case fromBuiltinData indexDatum of
-  Just datum -> check $ validateIndex datum r (unsafeFromBuiltinData context)
-  _ -> traceError "Error converting indexDatum"
-
-indexValidatorCompiledCode' :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
-indexValidatorCompiledCode' = $$(PlutusTx.compile [||untypedIndexValidator||])
-
 {- | Policy for minting index NFT.
 
    This policy performs the following checks:
@@ -199,9 +188,7 @@ mkIndexMinter
 mkIndexMinter _ _ _ = traceError "Wrong type of script purpose!"
 
 untypedIndexPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedIndexPolicy indexConfig r context =
-  check $
-    mkIndexMinter (unsafeFromBuiltinData indexConfig) r (unsafeFromBuiltinData context)
+untypedIndexPolicy = untypedPolicy mkIndexMinter
 
 indexPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 indexPolicyCompiledCode = $$(PlutusTx.compile [||untypedIndexPolicy||])

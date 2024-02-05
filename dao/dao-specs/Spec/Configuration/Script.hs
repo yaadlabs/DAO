@@ -13,7 +13,6 @@ module Spec.Configuration.Script (
 
 import Dao.Configuration.Script (mkConfigurationNftPolicy, validateConfiguration)
 import Dao.ScriptArgument (ConfigPolicyParams, ValidatorParams)
-import Dao.Shared (mkUntypedValidator)
 import LambdaBuffers.ApplicationTypes.Configuration (DynamicConfigDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
@@ -27,7 +26,7 @@ import PlutusLedgerApi.V1.Value (CurrencySymbol)
 import PlutusTx qualified
 import PlutusTx.Prelude (BuiltinData, ($), (.))
 import Spec.Configuration.SampleData (sampleValidatorParams)
-import Spec.SpecUtils (mkTypedValidator')
+import Spec.SpecUtils (mkTypedValidator', mkUntypedValidator)
 
 -- Policy script and info
 configNftTypedMintingPolicy :: ConfigPolicyParams -> TypedPolicy ()

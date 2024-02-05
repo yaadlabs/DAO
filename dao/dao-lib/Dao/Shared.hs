@@ -3,9 +3,10 @@ Module: Dao.Shared
 Description: Contains helper functions used across the other modules.
 -}
 module Dao.Shared (
-  WrappedMintingPolicyType,
+  untypedValidator,
+  untypedPolicy,
+  untypedPolicy',
   hasTokenInValueNoErrors,
-  wrapValidate,
   wrapValidate',
   wrapValidate'',
   hasBurnedTokens,
@@ -19,14 +20,9 @@ module Dao.Shared (
   integerToByteString,
   isScriptCredential,
   lovelacesOf,
-  mkUntypedValidator,
-  mkUntypedValidator',
-  mkUntypedPolicy,
-  mkUntypedPolicy',
 ) where
 
--- BuiltinString(BuiltinString),
-
+import Dao.ScriptArgument (ValidatorParams)
 import Data.Text qualified as Text
 import PlutusLedgerApi.V1 (CurrencySymbol)
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
@@ -64,8 +60,6 @@ import PlutusTx.Prelude (
   (==),
  )
 import Prelude (show)
-
-type WrappedMintingPolicyType = BuiltinData -> BuiltinData -> ()
 
 {-# INLINEABLE isScriptCredential #-}
 isScriptCredential :: Credential -> Bool
@@ -209,9 +203,9 @@ wrapValidate' validate config x y z =
             )
 
 wrapValidate'' ::
-  (FromData b, FromData c, UnsafeFromData d) =>
-  (config -> b -> c -> d -> Bool) ->
-  config ->
+  (FromData d, FromData r, UnsafeFromData c) =>
+  (ValidatorParams -> d -> r -> c -> Bool) ->
+  BuiltinData ->
   BuiltinData ->
   BuiltinData ->
   BuiltinData ->
@@ -222,81 +216,46 @@ wrapValidate'' validate config x y z =
         (Just dataArgX, Just dataArgY) ->
           check
             ( validate
-                config
+                (unsafeFromBuiltinData config)
                 dataArgX
                 dataArgY
                 (unsafeFromBuiltinData z)
             )
         _ -> traceError "wrapValidate'': Error at fromBuiltinData"
 
-wrapValidate ::
-  (UnsafeFromData b, UnsafeFromData c, UnsafeFromData d) =>
-  (config -> b -> c -> d -> Bool) ->
-  config ->
+untypedValidator ::
+  forall datum r.
+  (FromData datum, UnsafeFromData r) =>
+  (ValidatorParams -> datum -> r -> ScriptContext -> Bool) ->
+  BuiltinData ->
   BuiltinData ->
   BuiltinData ->
   BuiltinData ->
   ()
-wrapValidate validate config x y z =
-  check
-    ( validate
-        config
-        (unsafeFromBuiltinData x)
-        (unsafeFromBuiltinData y)
-        (unsafeFromBuiltinData z)
-    )
+untypedValidator validate config datum redeemer context =
+  case fromBuiltinData datum of
+    Just datum' ->
+      check $ validate (unsafeFromBuiltinData config) datum' (unsafeFromBuiltinData redeemer) (unsafeFromBuiltinData context)
+    _ -> traceError "Error at fromBuiltinData (TallyDatum - validator)"
 
-{-# INLINEABLE mkUntypedValidator #-}
-mkUntypedValidator ::
-  forall d r.
-  (FromData d, PlutusTx.UnsafeFromData r) =>
-  (d -> r -> ScriptContext -> Bool) ->
-  (BuiltinData -> BuiltinData -> BuiltinData -> ())
-mkUntypedValidator f d r p =
-  let maybeDataArg = fromBuiltinData d
-   in case maybeDataArg of
-        Just dataArg ->
-          check $
-            f
-              dataArg
-              (unsafeFromBuiltinData r)
-              (unsafeFromBuiltinData p)
-        _ -> traceError "mkUntypedValidator: Error at fromBuiltinData"
-
-mkUntypedValidator' ::
-  forall d r.
-  (FromData d, FromData r) =>
-  (d -> r -> ScriptContext -> Bool) ->
-  (BuiltinData -> BuiltinData -> BuiltinData -> ())
-mkUntypedValidator' f d r p =
-  let (maybeDataArg, maybeRedeemerArg) = (fromBuiltinData d, fromBuiltinData r)
-   in case (maybeDataArg, maybeRedeemerArg) of
-        (Just dataArg, Just redeemerArg) ->
-          check $
-            f
-              dataArg
-              redeemerArg
-              (unsafeFromBuiltinData p)
-        _ -> traceError "mkUntypedValidator: Error at fromBuiltinData"
-
-mkUntypedPolicy ::
-  forall r.
-  PlutusTx.UnsafeFromData r =>
-  (r -> ScriptContext -> Bool) ->
-  (BuiltinData -> BuiltinData -> ())
-mkUntypedPolicy f r p =
+untypedPolicy ::
+  forall config.
+  (UnsafeFromData config) =>
+  (config -> BuiltinData -> ScriptContext -> Bool) ->
+  BuiltinData ->
+  BuiltinData ->
+  BuiltinData ->
+  ()
+untypedPolicy policy config r context =
   check $
-    f (PlutusTx.unsafeFromBuiltinData r) (PlutusTx.unsafeFromBuiltinData p)
+    policy (unsafeFromBuiltinData config) r (unsafeFromBuiltinData context)
 
-mkUntypedPolicy' ::
-  forall r.
-  FromData r =>
-  (r -> ScriptContext -> Bool) ->
-  (BuiltinData -> BuiltinData -> ())
-mkUntypedPolicy' f r p =
-  let maybeRedeemerArg = fromBuiltinData r
-   in case maybeRedeemerArg of
-        Just redeemerArg ->
-          check $
-            f redeemerArg (PlutusTx.unsafeFromBuiltinData p)
-        _ -> traceError "mkUntypedPolicy': Error at fromBuiltinData"
+untypedPolicy' ::
+  (FromData r) =>
+  (ValidatorParams -> r -> ScriptContext -> Bool) ->
+  (BuiltinData -> BuiltinData -> BuiltinData -> ())
+untypedPolicy' policy params x y =
+  let (maybeDataX, maybeDataY) = (fromBuiltinData x, fromBuiltinData y)
+   in case (maybeDataX, maybeDataY) of
+        (Just dataX, Just dataY) -> check (policy (unsafeFromBuiltinData params) dataX dataY)
+        _ -> traceError "Error at fromBuiltinData function"

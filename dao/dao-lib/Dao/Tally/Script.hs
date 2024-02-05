@@ -37,9 +37,8 @@ import Dao.Shared (
   hasSymbolInValue,
   integerToByteString,
   isScriptCredential,
-  mkUntypedPolicy,
-  mkUntypedValidator,
-  wrapValidate',
+  untypedPolicy,
+  untypedValidator,
  )
 import LambdaBuffers.ApplicationTypes.Configuration (
   DynamicConfigDatum (
@@ -110,9 +109,7 @@ import PlutusTx (
   CompiledCode,
   applyCode,
   compile,
-  fromBuiltinData,
   liftCode,
-  unsafeFromBuiltinData,
  )
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as M
@@ -123,7 +120,6 @@ import PlutusTx.Prelude (
   Maybe (Just, Nothing),
   all,
   any,
-  check,
   divide,
   filter,
   foldr,
@@ -237,9 +233,7 @@ mkTallyNftMinter
 mkTallyNftMinter _ _ _ = traceError "Wrong type of script purpose!"
 
 untypedTallyPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedTallyPolicy nftConfig r context =
-  check $
-    mkTallyNftMinter (unsafeFromBuiltinData nftConfig) r (unsafeFromBuiltinData context)
+untypedTallyPolicy = untypedPolicy mkTallyNftMinter
 
 tallyPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 tallyPolicyCompiledCode = $$(PlutusTx.compile [||untypedTallyPolicy||])
@@ -485,8 +479,4 @@ tallyValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> Builti
 tallyValidatorCompiledCode = $$(PlutusTx.compile [||untypedTallyValidator||])
 
 untypedTallyValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedTallyValidator validatorConfig tallyDatum redeemer context =
-  case fromBuiltinData tallyDatum of
-    Just datum ->
-      check $ validateTally (unsafeFromBuiltinData validatorConfig) datum redeemer (unsafeFromBuiltinData context)
-    _ -> traceError "Error at fromBuiltinData (TallyDatum - validator)"
+untypedTallyValidator = untypedValidator validateTally

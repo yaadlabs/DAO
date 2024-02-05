@@ -10,6 +10,9 @@ module Spec.SpecUtils (
   findConfigUtxo,
   oneSecond,
   payToPkhTx,
+  mkUntypedPolicy',
+  mkUntypedValidator,
+  mkUntypedValidator',
 ) where
 
 import Dao.Shared (hasOneOfToken)
@@ -46,15 +49,79 @@ import Plutus.Model.V2 (
  )
 import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
 import PlutusLedgerApi.V1.Value (CurrencySymbol, TokenName, Value)
+import PlutusLedgerApi.V2.Contexts (ScriptContext)
 import PlutusLedgerApi.V2.Tx (TxOut, TxOutRef)
-import PlutusTx (CompiledCode)
-import PlutusTx.Prelude (Bool, BuiltinData, Integer, Maybe (Just, Nothing), fst, head, ($), (.), (>>=))
+import PlutusTx (
+  CompiledCode,
+  FromData,
+  UnsafeFromData,
+  fromBuiltinData,
+  unsafeFromBuiltinData,
+ )
+import PlutusTx.Prelude (
+  Bool,
+  BuiltinData,
+  Integer,
+  Maybe (Just, Nothing),
+  check,
+  fst,
+  head,
+  traceError,
+  ($),
+  (.),
+  (>>=),
+ )
 import Test.Tasty (TestTree)
 import Prelude (Eq, String, error, pure, show, (<$>), (<>))
 
 checkFails :: MockConfig -> Value -> String -> Run () -> TestTree
 checkFails cfg funds msg act =
   testNoErrors funds (skipLimits cfg) msg (mustFail act)
+
+mkUntypedPolicy' ::
+  forall r.
+  FromData r =>
+  (r -> ScriptContext -> Bool) ->
+  (BuiltinData -> BuiltinData -> ())
+mkUntypedPolicy' f r p =
+  let maybeRedeemerArg = fromBuiltinData r
+   in case maybeRedeemerArg of
+        Just redeemerArg ->
+          check $
+            f redeemerArg (unsafeFromBuiltinData p)
+        _ -> traceError "mkUntypedPolicy': Error at fromBuiltinData"
+
+mkUntypedValidator ::
+  forall d r.
+  (FromData d, UnsafeFromData r) =>
+  (d -> r -> ScriptContext -> Bool) ->
+  (BuiltinData -> BuiltinData -> BuiltinData -> ())
+mkUntypedValidator f d r p =
+  let maybeDataArg = fromBuiltinData d
+   in case maybeDataArg of
+        Just dataArg ->
+          check $
+            f
+              dataArg
+              (unsafeFromBuiltinData r)
+              (unsafeFromBuiltinData p)
+        _ -> traceError "mkUntypedValidator: Error at fromBuiltinData"
+
+mkUntypedValidator' ::
+  forall d r.
+  (FromData d, FromData r) =>
+  (d -> r -> ScriptContext -> Bool) ->
+  (BuiltinData -> BuiltinData -> BuiltinData -> ())
+mkUntypedValidator' f d r p =
+  let (maybeDataArg, maybeRedeemerArg) = (fromBuiltinData d, fromBuiltinData r)
+   in case (maybeDataArg, maybeRedeemerArg) of
+        (Just dataArg, Just redeemerArg) ->
+          check $
+            f
+              dataArg
+              redeemerArg
+              (unsafeFromBuiltinData p)
+        _ -> traceError "mkUntypedValidator: Error at fromBuiltinData"
 
 mkTypedValidator' ::
   (config -> CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())) ->

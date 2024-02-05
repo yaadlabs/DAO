@@ -29,9 +29,8 @@ import Dao.Shared (
   hasSymbolInValue,
   hasTokenInValue,
   hasTokenInValueNoErrors,
-  mkUntypedPolicy,
-  mkUntypedValidator,
-  wrapValidate',
+  untypedPolicy,
+  untypedValidator,
  )
 import LambdaBuffers.ApplicationTypes.Configuration (
   DynamicConfigDatum (
@@ -79,9 +78,7 @@ import PlutusTx (
   CompiledCode,
   applyCode,
   compile,
-  fromBuiltinData,
   liftCode,
-  unsafeFromBuiltinData,
  )
 import PlutusTx.Prelude (
   Bool,
@@ -89,7 +86,6 @@ import PlutusTx.Prelude (
   Integer,
   Maybe (Just),
   any,
-  check,
   divide,
   filter,
   traceError,
@@ -155,9 +151,7 @@ configPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinD
 configPolicyCompiledCode = $$(PlutusTx.compile [||untypedConfigPolicy||])
 
 untypedConfigPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedConfigPolicy nftConfig r context =
-  check $
-    mkConfigurationNftPolicy (unsafeFromBuiltinData nftConfig) r (unsafeFromBuiltinData context)
+untypedConfigPolicy = untypedPolicy mkConfigurationNftPolicy
 
 {- | Validator for proposal upgrades.
 
@@ -273,13 +267,4 @@ configValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> Built
 configValidatorCompiledCode = $$(PlutusTx.compile [||untypedConfigValidator||])
 
 untypedConfigValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
-untypedConfigValidator validatorConfig configDatum redeemer context =
-  case fromBuiltinData configDatum of
-    Just datum ->
-      check $
-        validateConfiguration
-          (unsafeFromBuiltinData validatorConfig)
-          datum
-          redeemer
-          (unsafeFromBuiltinData context)
-    _ -> traceError "Error at fromBuiltinData (DynamicConfigDatum - config validator)"
+untypedConfigValidator = untypedValidator validateConfiguration

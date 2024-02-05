@@ -15,7 +15,6 @@ module Spec.Tally.Script (
 where
 
 import Dao.ScriptArgument (TallyPolicyParams (TallyPolicyParams), ValidatorParams)
-import Dao.Shared (mkUntypedValidator)
 import Dao.Tally.Script (mkTallyNftMinter, validateTally)
 import LambdaBuffers.ApplicationTypes.Tally (TallyStateDatum)
 import Plutus.Model.V2 (
@@ -32,6 +31,7 @@ import PlutusLedgerApi.V1.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (BuiltinData, ($), (.))
 import Spec.Configuration.SampleData (sampleValidatorParams)
+import Spec.SpecUtils (mkUntypedValidator)
 
 -- Policy script and info
 tallyConfigNftTypedMintingPolicy :: TallyPolicyParams -> TypedPolicy ()
