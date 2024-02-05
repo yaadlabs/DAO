@@ -236,7 +236,7 @@ validateTreasury
 
       -- Get the TallyStateDatum from the reference inputs, should be exactly one
       TallyStateDatum {..} =
-        case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
+        case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoInputs of
           [] -> traceError "Missing tally NFT"
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
           _ -> traceError "Too many tally NFT values"
@@ -298,6 +298,7 @@ validateTreasury
                 lovelacesOf (valuePaidTo' txInfoOutputs travelerAddress) >= travelerLovelaces
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
+                && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
                 && traceIfFalse "Not paying enough to the travel agent address" paidToTravelAgentAddress
                 && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
@@ -336,6 +337,7 @@ validateTreasury
                 lovelacesOf (valuePaidTo' txInfoOutputs generalPaymentAddress) >= generalPaymentValue
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
+                && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
                 && traceIfFalse "Not paying to the correct address" paidToAddress
           ProposalType'Upgrade upgradeMinter ->
