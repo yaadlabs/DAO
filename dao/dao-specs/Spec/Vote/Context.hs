@@ -10,7 +10,7 @@ module Spec.Vote.Context (
 ) where
 
 import Control.Monad (void)
-import Dao.ScriptArgument (ConfigurationValidatorConfig)
+import Dao.ScriptArgument (ValidatorParams)
 import LambdaBuffers.ApplicationTypes.Vote (
   VoteMinterActionRedeemer (VoteMinterActionRedeemer'Mint),
  )
@@ -32,12 +32,13 @@ import Plutus.Model.V2 (
  )
 import PlutusLedgerApi.V1.Interval (to)
 import PlutusLedgerApi.V1.Value (TokenName (TokenName), Value, singleton)
-import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
+import Spec.Configuration.SampleData (sampleValidatorParams)
 import Spec.Configuration.Transactions (runInitConfig)
 import Spec.Configuration.Utils (findConfig)
 import Spec.SpecUtils (minAda, oneSecond)
 import Spec.Tally.Transactions (runInitTallyWithEndTimeInFuture)
 import Spec.Tally.Utils (findTally)
+import Spec.Values (dummyVoteNFTValue)
 import Spec.Vote.SampleData (sampleVoteDatum)
 import Spec.Vote.Script (
   VoteMintingPolicy,
@@ -45,6 +46,7 @@ import Spec.Vote.Script (
   voteTypedMintingPolicy,
   voteTypedValidator,
  )
+import Spec.Vote.Transactions (runInitVoteNft)
 import Prelude (mconcat, mempty, (*), (+), (<>))
 
 validVoteConfigNftTest :: Run ()
@@ -84,47 +86,49 @@ data ValidityRange
   | NoSpecificRange
 
 mkVoteConfigNftTest ::
-  (ConfigurationValidatorConfig -> Value) ->
+  (ValidatorParams -> Value) ->
   VoteConfigRef ->
   ValidityRange ->
   Run ()
 mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
   runInitConfig
+  -- Simulate a voteNFT at the user's wallet
+  runInitVoteNft
   void runInitTallyWithEndTimeInFuture
 
   (configOutRef, _, _) <- findConfig
   (tallyOutRef, _, _tallyDatum) <- findTally
 
-  user <- newUser minAda
-  spend1 <- spend user (adaValue 2)
+  user <- newUser (minAda <> dummyVoteNFTValue)
+  spend' <- spend user (adaValue 2 <> dummyVoteNFTValue)
   theTimeNow <- currentTime
 
   let
     voteValue :: Value
-    voteValue = voteConfigValue sampleConfigValidatorConfig
+    voteValue = voteConfigValue sampleValidatorParams
 
     votePolicy :: VoteMintingPolicy
-    votePolicy = voteTypedMintingPolicy sampleConfigValidatorConfig
+    votePolicy = voteTypedMintingPolicy sampleValidatorParams
 
     -- Set up the txs
     baseTx =
       mconcat
         [ mintValue votePolicy VoteMinterActionRedeemer'Mint voteValue
         , refInputInline tallyOutRef
-        , userSpend spend1
+        , userSpend spend'
         ]
 
     withVoteConfig = case voteConfigRef of
       ConfigInRefInputs -> refInputInline configOutRef
       NoConfigInRefInputs -> mempty
 
-    -- Pay the vote datum, and token,
+    -- Pay the vote datum, vote token and vote NFT,
     -- to the vote validator
     payToVoteValidator =
       payToScript
         voteTypedValidator
         (InlineDatum sampleVoteDatum)
-        (adaValue 2 <> voteValue)
+        (adaValue 2 <> voteValue <> dummyVoteNFTValue)
 
     combinedTxs = mconcat [baseTx, payToVoteValidator, withVoteConfig]
 
@@ -135,9 +139,16 @@ mkVoteConfigNftTest voteConfigValue voteConfigRef validityRange = do
     NoSpecificRange -> submitTx user combinedTxs -- Should (will) fail
 
 -- Valid token value, correct symbol and exactly one minted
-validVoteConfigValue :: ConfigurationValidatorConfig -> Value
+validVoteConfigValue :: ValidatorParams -> Value
 validVoteConfigValue config = singleton (voteCurrencySymbol config) (TokenName "vote") 1
 
+validVoteConfigValue' :: ValidatorParams -> Value
+validVoteConfigValue' config =
+  mconcat
+    [ singleton (voteCurrencySymbol config) (TokenName "vote") 1
+    , dummyVoteNFTValue
+    ]
+
 -- Valid token value, correct symbol and exactly one minted
-invalidMoreThanOneVoteConfigValue :: ConfigurationValidatorConfig -> Value
+invalidMoreThanOneVoteConfigValue :: ValidatorParams -> Value
 invalidMoreThanOneVoteConfigValue config = singleton (voteCurrencySymbol config) (TokenName "vote") 2

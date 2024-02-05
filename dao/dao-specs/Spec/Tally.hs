@@ -56,7 +56,7 @@ nftSpec config =
         invalidMoreThanOneTokenMintedTallyConfigNftTest
     negativeTest3 =
       bad
-        ( "Index field of output IndexNftDatum not incremented, should fail with: "
+        ( "Index field of output IndexDatum not incremented, should fail with: "
             <> "[output datum is not incremented]"
         )
         invalidIndexNotIncrementedConfigNftTest

@@ -1,0 +1,35 @@
+module ApplicationConfig.Scripts
+
+import Prelude
+
+prod Script = Bytes
+derive Eq Script
+derive Json Script
+
+record Scripts = {
+  configPolicy : Script,
+  configPolicyDebug : Script,
+  configValidator : Script,
+  configValidatorDebug : Script,
+  indexPolicy : Script,
+  indexPolicyDebug : Script,
+  indexValidator : Script,
+  indexValidatorDebug : Script,
+  tallyPolicy: Script,
+  tallyPolicyDebug : Script,
+  tallyValidator : Script,
+  tallyValidatorDebug : Script,
+  votePolicy: Script,
+  votePolicyDebug : Script,
+  voteValidator : Script,
+  voteValidatorDebug : Script,
+  treasuryValidator : Script,
+  treasuryValidatorDebug : Script,
+  treasuryPolicy : Script,
+  treasuryPolicyDebug : Script,
+  fungiblePolicy : Script,
+  voteNftPolicy : Script,
+  voteNftPolicyDebug : Script
+}
+derive Eq Scripts
+derive Json Scripts

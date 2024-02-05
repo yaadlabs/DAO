@@ -5,19 +5,19 @@ Description : Index scripts
 module Spec.Index.Script (
   -- * Validator
   IndexValidatorScript,
-  indexNftTypedValidator,
+  indexTypedValidator,
   indexValidatorScriptHash,
 
   -- * Minting policy
-  indexConfigNftTypedMintingPolicy,
-  indexConfigNftValue,
-  indexConfigNftCurrencySymbol,
+  indexTypedMintingPolicy,
+  indexValue,
+  indexCurrencySymbol,
 )
 where
 
-import Dao.Index.Script (indexValidatorCompiledCode, mkIndexNftMinter)
-import Dao.ScriptArgument (IndexNftConfig (IndexNftConfig))
-import LambdaBuffers.ApplicationTypes.Index (IndexNftDatum)
+import Dao.Index.Script (indexValidatorCompiledCode, mkIndexMinter)
+import Dao.ScriptArgument (IndexPolicyParams (IndexPolicyParams))
+import LambdaBuffers.ApplicationTypes.Index (IndexDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
@@ -33,24 +33,24 @@ import PlutusTx.Prelude (const, id, ($), (.))
 import Spec.SpecUtils (mkTypedValidator')
 
 -- Policy script and info
-indexConfigNftTypedMintingPolicy :: IndexNftConfig -> TypedPolicy ()
-indexConfigNftTypedMintingPolicy config =
+indexTypedMintingPolicy :: IndexPolicyParams -> TypedPolicy ()
+indexTypedMintingPolicy config =
   mkTypedPolicy $
-    $$(PlutusTx.compile [||toBuiltinPolicy . mkIndexNftMinter||])
+    $$(PlutusTx.compile [||toBuiltinPolicy . mkIndexMinter||])
       `PlutusTx.applyCode` PlutusTx.liftCode config
 
-indexConfigNftCurrencySymbol :: IndexNftConfig -> CurrencySymbol
-indexConfigNftCurrencySymbol = scriptCurrencySymbol . indexConfigNftTypedMintingPolicy
+indexCurrencySymbol :: IndexPolicyParams -> CurrencySymbol
+indexCurrencySymbol = scriptCurrencySymbol . indexTypedMintingPolicy
 
-indexConfigNftValue :: IndexNftConfig -> Value
-indexConfigNftValue nftCfg@(IndexNftConfig _ tokenName _) =
-  singleton (indexConfigNftCurrencySymbol nftCfg) tokenName 1
+indexValue :: IndexPolicyParams -> Value
+indexValue nftCfg@(IndexPolicyParams _ tokenName _) =
+  singleton (indexCurrencySymbol nftCfg) tokenName 1
 
 -- Validator script and info
-type IndexValidatorScript = TypedValidator IndexNftDatum ()
+type IndexValidatorScript = TypedValidator IndexDatum ()
 
-indexNftTypedValidator :: IndexValidatorScript
-indexNftTypedValidator = mkTypedValidator' (const indexValidatorCompiledCode) id
+indexTypedValidator :: IndexValidatorScript
+indexTypedValidator = mkTypedValidator' (const indexValidatorCompiledCode) id
 
 indexValidatorScriptHash :: ScriptHash
-indexValidatorScriptHash = scriptHash indexNftTypedValidator
+indexValidatorScriptHash = scriptHash indexTypedValidator

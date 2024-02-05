@@ -55,7 +55,6 @@ library
   build-depends:
     , aeson
     , bytestring
-    , containers
     , dao-lb-types
     , lbr-plutus
     , lbr-prelude
@@ -63,7 +62,7 @@ library
     , plutus-ledger-api
     , plutus-tx
     , plutus-tx-plugin
-    , serialise
+    , text
 
   hs-source-dirs:  dao-lib
   ghc-options:
@@ -129,7 +128,7 @@ library dao-specs
     , dao
     , plutus-tx-plugin
 
-executable create-sc
+executable create-scripts
   import:
     common-lang, common-depends, common-options, common-extensions
 
@@ -137,8 +136,15 @@ executable create-sc
   main-is:        Main.hs
   ghc-options:    -threaded -rtsopts -with-rtsopts=-T
   build-depends:
+    , bytestring
     , dao
+    , dao-lb-config
+    , lbr-prelude
+    , optparse-applicative
+    , plutonomy
     , plutus-ledger-api
+    , plutus-tx
+    , plutus-tx-plugin
 
 test-suite dao-test
   import:

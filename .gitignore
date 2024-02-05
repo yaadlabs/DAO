@@ -171,3 +171,5 @@ Pods
 dist-newstyle
 temp/
 result/
+# The scripts (result of running 'make run-create-scripts')
+triphut-dao-scripts.json

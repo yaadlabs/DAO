@@ -5,29 +5,36 @@ Description: Dao vote related scripts. It includes:
   - Vote validator script.
 -}
 module Dao.Vote.Script (
-  -- * Minting policy
+  -- * Vote minting policy
   mkVoteMinter,
-  wrappedPolicy,
+  votePolicyCompiledCode,
 
-  -- * Validator
+  -- * Vote validator
+  validateVote,
   voteValidatorCompiledCode,
+
+  -- * Fungible minting policy (placeholder)
+  fungiblePolicyCompiledCode,
+
+  -- * Vote NFT policy (placeholder)
+  voteNftPolicyCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
-  ConfigurationValidatorConfig (
-    ConfigurationValidatorConfig,
-    cvcConfigNftCurrencySymbol,
-    cvcConfigNftTokenName
+  ValidatorParams (
+    ValidatorParams,
+    vpConfigSymbol,
+    vpConfigTokenName
   ),
  )
 import Dao.Shared (
-  WrappedMintingPolicyType,
   convertDatum,
   hasBurnedTokens,
   hasOneOfToken,
   hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
+  untypedPolicy',
   wrapValidate'',
  )
 import Data.ByteString.Lazy qualified as BSL
@@ -62,7 +69,9 @@ import PlutusLedgerApi.V1.Address (addressCredential)
 import PlutusLedgerApi.V1.Credential (Credential (PubKeyCredential, ScriptCredential))
 import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusLedgerApi.V1.Interval (after)
+import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
 import PlutusLedgerApi.V1.Value (
+  TokenName (TokenName),
   Value,
   adaSymbol,
   adaToken,
@@ -95,11 +104,12 @@ import PlutusLedgerApi.V2.Tx (
     txOutValue
   ),
  )
-import PlutusTx (CompiledCode, applyCode, compile, fromBuiltinData, liftCode)
+import PlutusTx (CompiledCode, applyCode, compile, fromBuiltinData, liftCode, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.Prelude (
-  Bool,
+  Bool (True),
   BuiltinData,
+  Integer,
   any,
   check,
   filter,
@@ -109,6 +119,7 @@ import PlutusTx.Prelude (
   ($),
   (&&),
   (.),
+  (<),
   (==),
   (>),
  )
@@ -122,7 +133,7 @@ import PlutusTx.Prelude (
 
         - There is exactly one 'LambdaBuffers.ApplicationTypes.Configuration.DynamicConfigDatum' in the reference inputs,
           marked by the config NFT
-          (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'ConfigurationValidatorConfig' argument)
+          (Corresponding config 'CurrencySymbol' and 'TokenName' provided by the 'ValidatorParams' argument)
         - There is exactly one 'Dao.Types.TallyStateDatum' in the reference inputs,
           marked by the Tally NFT
         - Exactly one valid Vote NFT is minted with the valid token name.
@@ -141,9 +152,9 @@ import PlutusTx.Prelude (
 
         - That one vote token is burned
 -}
-mkVoteMinter :: ConfigurationValidatorConfig -> VoteMinterActionRedeemer -> ScriptContext -> Bool
+mkVoteMinter :: ValidatorParams -> VoteMinterActionRedeemer -> ScriptContext -> Bool
 mkVoteMinter
-  ConfigurationValidatorConfig {..}
+  ValidatorParams {..}
   action
   ScriptContext
     { scriptContextTxInfo = TxInfo {..}
@@ -160,7 +171,7 @@ mkVoteMinter
       let
         -- Helper for filtering for config UTXO in the reference inputs
         hasConfigurationNft :: Value -> Bool
-        hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
+        hasConfigurationNft = hasOneOfToken vpConfigSymbol vpConfigTokenName
 
         -- The datums
         theData :: Map DatumHash Datum
@@ -210,6 +221,10 @@ mkVoteMinter
             thisCurrencySymbol
             dynamicConfigDatum'voteTokenName
 
+        -- Ensure the 'voteValue' contains a 'vote NFT' matching the
+        -- 'voteNft' CurrencySymbol in the dynamic config.
+        -- This token acts as a 'voting pass' for the user,
+        -- and is required in order for them to vote on a proposal.
         hasVoteNft :: Bool
         !hasVoteNft = hasTokenInValue dynamicConfigDatum'voteNft "Vote NFT" voteValue
 
@@ -224,12 +239,11 @@ mkVoteMinter
           && traceIfFalse "Total ada is not high enough" totalAdaIsGreaterThanReturnAda
 mkVoteMinter _ _ _ = traceError "Wrong type of script purpose!"
 
-wrappedPolicy :: ConfigurationValidatorConfig -> WrappedMintingPolicyType
-wrappedPolicy config x y =
-  let (maybeDataX, maybeDataY) = (fromBuiltinData x, fromBuiltinData y)
-   in case (maybeDataX, maybeDataY) of
-        (Just dataX, Just dataY) -> check (mkVoteMinter config dataX dataY)
-        _ -> traceError "Error at fromBuiltinData function"
+untypedVotePolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedVotePolicy = untypedPolicy' mkVoteMinter
+
+votePolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+votePolicyCompiledCode = $$(PlutusTx.compile [||untypedVotePolicy||])
 
 {- | Validator for votes.
 
@@ -239,7 +253,7 @@ wrappedPolicy config x y =
 
        - There is exactly one 'DynamicConfigDatum' in the reference inputs,
          marked by the config NFT. (Corresponding config 'CurrencySymbol' and 'TokenName'
-         provided by the 'ConfigurationValidatorConfig' argument)
+         provided by the 'ValidatorParams' argument)
 
    == Count vote
 
@@ -261,13 +275,13 @@ wrappedPolicy config x y =
           in the 'DynamicConfigDatum'
 -}
 validateVote ::
-  ConfigurationValidatorConfig ->
+  ValidatorParams ->
   VoteDatum ->
   VoteActionRedeemer ->
   ScriptContext ->
   Bool
 validateVote
-  ConfigurationValidatorConfig {..}
+  ValidatorParams {..}
   VoteDatum {..}
   action
   ScriptContext
@@ -276,7 +290,7 @@ validateVote
     let
       -- Helper for filtering for config UTXO in the reference inputs
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
+      hasConfigurationNft = hasOneOfToken vpConfigSymbol vpConfigTokenName
 
       -- Get the configuration from the reference inputs
       DynamicConfigDatum {..} =
@@ -319,8 +333,45 @@ validateVote
             traceIfFalse "Transaction should be signed by the vote owner" isSignedByOwner
               && traceIfFalse "All vote tokens should be burned" voteTokenAreAllBurned
 
-voteValidatorCompiledCode ::
-  ConfigurationValidatorConfig ->
-  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
-voteValidatorCompiledCode config =
-  $$(PlutusTx.compile [||wrapValidate'' validateVote||]) `applyCode` liftCode config
+voteValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+voteValidatorCompiledCode = $$(PlutusTx.compile [||untypedVoteValidator||])
+
+untypedVoteValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedVoteValidator = wrapValidate'' validateVote
+
+{- A placeholder script for the 'voteNft' token in the off-chain.
+  The 'voteNft' acts as a required pass which a user requires in order to cast a vote.
+-}
+mkVoteNftMinter :: BuiltinData -> ScriptContext -> Bool
+mkVoteNftMinter
+  _
+  ( ScriptContext
+      { scriptContextPurpose = Minting thisCurrencySymbol
+      , scriptContextTxInfo = TxInfo {txInfoMint}
+      }
+    ) =
+    let
+      onlyOneTokenMinted :: Bool
+      onlyOneTokenMinted =
+        hasSingleTokenWithSymbolAndTokenName
+          txInfoMint
+          thisCurrencySymbol
+          (TokenName "vote_pass")
+     in
+      traceIfFalse "Only one token should be minted" onlyOneTokenMinted
+
+untypedVoteNftPolicy :: BuiltinData -> BuiltinData -> ()
+untypedVoteNftPolicy redeemer context =
+  check $ mkVoteNftMinter redeemer (unsafeFromBuiltinData context)
+
+voteNftPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> ())
+voteNftPolicyCompiledCode = $$(PlutusTx.compile [||untypedVoteNftPolicy||])
+
+{- An always-succeeds placeholder script for the fungible token for use in the off-chain.
+  The fungible token acts as a multiplier of the user's vote weight.
+-}
+mkFungibleMinter :: BuiltinData -> BuiltinData -> ()
+mkFungibleMinter _ _ = ()
+
+fungiblePolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> ())
+fungiblePolicyCompiledCode = $$(PlutusTx.compile [||mkFungibleMinter||])

@@ -12,8 +12,7 @@ record DynamicConfigDatum = {
   -- | Hash of the `Dao.Types.ConfigurationNft.Script.validateConfiguration` validator
   , configurationValidator : ScriptHash
   -- | Hash of the `Dao.Types.Vote.Script.validateVote` validator
-  , voteValidator : ScriptHash
-  -- | The majority and relative majority percentages used
+  , voteValidator : ScriptHash -- | The majority and relative majority percentages used
   -- in calculating whether a proposal has sufficient votes to pass
   -- (All times a 1000)
   , upgradeMajorityPercent : Integer
@@ -46,8 +45,12 @@ record DynamicConfigDatum = {
   -- | Token name for the vote value minted by `Dao.Vote.Script.mkVoteMinter`
   , voteTokenName : TokenName
   -- | Symbol of the Vote NFT
+  -- | The 'voteNft' acts as a required pass for voting on a proposal
+  -- | Without this the user cannot vote (the mkVoteMinter policy will fail)
   , voteNft : CurrencySymbol
   -- | Symbol of the fungible vote value
+  -- | The 'vote fungible token' acts as a vote multiplier
+  -- | Increasing the weight of a specific user's vote
   , voteFungibleCurrencySymbol : CurrencySymbol
   -- | Token name for fungible vote value
   , voteFungibleTokenName : TokenName
