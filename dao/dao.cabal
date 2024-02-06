@@ -5,7 +5,7 @@ license:       MIT
 author:        Jonathan Fischoff
 maintainer:    jonathan@Canonicalllc.com
 build-type:    Simple
-copyright:     2021 Canonical LLC
+copyright:     2024 Yaadlabs Ltd.
 
 common common-lang
   default-language: Haskell2010
