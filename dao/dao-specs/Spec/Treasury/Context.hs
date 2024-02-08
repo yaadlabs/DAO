@@ -58,7 +58,7 @@ import Spec.Treasury.Utils (findTreasury)
 import Spec.Values (dummyTreasuryValue)
 import Prelude (Eq, mconcat, (<>), (==))
 
--- Positive test for when the proposal is an Trip proposal
+-- Positive test for when the proposal is a Trip proposal
 validTripTreasuryTest :: Run ()
 validTripTreasuryTest = mkTripTreasuryTest HasEnoughVotes
 

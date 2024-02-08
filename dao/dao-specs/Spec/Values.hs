@@ -17,6 +17,9 @@ module Spec.Values (
   dummyTreasurySymbol,
   dummyTreasuryTokenName,
   dummyTreasuryValue,
+  dummyVoteNFTSymbol,
+  dummyVoteNFTTokenName,
+  dummyVoteNFTValue,
 ) where
 
 import PlutusLedgerApi.V1.Bytes (getLedgerBytes)
@@ -94,3 +97,15 @@ dummyTreasurySymbol :: CurrencySymbol
 dummyTreasurySymbol =
   CurrencySymbol $
     getLedgerBytes "77777777777777777777777777777777777777777777777777777777"
+
+-- | Dummy vote NFT
+dummyVoteNFTValue :: Value
+dummyVoteNFTValue = singleton dummyVoteNFTSymbol dummyVoteNFTTokenName 1
+
+dummyVoteNFTTokenName :: TokenName
+dummyVoteNFTTokenName = TokenName "vote_nft_pass"
+
+dummyVoteNFTSymbol :: CurrencySymbol
+dummyVoteNFTSymbol =
+  CurrencySymbol $
+    getLedgerBytes "88888888888888888888888888888888888888888888888888888888"

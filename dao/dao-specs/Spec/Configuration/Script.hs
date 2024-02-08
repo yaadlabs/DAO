@@ -11,34 +11,45 @@ module Spec.Configuration.Script (
   configNftCurrencySymbol,
 ) where
 
-import Dao.Configuration.Script (configurationValidatorCompiledCode, mkConfigurationNftPolicy)
-import Dao.ScriptArgument (NftConfig)
+import Dao.Configuration.Script (mkConfigurationNftPolicy, validateConfiguration)
+import Dao.ScriptArgument (ConfigPolicyParams, ValidatorParams)
 import LambdaBuffers.ApplicationTypes.Configuration (DynamicConfigDatum)
 import Plutus.Model.V2 (
   TypedPolicy,
   TypedValidator,
   mkTypedPolicy,
+  mkTypedValidator,
   scriptCurrencySymbol,
   toBuiltinPolicy,
  )
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 import PlutusTx qualified
-import PlutusTx.Prelude (($), (.))
-import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
-import Spec.SpecUtils (mkTypedValidator')
+import PlutusTx.Prelude (BuiltinData, ($), (.))
+import Spec.Configuration.SampleData (sampleValidatorParams)
+import Spec.SpecUtils (mkUntypedValidator)
 
 -- Policy script and info
-configNftTypedMintingPolicy :: NftConfig -> TypedPolicy ()
+configNftTypedMintingPolicy :: ConfigPolicyParams -> TypedPolicy ()
 configNftTypedMintingPolicy config =
   mkTypedPolicy $
     $$(PlutusTx.compile [||toBuiltinPolicy . mkConfigurationNftPolicy||])
       `PlutusTx.applyCode` PlutusTx.liftCode config
 
-configNftCurrencySymbol :: NftConfig -> CurrencySymbol
+configNftCurrencySymbol :: ConfigPolicyParams -> CurrencySymbol
 configNftCurrencySymbol = scriptCurrencySymbol . configNftTypedMintingPolicy
 
 -- Validator script and info
 type ConfigUpgradeValidatorScript = TypedValidator DynamicConfigDatum ()
 
 upgradeConfigNftTypedValidator :: ConfigUpgradeValidatorScript
-upgradeConfigNftTypedValidator = mkTypedValidator' configurationValidatorCompiledCode sampleConfigValidatorConfig
+upgradeConfigNftTypedValidator = upgradeConfigTypedValidator' sampleValidatorParams
+
+upgradeConfigTypedValidator' :: ValidatorParams -> ConfigUpgradeValidatorScript
+upgradeConfigTypedValidator' config =
+  mkTypedValidator
+    (compiledConfigValidator `PlutusTx.applyCode` PlutusTx.liftCode config)
+
+compiledConfigValidator ::
+  PlutusTx.CompiledCode (ValidatorParams -> (BuiltinData -> BuiltinData -> BuiltinData -> ()))
+compiledConfigValidator =
+  $$(PlutusTx.compile [||mkUntypedValidator . validateConfiguration||])

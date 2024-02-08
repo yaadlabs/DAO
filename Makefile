@@ -13,6 +13,21 @@ run-build:
 	@rm -rf ./result
 	@rm -rf ./dist-newstyle
 
+# Build and run 'create-scripts'
+run-create-scripts:
+	@rm -rf ./result
+	@nix build .#dao-scripts
+	@./result/bin/create-scripts compile
+	@rm -rf ./result
+	@rm -rf ./dist-newstyle
+
+# Build but don't run 'create-scripts', for testing it compiles
+build-create-scripts:
+	@rm -rf ./result
+	@nix build .#dao-scripts
+	@rm -rf ./result
+	@rm -rf ./dist-newstyle
+
 clean:
 	@rm -rf ./result
 	@rm -rf ./dao/dist-newstyle

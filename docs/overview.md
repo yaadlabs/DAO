@@ -27,8 +27,8 @@ The `Dao.Configuration.Script.mkConfigurationNftPolicy` is a one-shot minting po
 The `mkConfigurationNftPolicy` script performs the following validation checks:
 
   - The UTXO, referenced in the `ncInitialUtxo` field of
-    the `NftConfig` argument, is spent in the transaction.
-  - The token name matches the `ncTokenName` field of the `NftConfig` argument.
+    the `ConfigPolicyParams` argument, is spent in the transaction.
+  - The token name matches the `ncTokenName` field of the `ConfigPolicyParams` argument.
   - Exactly one configuration NFT is minted with the valid token name.
   - There is exactly one output containing the NFT.
   - This output contains a valid `LambdaBuffers.ApplicationTypes.DynamicConfigDatum` datum.
@@ -59,7 +59,7 @@ The `mkVoteMinter` script performs the following validation checks:
 
 When the `LambdaBuffers.ApplicationTypes.Vote.VoteMinterActionRedeemer` redeemer is set to `Mint`, this policy performs the following checks:
 
-  - There is exactly one `LambdaBuffers.ApplicationTypes.Configuration.DynamicConfigDatum` in the reference inputs, marked by the configuration NFT (The corresponding `CurrencySymbol` and `TokenName` are provided by the `ConfigurationValidatorConfig` argument).
+  - There is exactly one `LambdaBuffers.ApplicationTypes.Configuration.DynamicConfigDatum` in the reference inputs, marked by the configuration NFT (The corresponding `CurrencySymbol` and `TokenName` are provided by the `ValidatorParams` argument).
   - There is exactly one `Dao.Types.TallyStateDatum` in the reference inputs, marked by the Tally NFT.
   - Exactly one valid vote NFT is minted with the valid token name.
   - The token name matches the `voteTokenName` field of the `DynamicConfigDatum`.
@@ -81,7 +81,7 @@ The `validateVote` script performs the following validation checks:
 
 The validator always ensures the following, regardless of the redeemer provided:
 
-  - There is exactly one `DynamicConfigDatum` in the reference inputs, marked by the config NFT. (The corresponding configuration `CurrencySymbol` and `TokenName` are provided by the `ConfigurationValidatorConfig` argument).
+  - There is exactly one `DynamicConfigDatum` in the reference inputs, marked by the config NFT. (The corresponding configuration `CurrencySymbol` and `TokenName` are provided by the `ValidatorParams` argument).
 
   - When the `VoteActionRedeemer` redeemer is set to `Count`, this validator performs the following checks:
   
@@ -138,11 +138,11 @@ In the `Dao.Tally.Script` module we have two scripts, the tallying minting polic
 
 The `Dao.Tally.Script.mkTallyNftMinter` policy performs the following checks:
 
-  - There is exactly one 'DynamicConfigDatum' in the reference inputs, marked by the config NFT (The corresponding configuration `CurrencySymbol` and `TokenName` provided by the `TallyNftConfig` argument).
+  - There is exactly one 'DynamicConfigDatum' in the reference inputs, marked by the config NFT (The corresponding configuration `CurrencySymbol` and `TokenName` provided by the `TallyConfigPolicyParams` argument).
   - There is exactly one Index UTXO spent (contained in the `txInfoInputs`).
-  - This index UTXO contains a valid `IndexNftDatum` (The `Dao.Index.Script.validateIndex` validator ensures the datum's index is incremented by one).
+  - This index UTXO contains a valid `IndexDatum` (The `Dao.Index.Script.validateIndex` validator ensures the datum's index is incremented by one).
   - Exactly one valid Tally NFT is minted with the valid token name.
-  - The token name matches the `'ndex` field of the `IndexNftDatum`.
+  - The token name matches the `'ndex` field of the `IndexDatum`.
   - There is exactly one output containing the tally NFT.
   - This output contains a valid `TallyStateDatum` datum.
   - The initial votes for fields of the `TallyStateDatum` are both set to zero.
@@ -152,7 +152,7 @@ The tests for the tally policy validator can be found in `Spec.Tally.Context`.
 
 The `Dao.Tally.Script.validateTally` validator performs the following checks:
 
-  - There is exactly one `DynamicConfigDatum` in the reference inputs, marked by the tally NFT. (The corresponding config `CurrencySymbol` and `TokenName` provided by the `ConfigurationValidatorConfig` argument).
+  - There is exactly one `DynamicConfigDatum` in the reference inputs, marked by the tally NFT. (The corresponding config `CurrencySymbol` and `TokenName` provided by the `ValidatorParams` argument).
   - That the tally NFT remains at the validator (the `newValueIsAtleastAsBigAsOldValue` check).
   - There is exactly one `TallyStateDatum` in the outputs.
   - This `TallyStateDatum` in the outputs has been updated accordingly. We check this by ensuring the new votes have been added to the `For` and `Against` vote count fields of the new tally datum at the output.
@@ -167,22 +167,22 @@ In the `Dao.Index.Script` module we have two scripts, the tally index minting po
 
 The `Dao.Index.Script.mkIndexNftMinter` minting policy performs the following checks:
 
-  - The UTXO, referenced in the `incInitialUtxo` field of the `IndexNftConfig` argument, is spent in the transaction.
-  - The token name matches the `incTokenName` field of the `NftConfig` argument.
+  - The UTXO, referenced in the `incInitialUtxo` field of the `IndexConfigPolicyParams` argument, is spent in the transaction.
+  - The token name matches the `incTokenName` field of the `ConfigPolicyParams` argument.
   - Exactly one valid config NFT is minted with the valid token name.
   - There is exactly one output containing the NFT.
-  - This output contains a valid `IndexNftDatum` datum.
+  - This output contains a valid `IndexDatum` datum.
   - The `index` field of this datum is set to zero.
-  - The index output is at the index validator (The corresponding index script provided by the `incIndexValidator` field of the `IndexNftConfig` parameter).
+  - The index output is at the index validator (The corresponding index script provided by the `incIndexValidator` field of the `IndexConfigPolicyParams` parameter).
 
 The tests for the index policy can be found in the `Spec.Index.Context` module.
 
 The `Dao.Index.Script.indexValidator` script performs the following checks:
 
-  - The `index` field of the `IndexNftDatum` is incremented when we create a new proposal (a new `TallyStateDatum` is created and paid to the tally validator).
+  - The `index` field of the `IndexDatum` is incremented when we create a new proposal (a new `TallyStateDatum` is created and paid to the tally validator).
   - The index NFT stays at the validator.
 
-The index validator is used in conjunction with the tally minter, when minting a tally NFT the index validator is used to check that the index field of the `IndexNftDatum` was incremented by one, hence the index validator is also tested in the same place as the tally minter, `Spec.Tally.Context`.
+The index validator is used in conjunction with the tally minter, when minting a tally NFT the index validator is used to check that the index field of the `IndexDatum` was incremented by one, hence the index validator is also tested in the same place as the tally minter, `Spec.Tally.Context`.
 
 ## Types
 

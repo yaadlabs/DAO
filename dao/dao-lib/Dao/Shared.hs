@@ -3,9 +3,10 @@ Module: Dao.Shared
 Description: Contains helper functions used across the other modules.
 -}
 module Dao.Shared (
-  WrappedMintingPolicyType,
+  untypedValidator,
+  untypedPolicy,
+  untypedPolicy',
   hasTokenInValueNoErrors,
-  wrapValidate,
   wrapValidate',
   wrapValidate'',
   hasBurnedTokens,
@@ -21,6 +22,7 @@ module Dao.Shared (
   lovelacesOf,
 ) where
 
+import Dao.ScriptArgument (ValidatorParams)
 import PlutusLedgerApi.V1 (CurrencySymbol)
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
 import PlutusLedgerApi.V1.Value (TokenName, Value (Value, getValue), adaSymbol, adaToken)
@@ -29,14 +31,15 @@ import PlutusLedgerApi.V2 (
   DatumHash,
   OutputDatum (NoOutputDatum, OutputDatum, OutputDatumHash),
  )
+import PlutusLedgerApi.V2.Contexts (ScriptContext)
 import PlutusTx (FromData, UnsafeFromData, fromBuiltinData, unsafeFromBuiltinData)
 import PlutusTx.AssocMap (Map)
 import PlutusTx.AssocMap qualified as Map
+import PlutusTx.Builtins.Internal (BuiltinString)
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinByteString,
   BuiltinData,
-  BuiltinString,
   Integer,
   Maybe (Just, Nothing),
   check,
@@ -54,8 +57,6 @@ import PlutusTx.Prelude (
   (<>),
   (==),
  )
-
-type WrappedMintingPolicyType = BuiltinData -> BuiltinData -> ()
 
 {-# INLINEABLE isScriptCredential #-}
 isScriptCredential :: Credential -> Bool
@@ -83,6 +84,7 @@ hasSingleTokenWithSymbolAndTokenName (Value value) symbol tokenName = case Map.l
 {- | Return True if the value contains exactly one of the given token
   Same as `hasTokenInValue` but contains error traces (traceError)
 -}
+{-# INLINEABLE hasTokenInValueNoErrors #-}
 hasTokenInValueNoErrors :: CurrencySymbol -> Value -> Bool
 hasTokenInValueNoErrors symbol (Value value) = case Map.lookup symbol value of
   Nothing -> False
@@ -108,6 +110,8 @@ hasTokenInValue :: CurrencySymbol -> BuiltinString -> Value -> Bool
 hasTokenInValue symbol errorMessage = isJust . getTokenNameOfNftMaybe symbol errorMessage
 
 -- | Retrieve the token name of corresponding symbol from value
+
+{- INLINEABLE getTokenNameOfNft -}
 getTokenNameOfNft :: CurrencySymbol -> Value -> BuiltinString -> TokenName
 getTokenNameOfNft symbol value errorMessage =
   fromMaybe (traceError $ errorMessage <> ": not found") (getTokenNameOfNftMaybe symbol errorMessage value)
@@ -124,6 +128,7 @@ hasBurnedTokens symbol (Value value) errorMessage =
 {- | Get the count of tokens with the given `CurrencySymbol`
  and `TokenName` in the given `Value`
 -}
+{-# INLINEABLE countOfTokenInValue #-}
 countOfTokenInValue :: CurrencySymbol -> TokenName -> Value -> Integer
 countOfTokenInValue symbol tokenName (Value value) =
   case Map.lookup symbol value of
@@ -147,11 +152,11 @@ convertDatum :: (FromData a) => Map DatumHash Datum -> OutputDatum -> a
 convertDatum infoData datum = case datum of
   OutputDatum (Datum dbs) -> case fromBuiltinData dbs of
     Just dbs' -> dbs'
-    Nothing -> traceError "convertDatum: Error at fromBuiltinData"
+    Nothing -> traceError "convertDatum: OutputDatum: Error at fromBuiltinData"
   OutputDatumHash dh -> case Map.lookup dh infoData of
     Just (Datum dbs) -> case fromBuiltinData dbs of
       Just dbs' -> dbs'
-      Nothing -> traceError "convertDatum: Error at fromBuiltinData"
+      Nothing -> traceError "convertDatum: OutputDatumHash: Error at fromBuiltinData"
     _ -> traceError "convertDatum: Missing datum"
   NoOutputDatum -> traceError "convertDatum: Missing datum hash or datum"
 
@@ -195,9 +200,9 @@ wrapValidate' validate config x y z =
             )
 
 wrapValidate'' ::
-  (FromData b, FromData c, UnsafeFromData d) =>
-  (config -> b -> c -> d -> Bool) ->
-  config ->
+  (FromData d, FromData r, UnsafeFromData c) =>
+  (ValidatorParams -> d -> r -> c -> Bool) ->
+  BuiltinData ->
   BuiltinData ->
   BuiltinData ->
   BuiltinData ->
@@ -208,26 +213,46 @@ wrapValidate'' validate config x y z =
         (Just dataArgX, Just dataArgY) ->
           check
             ( validate
-                config
+                (unsafeFromBuiltinData config)
                 dataArgX
                 dataArgY
                 (unsafeFromBuiltinData z)
             )
         _ -> traceError "wrapValidate'': Error at fromBuiltinData"
 
-wrapValidate ::
-  (UnsafeFromData b, UnsafeFromData c, UnsafeFromData d) =>
-  (config -> b -> c -> d -> Bool) ->
-  config ->
+untypedValidator ::
+  forall datum r.
+  (FromData datum, UnsafeFromData r) =>
+  (ValidatorParams -> datum -> r -> ScriptContext -> Bool) ->
+  BuiltinData ->
   BuiltinData ->
   BuiltinData ->
   BuiltinData ->
   ()
-wrapValidate validate config x y z =
-  check
-    ( validate
-        config
-        (unsafeFromBuiltinData x)
-        (unsafeFromBuiltinData y)
-        (unsafeFromBuiltinData z)
-    )
+untypedValidator validate config datum redeemer context =
+  case fromBuiltinData datum of
+    Just datum' ->
+      check $ validate (unsafeFromBuiltinData config) datum' (unsafeFromBuiltinData redeemer) (unsafeFromBuiltinData context)
+    _ -> traceError "Error at fromBuiltinData (TallyDatum - validator)"
+
+untypedPolicy ::
+  forall config.
+  (UnsafeFromData config) =>
+  (config -> BuiltinData -> ScriptContext -> Bool) ->
+  BuiltinData ->
+  BuiltinData ->
+  BuiltinData ->
+  ()
+untypedPolicy policy config r context =
+  check $
+    policy (unsafeFromBuiltinData config) r (unsafeFromBuiltinData context)
+
+untypedPolicy' ::
+  (FromData r) =>
+  (ValidatorParams -> r -> ScriptContext -> Bool) ->
+  (BuiltinData -> BuiltinData -> BuiltinData -> ())
+untypedPolicy' policy params x y =
+  let (maybeDataX, maybeDataY) = (fromBuiltinData x, fromBuiltinData y)
+   in case (maybeDataX, maybeDataY) of
+        (Just dataX, Just dataY) -> check (policy (unsafeFromBuiltinData params) dataX dataY)
+        _ -> traceError "Error at fromBuiltinData function"

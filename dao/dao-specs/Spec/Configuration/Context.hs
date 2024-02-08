@@ -9,7 +9,7 @@ module Spec.Configuration.Context (
   invalidConfigNftWrongTokenNameTest,
 ) where
 
-import Dao.ScriptArgument (NftConfig (NftConfig))
+import Dao.ScriptArgument (ConfigPolicyParams (ConfigPolicyParams))
 import Plutus.Model (
   Run,
   Tx,
@@ -17,6 +17,7 @@ import Plutus.Model (
   adaToken,
   adaValue,
   getHeadRef,
+  logInfo,
   mintValue,
   newUser,
   spend,
@@ -30,6 +31,7 @@ import Plutus.Model.V2 (
  )
 import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusLedgerApi.V1.Value (TokenName (TokenName), Value, singleton)
+import PlutusTx qualified
 import PlutusTx.Prelude (Bool (False, True), ($))
 import Spec.Configuration.Script (
   configNftCurrencySymbol,
@@ -38,7 +40,7 @@ import Spec.Configuration.Script (
  )
 import Spec.SampleData (sampleDynamicConfig)
 import Spec.SpecUtils (minAda)
-import Prelude (mconcat, (<>))
+import Prelude (error, mconcat, show, (<>))
 
 -- Test txs
 
@@ -59,36 +61,40 @@ invalidConfigNftNoDatumPaidToScriptTest :: Run ()
 invalidConfigNftNoDatumPaidToScriptTest = mkConfigNftTest invalidNftNoDatumSentToValidator
 
 -- | A valid tx, corresponding test should pass
-validNftTx :: NftConfig -> UserSpend -> PubKeyHash -> Tx
-validNftTx = mkConfigNftTx True validNftConfigValue
+validNftTx :: ConfigPolicyParams -> UserSpend -> PubKeyHash -> Tx
+validNftTx = mkConfigNftTx True validConfigPolicyParamsValue
 
 -- | Invalid tx that mints 2 tokens instead of 1, corresponding test should fail
-invalidNftTooManyTokensTx :: NftConfig -> UserSpend -> PubKeyHash -> Tx
+invalidNftTooManyTokensTx :: ConfigPolicyParams -> UserSpend -> PubKeyHash -> Tx
 invalidNftTooManyTokensTx = mkConfigNftTx True invalidTooManyTokensConfigValue
 
 -- | Invalid tx that has the wrong token name, corresponding test should fail
-invalidNftWrongTokenNameTokensTx :: NftConfig -> UserSpend -> PubKeyHash -> Tx
+invalidNftWrongTokenNameTokensTx :: ConfigPolicyParams -> UserSpend -> PubKeyHash -> Tx
 invalidNftWrongTokenNameTokensTx = mkConfigNftTx True invalidWrongTokenNameConfigValue
 
 {- | Invalid tx as we set the flag for paying the Datum to the
  validator script to False, corresponding test should fail
 -}
-invalidNftNoDatumSentToValidator :: NftConfig -> UserSpend -> PubKeyHash -> Tx
-invalidNftNoDatumSentToValidator = mkConfigNftTx False validNftConfigValue
+invalidNftNoDatumSentToValidator :: ConfigPolicyParams -> UserSpend -> PubKeyHash -> Tx
+invalidNftNoDatumSentToValidator = mkConfigNftTx False validConfigPolicyParamsValue
 
 -- | Helper function for making tests
-mkConfigNftTest :: (NftConfig -> UserSpend -> PubKeyHash -> Tx) -> Run ()
+mkConfigNftTest :: (ConfigPolicyParams -> UserSpend -> PubKeyHash -> Tx) -> Run ()
 mkConfigNftTest tx = do
   user <- newUser minAda
   spend' <- spend user (adaValue 2)
-  let config = NftConfig (getHeadRef spend') (TokenName "triphut")
+  let config = ConfigPolicyParams (getHeadRef spend') (TokenName "triphut")
+  let configData = PlutusTx.toBuiltinData config
+  let configData' = PlutusTx.toData config
+  logInfo $ show configData'
+  -- error $ show configData
   submitTx user $ tx config spend' user
 
 {- | Helper function for building txs
  Set the `hasDatum` flag to False to create an invalid tx that
  doesn't pay the datum to the validator script
 -}
-mkConfigNftTx :: Bool -> (NftConfig -> Value) -> NftConfig -> UserSpend -> PubKeyHash -> Tx
+mkConfigNftTx :: Bool -> (ConfigPolicyParams -> Value) -> ConfigPolicyParams -> UserSpend -> PubKeyHash -> Tx
 mkConfigNftTx hasDatum configValue config spend' user =
   let
     -- Set up the value and scripts
@@ -109,16 +115,16 @@ mkConfigNftTx hasDatum configValue config spend' user =
     if hasDatum then baseTx <> withDatum else baseTx <> withNoDatumToUser
 
 -- | Valid value to be used in valid tx
-validNftConfigValue :: NftConfig -> Value
-validNftConfigValue nftCfg@(NftConfig _ tokenName) =
+validConfigPolicyParamsValue :: ConfigPolicyParams -> Value
+validConfigPolicyParamsValue nftCfg@(ConfigPolicyParams _ tokenName) =
   singleton (configNftCurrencySymbol nftCfg) tokenName 1
 
 -- | Invalid value to be used in invalid tx
-invalidTooManyTokensConfigValue :: NftConfig -> Value
-invalidTooManyTokensConfigValue nftCfg@(NftConfig _ tokenName) =
+invalidTooManyTokensConfigValue :: ConfigPolicyParams -> Value
+invalidTooManyTokensConfigValue nftCfg@(ConfigPolicyParams _ tokenName) =
   singleton (configNftCurrencySymbol nftCfg) tokenName 2
 
 -- | Invalid value to be used in invalid tx
-invalidWrongTokenNameConfigValue :: NftConfig -> Value
-invalidWrongTokenNameConfigValue nftCfg@(NftConfig _ _) =
+invalidWrongTokenNameConfigValue :: ConfigPolicyParams -> Value
+invalidWrongTokenNameConfigValue nftCfg@(ConfigPolicyParams _ _) =
   singleton (configNftCurrencySymbol nftCfg) adaToken 1

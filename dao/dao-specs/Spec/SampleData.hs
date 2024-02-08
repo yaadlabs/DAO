@@ -6,10 +6,10 @@ module Spec.SampleData (
 import LambdaBuffers.ApplicationTypes.Configuration (DynamicConfigDatum (..))
 import PlutusLedgerApi.V1.Scripts (ScriptHash (ScriptHash))
 import PlutusLedgerApi.V1.Value (TokenName (TokenName), adaToken)
-import Spec.Configuration.SampleData (sampleConfigValidatorConfig)
+import Spec.Configuration.SampleData (sampleValidatorParams)
 import Spec.Tally.Script (tallyValidatorScriptHash)
 import Spec.Treasury.Script (treasuryValidatorScriptHash)
-import Spec.Values (dummyTallySymbol, dummyVoteFungibleSymbol)
+import Spec.Values (dummyTallySymbol, dummyVoteFungibleSymbol, dummyVoteNFTSymbol)
 import Spec.Vote.Script (voteCurrencySymbol, voteValidatorScriptHash)
 
 -- DynamicConfigDatum samples
@@ -32,9 +32,9 @@ sampleDynamicConfig =
     , dynamicConfigDatum'agentDisbursementPercent = 1
     , dynamicConfigDatum'proposalTallyEndOffset = 0
     , dynamicConfigDatum'tallyNft = dummyTallySymbol
-    , dynamicConfigDatum'voteCurrencySymbol = dummyVoteFungibleSymbol
+    , dynamicConfigDatum'voteCurrencySymbol = voteCurrencySymbol sampleValidatorParams
     , dynamicConfigDatum'voteTokenName = TokenName "vote"
-    , dynamicConfigDatum'voteNft = voteCurrencySymbol sampleConfigValidatorConfig
+    , dynamicConfigDatum'voteNft = dummyVoteNFTSymbol
     , dynamicConfigDatum'voteFungibleCurrencySymbol = dummyVoteFungibleSymbol
     , dynamicConfigDatum'voteFungibleTokenName = adaToken
     , dynamicConfigDatum'fungibleVotePercent = 1
@@ -60,9 +60,9 @@ sampleHighRelativeMajorityHighTotalVotesDynamicConfig =
     , dynamicConfigDatum'agentDisbursementPercent = 1
     , dynamicConfigDatum'proposalTallyEndOffset = 0
     , dynamicConfigDatum'tallyNft = dummyTallySymbol
-    , dynamicConfigDatum'voteCurrencySymbol = dummyVoteFungibleSymbol
+    , dynamicConfigDatum'voteCurrencySymbol = voteCurrencySymbol sampleValidatorParams
     , dynamicConfigDatum'voteTokenName = TokenName "vote"
-    , dynamicConfigDatum'voteNft = voteCurrencySymbol sampleConfigValidatorConfig
+    , dynamicConfigDatum'voteNft = dummyVoteNFTSymbol
     , dynamicConfigDatum'voteFungibleCurrencySymbol = dummyVoteFungibleSymbol
     , dynamicConfigDatum'voteFungibleTokenName = adaToken
     , dynamicConfigDatum'fungibleVotePercent = 1

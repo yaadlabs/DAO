@@ -3,15 +3,15 @@ Module      : Spec.Configuration.SampleData
 Description : Configuration sample data for tests
 -}
 module Spec.Configuration.SampleData (
-  sampleConfigValidatorConfig,
+  sampleValidatorParams,
 ) where
 
-import Dao.ScriptArgument (ConfigurationValidatorConfig (..))
+import Dao.ScriptArgument (ValidatorParams (..))
 import Spec.Values (dummyConfigNftSymbol, dummyConfigNftTokenName)
 
-sampleConfigValidatorConfig :: ConfigurationValidatorConfig
-sampleConfigValidatorConfig =
-  ConfigurationValidatorConfig
-    { cvcConfigNftCurrencySymbol = dummyConfigNftSymbol
-    , cvcConfigNftTokenName = dummyConfigNftTokenName
+sampleValidatorParams :: ValidatorParams
+sampleValidatorParams =
+  ValidatorParams
+    { vpConfigSymbol = dummyConfigNftSymbol
+    , vpConfigTokenName = dummyConfigNftTokenName
     }

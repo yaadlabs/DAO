@@ -4,26 +4,31 @@ Description: Dao treasury related scripts. It includes:
   - Treasury validator script
 -}
 module Dao.Treasury.Script (
-  -- * Validator
+  -- * Treasury validator
   validateTreasury,
   treasuryValidatorCompiledCode,
+
+  -- * Treasury policy (Placeholder for off-chain use)
+  treasuryPolicyCompiledCode,
 ) where
 
 import Dao.ScriptArgument (
-  ConfigurationValidatorConfig (
-    ConfigurationValidatorConfig,
-    cvcConfigNftCurrencySymbol,
-    cvcConfigNftTokenName
+  ValidatorParams (
+    ValidatorParams,
+    vpConfigSymbol,
+    vpConfigTokenName
   ),
  )
 import Dao.Shared (
   convertDatum,
   hasOneOfToken,
+  hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
   hasTokenInValue,
   isScriptCredential,
   lovelacesOf,
-  wrapValidate,
+  untypedPolicy,
+  untypedValidator,
  )
 import LambdaBuffers.ApplicationTypes.Configuration (
   DynamicConfigDatum (
@@ -76,7 +81,7 @@ import PlutusLedgerApi.V2.Contexts (
     scriptContextPurpose,
     scriptContextTxInfo
   ),
-  ScriptPurpose (Spending),
+  ScriptPurpose (Minting, Spending),
   TxInInfo (
     TxInInfo,
     txInInfoOutRef,
@@ -101,15 +106,14 @@ import PlutusLedgerApi.V2.Contexts (
  )
 import PlutusTx (
   CompiledCode,
-  applyCode,
   compile,
-  liftCode,
  )
 import PlutusTx.Prelude (
   Bool (False, True),
   BuiltinData,
   Integer,
   Maybe (Just, Nothing),
+  any,
   divide,
   filter,
   mapMaybe,
@@ -154,7 +158,7 @@ import PlutusTx.Prelude (
 
         - The correct amount is paid to the traveler's address, specified by the
           corresponding 'Trip' field in the 'ProposalType'. The traveler's amount should
-          be greater than or equal to the total case of the travel minus the payment to
+          be greater than or equal to the total cost of the travel minus the payment to
           the travel agent.
 
         - The correct amount is paid to the travel agent's address, specified by the
@@ -193,13 +197,13 @@ import PlutusTx.Prelude (
           is provided as the field of the 'Upgrade' constructor of the Proposal type.
 -}
 validateTreasury ::
-  ConfigurationValidatorConfig ->
+  ValidatorParams ->
   BuiltinData ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateTreasury
-  ConfigurationValidatorConfig {..}
+  ValidatorParams {..}
   _treasury
   _action
   ScriptContext
@@ -212,7 +216,7 @@ validateTreasury
 
       -- Helper for filtering for config UTXO
       hasConfigurationNft :: Value -> Bool
-      hasConfigurationNft = hasOneOfToken cvcConfigNftCurrencySymbol cvcConfigNftTokenName
+      hasConfigurationNft = hasOneOfToken vpConfigSymbol vpConfigTokenName
 
       -- Get the DynamicConfigDatum from the reference inputs, should be exactly one
       DynamicConfigDatum {..} =
@@ -395,8 +399,44 @@ onlyOneOfThisScript ins vh expectedRef = go ins
             _ -> go xs
           else go xs
 
-treasuryValidatorCompiledCode ::
-  ConfigurationValidatorConfig ->
-  CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
-treasuryValidatorCompiledCode config =
-  $$(PlutusTx.compile [||wrapValidate validateTreasury||]) `applyCode` liftCode config
+treasuryValidatorCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ())
+treasuryValidatorCompiledCode = $$(PlutusTx.compile [||untypedTreasuryValidator||])
+
+untypedTreasuryValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedTreasuryValidator = untypedValidator validateTreasury
+
+{- A one-shot minting policy. (Placeholder)
+
+  Used in the off-chain when creating a new UTXO at the treasury validator
+  and sending funds to that UTXO.
+-}
+mkTreasuryMinter :: TxOutRef -> BuiltinData -> ScriptContext -> Bool
+mkTreasuryMinter
+  txOutRef
+  _
+  ScriptContext
+    { scriptContextTxInfo = TxInfo {..}
+    , scriptContextPurpose = Minting thisCurrencySymbol
+    } =
+    let
+      -- Ensure that the reference UTXO is spent
+      hasUTxO :: Bool
+      !hasUTxO = any (\i -> txInInfoOutRef i == txOutRef) txInfoInputs
+
+      -- Ensure exactly one valid index token is minted
+      onlyOneTokenMinted :: Bool
+      !onlyOneTokenMinted =
+        hasSingleTokenWithSymbolAndTokenName
+          txInfoMint
+          thisCurrencySymbol
+          adaToken
+     in
+      traceIfFalse "Reference UTXO should be spent" hasUTxO
+        && traceIfFalse "Exactly one valid token should be minted" onlyOneTokenMinted
+mkTreasuryMinter _ _ _ = traceError "Wrong type of script purpose!"
+
+untypedTreasuryPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+untypedTreasuryPolicy = untypedPolicy mkTreasuryMinter
+
+treasuryPolicyCompiledCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+treasuryPolicyCompiledCode = $$(PlutusTx.compile [||untypedTreasuryPolicy||])
