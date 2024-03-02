@@ -295,6 +295,7 @@ validateTreasury
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
                 && traceIfFalse "Not paying enough to the travel agent address" paidToTravelAgentAddress
                 && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
+                && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
           ProposalType'General generalPaymentAddress generalPaymentValue ->
             let
               hasEnoughVotes :: Bool
@@ -332,6 +333,7 @@ validateTreasury
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
                 && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
                 && traceIfFalse "Not paying to the correct address" paidToAddress
+                && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
           ProposalType'Upgrade upgradeMinter ->
             let
               hasEnoughVotes :: Bool
