@@ -46,9 +46,9 @@ import Spec.Configuration.Transactions (
 import Spec.Configuration.Utils (findConfig)
 import Spec.SpecUtils (amountOfAda)
 import Spec.Tally.Transactions (
-  runInitGeneralTallyWithEndTimeInFuture,
-  runInitTripTallyWithEndTimeInFuture,
-  runInitTripTallyWithEndTimeInFutureNotEnoughVotes,
+  runInitGeneralTallyWithEndTimeInPast,
+  runInitTripTallyWithEndTimeInPast,
+  runInitTripTallyWithEndTimeInPastNotEnoughVotes,
   runInitUpgradeTallyWithEndTimeInPast,
  )
 import Spec.Tally.Utils (findTally)
@@ -79,8 +79,8 @@ mkTripTreasuryTest enoughVotes = do
 
   -- Choose which tally to load based on whether we want to trigger
   -- the negative test for not enough votes or not
-  when (enoughVotes == HasEnoughVotes) runInitTripTallyWithEndTimeInFuture
-  when (enoughVotes == NotEnoughVotes) runInitTripTallyWithEndTimeInFutureNotEnoughVotes
+  when (enoughVotes == HasEnoughVotes) runInitTripTallyWithEndTimeInPast
+  when (enoughVotes == NotEnoughVotes) runInitTripTallyWithEndTimeInPastNotEnoughVotes
 
   runInitTreasury
 
@@ -119,7 +119,10 @@ mkTripTreasuryTest enoughVotes = do
 
       combinedTxs = baseTx <> payToTreasuryValidator <> payToTravelerAddress
 
-  submitTx user combinedTxs
+  theTimeNow <- currentTime
+  finalTx <- validateIn (from theTimeNow) combinedTxs
+
+  submitTx user finalTx
 
 -- Positive test for when the proposal is an Upgrade proposal
 validUpgradeTreasuryTest :: Run ()
@@ -172,7 +175,7 @@ validUpgradeTreasuryTest = do
 validGeneralTreasuryTest :: Run ()
 validGeneralTreasuryTest = do
   runInitConfig
-  runInitGeneralTallyWithEndTimeInFuture
+  runInitGeneralTallyWithEndTimeInPast
   runInitTreasury
 
   (configOutRef, _, _) <- findConfig
@@ -215,4 +218,7 @@ validGeneralTreasuryTest = do
           , payToGeneralAddress
           ]
 
-  submitTx user combinedTxs
+  theTimeNow <- currentTime
+  finalTx <- validateIn (from theTimeNow) combinedTxs
+
+  submitTx user finalTx
