@@ -6,12 +6,15 @@ module Spec.Tally.SampleData (
   sampleUpgradeWithEndTimeInFutureTallyStateDatum,
   sampleUpgradeWithEndTimeInPastTallyStateDatum,
   sampleTripWithEndTimeInFutureTallyStateDatum,
+  sampleTripWithEndTimeInPastTallyStateDatum,
   sampleUpgradeWithVotesEndTimeInPastTallyStateDatum,
   sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum,
   sampleGeneralWithEndTimeInFutureTallyStateDatum,
+  sampleGeneralWithEndTimeInPastTallyStateDatum,
   sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum,
   sampleUpgradeNotEnoughVotesEndTimeInFutureTallyStateDatum,
   sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum,
+  sampleTripNotEnoughVotesEndTimeInPastTallyStateDatum,
 ) where
 
 import LambdaBuffers.ApplicationTypes.Proposal (
@@ -52,6 +55,15 @@ sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum =
   TallyStateDatum
     { tallyStateDatum'proposal = ProposalType'Trip dummyTravelAgentAddress dummyTravelerPaymentAddress 2
     , tallyStateDatum'proposalEndTime = sampleEndTimeInFuture
+    , tallyStateDatum'for = 1
+    , tallyStateDatum'against = 100
+    }
+
+sampleTripNotEnoughVotesEndTimeInPastTallyStateDatum :: TallyStateDatum
+sampleTripNotEnoughVotesEndTimeInPastTallyStateDatum =
+  TallyStateDatum
+    { tallyStateDatum'proposal = ProposalType'Trip dummyTravelAgentAddress dummyTravelerPaymentAddress 2
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInPast
     , tallyStateDatum'for = 1
     , tallyStateDatum'against = 100
     }
@@ -101,6 +113,15 @@ sampleTripWithEndTimeInFutureTallyStateDatum =
     , tallyStateDatum'against = 3
     }
 
+sampleTripWithEndTimeInPastTallyStateDatum :: TallyStateDatum
+sampleTripWithEndTimeInPastTallyStateDatum =
+  TallyStateDatum
+    { tallyStateDatum'proposal = ProposalType'Trip dummyTravelAgentAddress dummyTravelerPaymentAddress 2
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInPast
+    , tallyStateDatum'for = 5
+    , tallyStateDatum'against = 3
+    }
+
 sampleUpgradeWithVotesEndTimeInPastTallyStateDatum :: TallyStateDatum
 sampleUpgradeWithVotesEndTimeInPastTallyStateDatum =
   TallyStateDatum
@@ -115,6 +136,15 @@ sampleGeneralWithEndTimeInFutureTallyStateDatum =
   TallyStateDatum
     { tallyStateDatum'proposal = sampleGeneralProposalType
     , tallyStateDatum'proposalEndTime = sampleEndTimeInFuture
+    , tallyStateDatum'for = 5
+    , tallyStateDatum'against = 3
+    }
+
+sampleGeneralWithEndTimeInPastTallyStateDatum :: TallyStateDatum
+sampleGeneralWithEndTimeInPastTallyStateDatum =
+  TallyStateDatum
+    { tallyStateDatum'proposal = sampleGeneralProposalType
+    , tallyStateDatum'proposalEndTime = sampleEndTimeInPast
     , tallyStateDatum'for = 5
     , tallyStateDatum'against = 3
     }

@@ -2,19 +2,25 @@ module Spec.Tally.Transactions (
   runInitTallyWithEndTimeInPast,
   runInitTallyWithEndTimeInFuture,
   runInitTripTallyWithEndTimeInFuture,
+  runInitTripTallyWithEndTimeInPastNotEnoughVotes,
   runInitUpgradeTallyWithEndTimeInPast,
   runInitGeneralTallyWithEndTimeInFuture,
   runInitUpgradeWithVotesWithEndTimeInFutureTallyStateDatum,
   runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes,
   runInitTripTallyWithEndTimeInFutureNotEnoughVotes,
+  runInitTripTallyWithEndTimeInPast,
+  runInitGeneralTallyWithEndTimeInPast,
 ) where
 
 import Plutus.Model (Run)
 import Spec.SpecUtils (runInitPayToScript)
 import Spec.Tally.SampleData (
   sampleGeneralWithEndTimeInFutureTallyStateDatum,
+  sampleGeneralWithEndTimeInPastTallyStateDatum,
   sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum,
+  sampleTripNotEnoughVotesEndTimeInPastTallyStateDatum,
   sampleTripWithEndTimeInFutureTallyStateDatum,
+  sampleTripWithEndTimeInPastTallyStateDatum,
   sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum,
   sampleUpgradeWithEndTimeInFutureTallyStateDatum,
   sampleUpgradeWithEndTimeInPastTallyStateDatum,
@@ -31,6 +37,13 @@ runInitTripTallyWithEndTimeInFutureNotEnoughVotes =
     sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum
     dummyTallyValue
 
+runInitTripTallyWithEndTimeInPastNotEnoughVotes :: Run ()
+runInitTripTallyWithEndTimeInPastNotEnoughVotes =
+  runInitPayToScript
+    tallyNftTypedValidator
+    sampleTripNotEnoughVotesEndTimeInPastTallyStateDatum
+    dummyTallyValue
+
 runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes :: Run ()
 runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes =
   runInitPayToScript
@@ -45,11 +58,25 @@ runInitGeneralTallyWithEndTimeInFuture =
     sampleGeneralWithEndTimeInFutureTallyStateDatum
     dummyTallyValue
 
+runInitGeneralTallyWithEndTimeInPast :: Run ()
+runInitGeneralTallyWithEndTimeInPast =
+  runInitPayToScript
+    tallyNftTypedValidator
+    sampleGeneralWithEndTimeInPastTallyStateDatum
+    dummyTallyValue
+
 runInitTripTallyWithEndTimeInFuture :: Run ()
 runInitTripTallyWithEndTimeInFuture =
   runInitPayToScript
     tallyNftTypedValidator
     sampleTripWithEndTimeInFutureTallyStateDatum
+    dummyTallyValue
+
+runInitTripTallyWithEndTimeInPast :: Run ()
+runInitTripTallyWithEndTimeInPast =
+  runInitPayToScript
+    tallyNftTypedValidator
+    sampleTripWithEndTimeInPastTallyStateDatum
     dummyTallyValue
 
 runInitUpgradeTallyWithEndTimeInPast :: Run ()
