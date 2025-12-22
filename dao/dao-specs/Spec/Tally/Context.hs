@@ -26,6 +26,7 @@ import Plutus.Model (
  )
 import Plutus.Model.V2 (
   DatumMode (InlineDatum),
+  payToKey,
   payToScript,
   refInputInline,
   spendScript,
@@ -51,7 +52,9 @@ import Spec.Values (
   dummyIndexConfigNftSymbol,
   dummyIndexConfigNftTokenName,
   dummyIndexConfigNftValue,
+  dummyVoteNFTValue,
  )
+import Spec.Vote.Transactions (runInitVoteNft)
 import Prelude (mconcat, mempty, (+), (<>))
 
 validTallyConfigNftTest :: Run ()
@@ -132,8 +135,11 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
     fromBuiltinIndex :: Maybe IndexDatum
     fromBuiltinIndex = fromBuiltinData builtinIndex
 
-  user <- newUser $ amountOfAda 4_000_000
-  spend1 <- spend user (adaValue 2_000_002)
+  -- Initialize vote NFT first (like Vote tests do)
+  runInitVoteNft
+  -- User needs vote NFT for policy requirement (ID-303)
+  user <- newUser $ amountOfAda 4_000_000 <> dummyVoteNFTValue
+  spend1 <- spend user (adaValue 2_000_002 <> dummyVoteNFTValue)
   spend2 <- spend user (adaValue 4_000_000)
 
   let config =
@@ -164,7 +170,7 @@ mkTallyConfigTest tallyConfigValue incrementIndex configRef spendIndex = do
         , -- \^ Mint the tally NFT
           userSpend spend1
         , userSpend spend2
-        -- \^ Spend these to balance the tx
+        -- \^ Spend these to balance the tx (vote NFT in spend1 for policy requirement)
         ]
 
     -- Valid tx has the config in the reference inputs

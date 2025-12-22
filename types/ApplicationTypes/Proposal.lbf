@@ -1,6 +1,6 @@
 module ApplicationTypes.Proposal
 
-import Prelude (Eq, Integer)
+import Prelude (Eq, Integer, Maybe)
 import Plutus.V1 
   ( Address
   , CurrencySymbol
@@ -11,11 +11,12 @@ import Plutus.V1
 -- A `Trip` proposal, a `General` proposal or an `Upgrade` proposal.
 sum ProposalType =
     -- | Upgrade a proposal
+    -- The Maybe Address indicates if funds should be migrated to a new treasury
+    -- Nothing = config-only upgrade, Just Address = migrate treasury to new address
     Upgrade 
-      -- | Symbol of the upgrade minting policy
-      CurrencySymbol
+      (Maybe Address)
   | -- | A general proposal
-    General 
+    General
       -- | General payment address
       Address 
       -- | General payment amount

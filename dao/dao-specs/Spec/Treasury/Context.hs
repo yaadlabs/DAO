@@ -10,6 +10,7 @@ module Spec.Treasury.Context (
 ) where
 
 import Control.Monad (when)
+import LambdaBuffers.ApplicationTypes.Treasury (TreasuryDatum (TreasuryDatum))
 import Plutus.Model (
   Run,
   adaValue,
@@ -30,7 +31,7 @@ import Plutus.Model.V2 (
  )
 import PlutusLedgerApi.V1.Interval (from)
 import PlutusLedgerApi.V1.Value (Value, adaToken, singleton)
-import PlutusTx.Prelude (($))
+import PlutusTx.Prelude (Bool (True), ($))
 import Spec.Addresses (
   dummyGeneralPaymentAddress,
   dummyTravelerPaymentAddress,
@@ -42,20 +43,29 @@ import Spec.AlwaysSucceed.Script (
 import Spec.Configuration.Transactions (
   runHighRelativeMajorityTotalVotesInitConfig,
   runInitConfig,
+  runInitHighThresholdTreasuryTestConfig,
+  runInitTreasuryTestConfig,
  )
 import Spec.Configuration.Utils (findConfig)
-import Spec.SpecUtils (amountOfAda)
-import Spec.Tally.Transactions (
-  runInitGeneralTallyWithEndTimeInPast,
-  runInitTripTallyWithEndTimeInPast,
-  runInitTripTallyWithEndTimeInPastNotEnoughVotes,
-  runInitUpgradeTallyWithEndTimeInPast,
+import Spec.Index.Transactions (runInitIndex)
+import Spec.SampleData (sampleTallyPolicyParams)
+import Spec.SpecUtils (amountOfAda, findConfigUtxo, runInitPayToScript)
+import Spec.Tally.SampleData (
+  sampleGeneralWithEndTimeInPastTallyStateDatum,
+  sampleTripNotEnoughVotesEndTimeInPastTallyStateDatum,
+  sampleTripWithEndTimeInPastTallyStateDatum,
+  sampleUpgradeWithVotesEndTimeInPastTallyStateDatum,
  )
-import Spec.Tally.Utils (findTally)
+import Spec.Tally.Script (
+  tallyConfigNftCurrencySymbol,
+  tallyConfigNftTypedMintingPolicy,
+  tallyNftTypedValidator,
+ )
 import Spec.Treasury.Script (treasuryTypedValidator)
-import Spec.Treasury.Transactions (runInitTreasury)
+import Spec.Treasury.Transactions (runInitTreasury, runInitTreasuryWithFunds)
 import Spec.Treasury.Utils (findTreasury)
-import Spec.Values (dummyTreasuryValue)
+import Spec.Values (dummyTallySymbol, dummyTallyTokenName, dummyTallyValue, dummyTreasurySymbol, dummyTreasuryTokenName, dummyTreasuryValue)
+import Spec.Vote.Transactions (runInitVoteNft)
 import Prelude (Eq, mconcat, (<>), (==))
 
 -- Positive test for when the proposal is a Trip proposal
@@ -74,50 +84,49 @@ mkTripTreasuryTest :: EnoughVotes -> Run ()
 mkTripTreasuryTest enoughVotes = do
   -- Choose which config to load based on whether we want to trigger
   -- the negative test for not enough votes or not
-  when (enoughVotes == HasEnoughVotes) runInitConfig
-  when (enoughVotes == NotEnoughVotes) runHighRelativeMajorityTotalVotesInitConfig
+  -- Use special Treasury test config that has alwaysSucceed for tally burning (ID-501)
+  when (enoughVotes == HasEnoughVotes) runInitTreasuryTestConfig
+  when (enoughVotes == NotEnoughVotes) runInitHighThresholdTreasuryTestConfig
 
-  -- Choose which tally to load based on whether we want to trigger
-  -- the negative test for not enough votes or not
-  when (enoughVotes == HasEnoughVotes) runInitTripTallyWithEndTimeInPast
-  when (enoughVotes == NotEnoughVotes) runInitTripTallyWithEndTimeInPastNotEnoughVotes
+  runInitIndex
+  runInitVoteNft
 
-  runInitTreasury
+  -- Use alwaysSucceedCurrencySymbol for tally (so we can burn it per ID-501)
+  -- Note: Original tests used dummyTallyValue but didn't burn. After audit fix ID-501, we MUST burn the tally.
+  let tallyValue = singleton alwaysSucceedCurrencySymbol dummyTallyTokenName 1
+  when (enoughVotes == HasEnoughVotes) $
+    runInitPayToScript tallyNftTypedValidator sampleTripWithEndTimeInPastTallyStateDatum tallyValue
+  when (enoughVotes == NotEnoughVotes) $
+    runInitPayToScript tallyNftTypedValidator sampleTripNotEnoughVotesEndTimeInPastTallyStateDatum tallyValue
 
+  runInitTreasury -- Treasury starts with just minAda + treasury token (like original)
   (configOutRef, _, _) <- findConfig
-  (tallyOutRef, _, _) <- findTally
-  (treasuryOutRef, _, _) <- findTreasury
+  (tallyOutRef, _, tallyDatum) <- findConfigUtxo tallyNftTypedValidator alwaysSucceedCurrencySymbol dummyTallyTokenName
+  (treasuryOutRef, _, treasuryDatum) <- findConfigUtxo treasuryTypedValidator dummyTreasurySymbol dummyTreasuryTokenName
 
-  user <- newUser $ amountOfAda 9_000_000
-  spend1 <- spend user $ amountOfAda 6_000_000
-  spend2 <- spend user $ amountOfAda 6_000_000
-  spend3 <- spend user $ amountOfAda 8_000_002
+  user <- newUser $ amountOfAda 3_000_000
 
-  let baseTx =
-        mconcat
-          [ spendScript treasuryTypedValidator treasuryOutRef () ()
-          , refInputInline configOutRef
-          , refInputInline tallyOutRef
-          , userSpend spend1
-          , userSpend spend2
-          ]
+  let
+    -- ID-501: Burn the tally token (was referenced in original, now must be spent and burned)
+    burnDummyTallyValue = singleton alwaysSucceedCurrencySymbol dummyTallyTokenName (-1)
 
-      payToTreasuryValidator =
-        payToScript
-          treasuryTypedValidator
-          (InlineDatum ())
-          (amountOfAda 4_000_000 <> dummyTreasuryValue)
+    baseTx =
+      mconcat
+        [ spendScript treasuryTypedValidator treasuryOutRef () (TreasuryDatum True)
+        , refInputInline configOutRef
+        , spendScript tallyNftTypedValidator tallyOutRef () tallyDatum -- ID-501: spend instead of reference
+        , mintValue alwaysSucceedTypedMintingPolicy () burnDummyTallyValue -- ID-501: burn tally
+        ]
 
-      -- Need to pay something to the traveller's payment address provided
-      payToTravelerAddress =
-        mconcat
-          [ payToKey
-              dummyTravelerPaymentAddress
-              (adaValue 2)
-          , userSpend spend3
-          ]
+    -- ID-401: With disbursedAmount=1 lovelace, Treasury remainder (2M - 1) is below 3M threshold
+    -- Must send remainder (including treasury token) to fallback address
+    -- Treasury 2M + Tally 2M = 4M total from scripts, minus 2 ADA disbursed = 3_999_998
+    payToFallback = payToKey dummyGeneralPaymentAddress (amountOfAda 3_999_998 <> dummyTreasuryValue)
 
-      combinedTxs = baseTx <> payToTreasuryValidator <> payToTravelerAddress
+    -- Need to pay 2 ADA to the traveller's payment address provided (from disbursement)
+    payToTravelerAddress = payToKey dummyTravelerPaymentAddress (adaValue 2)
+
+    combinedTxs = baseTx <> payToFallback <> payToTravelerAddress
 
   theTimeNow <- currentTime
   finalTx <- validateIn (from theTimeNow) combinedTxs
@@ -127,45 +136,41 @@ mkTripTreasuryTest enoughVotes = do
 -- Positive test for when the proposal is an Upgrade proposal
 validUpgradeTreasuryTest :: Run ()
 validUpgradeTreasuryTest = do
-  runInitConfig
-  runInitUpgradeTallyWithEndTimeInPast
-  runInitTreasury
+  runInitTreasuryTestConfig -- Use special Treasury test config for tally burning (ID-501)
+  runInitIndex
+  runInitVoteNft
 
+  -- Use alwaysSucceedCurrencySymbol for tally (so we can burn it per ID-501)
+  -- Use the one with votes to avoid division by zero
+  let tallyValue = singleton alwaysSucceedCurrencySymbol dummyTallyTokenName 1
+  runInitPayToScript tallyNftTypedValidator sampleUpgradeWithVotesEndTimeInPastTallyStateDatum tallyValue
+
+  runInitTreasury -- Treasury starts with just minAda + treasury token (like original)
   (configOutRef, _, _) <- findConfig
-  (tallyOutRef, _, _) <- findTally
-  (treasuryOutRef, _, _) <- findTreasury
+  (tallyOutRef, _, tallyDatum) <- findConfigUtxo tallyNftTypedValidator alwaysSucceedCurrencySymbol dummyTallyTokenName
+  (treasuryOutRef, _, treasuryDatum) <- findConfigUtxo treasuryTypedValidator dummyTreasurySymbol dummyTreasuryTokenName
 
-  user <- newUser $ amountOfAda 8_000_000
-  spend1 <- spend user $ amountOfAda 4_000_000
-  spend2 <- spend user $ amountOfAda 2_000_002
+  user <- newUser $ amountOfAda 3_000_000
 
   theTimeNow <- currentTime
 
   let
-    upgradeToken :: Value
-    upgradeToken = singleton alwaysSucceedCurrencySymbol adaToken 1
+    -- ID-501 & ID-503: Burn the tally token (replaces separate upgrade token per ID-503)
+    burnDummyTallyValue = singleton alwaysSucceedCurrencySymbol dummyTallyTokenName (-1)
 
     baseTx =
       mconcat
-        [ spendScript treasuryTypedValidator treasuryOutRef () ()
-        , mintValue alwaysSucceedTypedMintingPolicy () upgradeToken
+        [ spendScript treasuryTypedValidator treasuryOutRef () (TreasuryDatum True)
         , refInputInline configOutRef
-        , refInputInline tallyOutRef
-        , userSpend spend1
-        , userSpend spend2
+        , spendScript tallyNftTypedValidator tallyOutRef () tallyDatum -- ID-501: spend instead of reference
+        , mintValue alwaysSucceedTypedMintingPolicy () burnDummyTallyValue -- ID-501 & ID-503: burn tally
         ]
 
-    payToTreasuryValidator =
-      payToScript
-        treasuryTypedValidator
-        (InlineDatum ())
-        (adaValue 2 <> dummyTreasuryValue)
+    -- ID-502: Upgrade proposal - ALL funds must go to new treasury address (no continuing output)
+    -- Treasury 2M + Tally 2M = 4M + treasury token, all sent to new treasury address
+    payToNewTreasuryAddress = payToKey dummyGeneralPaymentAddress (amountOfAda 4_000_000 <> dummyTreasuryValue)
 
-    -- Pay it to the user, just for balancing the tx for now
-    -- Not sure what is meant to happen with this token after minting it here
-    payUpgradeTokenToUser = payToKey user upgradeToken
-
-    combinedTxs = baseTx <> payToTreasuryValidator <> payUpgradeTokenToUser
+    combinedTxs = baseTx <> payToNewTreasuryAddress
 
   finalTx <- validateIn (from theTimeNow) combinedTxs
 
@@ -174,49 +179,47 @@ validUpgradeTreasuryTest = do
 -- Positive test for when the proposal is a General proposal
 validGeneralTreasuryTest :: Run ()
 validGeneralTreasuryTest = do
-  runInitConfig
-  runInitGeneralTallyWithEndTimeInPast
-  runInitTreasury
+  runInitTreasuryTestConfig -- Use special Treasury test config for tally burning (ID-501)
+  runInitIndex
+  runInitVoteNft
 
+  -- Use simplified dummy Tally initialization with alwaysSucceed token
+  let tallyValue = singleton alwaysSucceedCurrencySymbol dummyTallyTokenName 1
+  runInitPayToScript tallyNftTypedValidator sampleGeneralWithEndTimeInPastTallyStateDatum tallyValue
+
+  runInitTreasury -- Treasury starts with just minAda + treasury token (like original)
   (configOutRef, _, _) <- findConfig
-  (tallyOutRef, _, _) <- findTally
-  (treasuryOutRef, _, _) <- findTreasury
+  (tallyOutRef, _, tallyDatum) <- findConfigUtxo tallyNftTypedValidator alwaysSucceedCurrencySymbol dummyTallyTokenName
+  (treasuryOutRef, _, treasuryDatum) <- findConfigUtxo treasuryTypedValidator dummyTreasurySymbol dummyTreasuryTokenName
 
-  user <- newUser $ amountOfAda 9_000_000
-  spend1 <- spend user $ amountOfAda 6_000_000
-  spend2 <- spend user $ amountOfAda 6_000_000
-  spend3 <- spend user $ amountOfAda 8_000_002
+  user <- newUser $ amountOfAda 3_000_000
 
-  let baseTx =
-        mconcat
-          [ spendScript treasuryTypedValidator treasuryOutRef () ()
-          , refInputInline configOutRef
-          , refInputInline tallyOutRef
-          , userSpend spend1
-          , userSpend spend2
-          ]
+  let
+    -- ID-501: Burn the tally token (was referenced in original, now must be spent and burned)
+    burnDummyTallyValue = singleton alwaysSucceedCurrencySymbol dummyTallyTokenName (-1)
 
-      payToTreasuryValidator =
-        payToScript
-          treasuryTypedValidator
-          (InlineDatum ())
-          (amountOfAda 4_000_000 <> dummyTreasuryValue)
+    baseTx =
+      mconcat
+        [ spendScript treasuryTypedValidator treasuryOutRef () (TreasuryDatum True)
+        , refInputInline configOutRef
+        , spendScript tallyNftTypedValidator tallyOutRef () tallyDatum -- ID-501: spend instead of reference
+        , mintValue alwaysSucceedTypedMintingPolicy () burnDummyTallyValue -- ID-501: burn tally
+        ]
 
-      -- Need to pay something to the payment address provided
-      payToGeneralAddress =
-        mconcat
-          [ payToKey
-              dummyGeneralPaymentAddress
-              (adaValue 2)
-          , userSpend spend3
-          ]
+    -- ID-401: With maxGeneralDisbursement=1 lovelace, Treasury remainder (2M - 1) is below 3M threshold
+    -- Must send remainder (including treasury token) to fallback address
+    -- Treasury 2M + Tally 2M = 4M total from scripts, minus 2 ADA disbursed = 3_999_998
+    payToFallback = payToKey dummyGeneralPaymentAddress (amountOfAda 3_999_998 <> dummyTreasuryValue)
 
-      combinedTxs =
-        mconcat
-          [ baseTx
-          , payToTreasuryValidator
-          , payToGeneralAddress
-          ]
+    -- Need to pay 2 ADA to the payment address provided (from disbursement)
+    payToGeneralAddress = payToKey dummyGeneralPaymentAddress (adaValue 2)
+
+    combinedTxs =
+      mconcat
+        [ baseTx
+        , payToFallback
+        , payToGeneralAddress
+        ]
 
   theTimeNow <- currentTime
   finalTx <- validateIn (from theTimeNow) combinedTxs

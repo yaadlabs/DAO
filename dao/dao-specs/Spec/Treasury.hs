@@ -9,6 +9,8 @@ import Plutus.Model (
   defaultBabbageV2,
   testNoErrors,
  )
+import PlutusLedgerApi.V1.Value (singleton)
+import Spec.AlwaysSucceed.Script (alwaysSucceedCurrencySymbol)
 import Spec.SpecUtils (amountOfAda)
 import Spec.Treasury.Context (
   invalidNotEnoughVotesTripTreasuryTest,
@@ -16,7 +18,7 @@ import Spec.Treasury.Context (
   validTripTreasuryTest,
   validUpgradeTreasuryTest,
  )
-import Spec.Values (dummyConfigNftValue, dummyTallyValue, dummyTreasuryValue)
+import Spec.Values (dummyConfigNftValue, dummyIndexConfigNftValue, dummyTallyTokenName, dummyTreasuryValue, dummyVoteNFTValue)
 import Test.Tasty (TestTree, testGroup)
 import Prelude (mconcat)
 
@@ -58,8 +60,10 @@ nftSpec config =
 
     initialFunds =
       mconcat
-        [ amountOfAda 20_000_000
+        [ amountOfAda 50_000_000 -- Need more for runInitTreasuryWithFunds (4M) + disbursements
         , dummyConfigNftValue
-        , dummyTallyValue
-        , dummyTreasuryValue
+        , dummyIndexConfigNftValue
+        , singleton alwaysSucceedCurrencySymbol dummyTallyTokenName 1 -- AlwaysSucceed tally (for burning per ID-501)
+        , dummyTreasuryValue -- Real treasury value (no separate policy tests)
+        , dummyVoteNFTValue
         ]

@@ -13,6 +13,8 @@ module Spec.Tally.Transactions (
 ) where
 
 import Plutus.Model (Run)
+import PlutusLedgerApi.V1.Value (singleton)
+import Spec.SampleData (sampleTallyPolicyParams)
 import Spec.SpecUtils (runInitPayToScript)
 import Spec.Tally.SampleData (
   sampleGeneralWithEndTimeInFutureTallyStateDatum,
@@ -27,82 +29,82 @@ import Spec.Tally.SampleData (
   sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum,
   sampleUpgradeWithVotesEndTimeInPastTallyStateDatum,
  )
-import Spec.Tally.Script (tallyNftTypedValidator)
-import Spec.Values (dummyTallyValue)
+import Spec.Tally.Script (tallyConfigNftCurrencySymbol, tallyNftTypedValidator)
+import Spec.Values (dummyTallyTokenName)
 
 runInitTripTallyWithEndTimeInFutureNotEnoughVotes :: Run ()
 runInitTripTallyWithEndTimeInFutureNotEnoughVotes =
   runInitPayToScript
     tallyNftTypedValidator
     sampleTripNotEnoughVotesEndTimeInFutureTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)
 
 runInitTripTallyWithEndTimeInPastNotEnoughVotes :: Run ()
 runInitTripTallyWithEndTimeInPastNotEnoughVotes =
   runInitPayToScript
     tallyNftTypedValidator
     sampleTripNotEnoughVotesEndTimeInPastTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)
 
 runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes :: Run ()
 runInitUpgradeTallyWithEndTimeInPastNotEnoughVotes =
   runInitPayToScript
     tallyNftTypedValidator
     sampleUpgradeNotEnoughVotesEndTimeInPastTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)
 
 runInitGeneralTallyWithEndTimeInFuture :: Run ()
 runInitGeneralTallyWithEndTimeInFuture =
   runInitPayToScript
     tallyNftTypedValidator
     sampleGeneralWithEndTimeInFutureTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)
 
 runInitGeneralTallyWithEndTimeInPast :: Run ()
 runInitGeneralTallyWithEndTimeInPast =
   runInitPayToScript
     tallyNftTypedValidator
     sampleGeneralWithEndTimeInPastTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)
 
 runInitTripTallyWithEndTimeInFuture :: Run ()
 runInitTripTallyWithEndTimeInFuture =
   runInitPayToScript
     tallyNftTypedValidator
     sampleTripWithEndTimeInFutureTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)
 
 runInitTripTallyWithEndTimeInPast :: Run ()
 runInitTripTallyWithEndTimeInPast =
   runInitPayToScript
     tallyNftTypedValidator
     sampleTripWithEndTimeInPastTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)
 
 runInitUpgradeTallyWithEndTimeInPast :: Run ()
 runInitUpgradeTallyWithEndTimeInPast =
   runInitPayToScript
     tallyNftTypedValidator
     sampleUpgradeWithVotesEndTimeInPastTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)
 
 runInitUpgradeWithVotesWithEndTimeInFutureTallyStateDatum :: Run ()
 runInitUpgradeWithVotesWithEndTimeInFutureTallyStateDatum =
   runInitPayToScript
     tallyNftTypedValidator
     sampleUpgradeWithVotesEndTimeInFutureTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)
 
 runInitTallyWithEndTimeInPast :: Run ()
 runInitTallyWithEndTimeInPast =
   runInitPayToScript
     tallyNftTypedValidator
     sampleUpgradeWithEndTimeInPastTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)
 
 runInitTallyWithEndTimeInFuture :: Run ()
 runInitTallyWithEndTimeInFuture =
   runInitPayToScript
     tallyNftTypedValidator
     sampleUpgradeWithEndTimeInFutureTallyStateDatum
-    dummyTallyValue
+    (singleton (tallyConfigNftCurrencySymbol sampleTallyPolicyParams) dummyTallyTokenName 1)

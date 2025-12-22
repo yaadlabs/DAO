@@ -58,9 +58,9 @@ nftSpec config =
 
     initialFunds =
       mconcat
-        [ adaValue 10_000_000
+        [ adaValue 20_000_000 -- Enough for init TXs + user creation
         , dummyConfigNftValue
         , dummyIndexConfigNftValue
-        , dummyTallyValue
+        , dummyTallyValue -- For runInitTallyWithEndTimeInFuture
         , dummyVoteNFTValue
         ]

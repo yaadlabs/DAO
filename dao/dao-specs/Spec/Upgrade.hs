@@ -9,6 +9,8 @@ import Plutus.Model (
   defaultBabbageV2,
   testNoErrors,
  )
+import PlutusLedgerApi.V1.Value (singleton)
+import Spec.AlwaysSucceed.Script (alwaysSucceedCurrencySymbol)
 import Spec.SpecUtils (amountOfAda, checkFails)
 import Spec.Upgrade.Context (
   invalidUpgradeNoConfigInputTest,
@@ -17,7 +19,7 @@ import Spec.Upgrade.Context (
   invalidUpgradeNotEnoughVotesTest,
   validUpgradeTest,
  )
-import Spec.Values (dummyConfigNftValue, dummyTallyValue)
+import Spec.Values (dummyConfigNftValue, dummyIndexConfigNftValue, dummyTallyTokenName, dummyVoteNFTValue)
 import Test.Tasty (TestTree, testGroup)
 import Prelude (mconcat)
 
@@ -78,5 +80,7 @@ nftSpec config =
       mconcat
         [ amountOfAda 20_000_000
         , dummyConfigNftValue
-        , dummyTallyValue
+        , dummyIndexConfigNftValue
+        , singleton alwaysSucceedCurrencySymbol dummyTallyTokenName 1 -- AlwaysSucceed tally for burning
+        , dummyVoteNFTValue
         ]

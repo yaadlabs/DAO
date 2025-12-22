@@ -42,16 +42,16 @@ import Plutus.Model.V2 (
 import PlutusLedgerApi.V1.Interval (from)
 import Spec.Configuration.Transactions (runInitConfig)
 import Spec.Configuration.Utils (findConfig)
-import Spec.SpecUtils (amountOfAda)
-import Spec.Tally.Script (tallyNftTypedValidator)
-import Spec.Tally.Transactions (
-  runInitTallyWithEndTimeInFuture,
-  runInitTallyWithEndTimeInPast,
+import Spec.Index.Transactions (runInitIndex)
+import Spec.SpecUtils (amountOfAda, findConfigUtxo, runInitPayToScript)
+import Spec.Tally.SampleData (
+  sampleUpgradeWithEndTimeInFutureTallyStateDatum,
+  sampleUpgradeWithEndTimeInPastTallyStateDatum,
  )
-import Spec.Tally.Utils (findTally)
-import Spec.Values (dummyTallyValue, dummyVoteValue)
+import Spec.Tally.Script (tallyNftTypedValidator)
+import Spec.Values (dummyTallySymbol, dummyTallyTokenName, dummyTallyValue, dummyVoteValue)
 import Spec.Vote.Script (voteTypedValidator)
-import Spec.Vote.Transactions (runInitVote, runInitVoteWithUser)
+import Spec.Vote.Transactions (runInitVote, runInitVoteNft, runInitVoteWithUser)
 import Spec.Vote.Utils (findVote)
 import Prelude (Eq, mconcat, mempty, ($), (<>), (==))
 
@@ -132,12 +132,18 @@ mkVoteValidatorCountRedeemerTest ::
   Run ()
 mkVoteValidatorCountRedeemerTest configRef voteValidator tallyValidator tallyPeriod = do
   runInitConfig
+  runInitIndex
+  runInitVoteNft
   runInitVote
 
-  when (tallyPeriod == TallyPeriodOver) runInitTallyWithEndTimeInPast -- Valid
-  when (tallyPeriod == StillInTallyPeriod) runInitTallyWithEndTimeInFuture -- Invalid
+  -- Use simplified dummy Tally initialization instead of real minting
+  when (tallyPeriod == TallyPeriodOver) $
+    runInitPayToScript tallyNftTypedValidator sampleUpgradeWithEndTimeInPastTallyStateDatum dummyTallyValue
+  when (tallyPeriod == StillInTallyPeriod) $
+    runInitPayToScript tallyNftTypedValidator sampleUpgradeWithEndTimeInFutureTallyStateDatum dummyTallyValue
+
   (configOutRef, _, _) <- findConfig
-  (tallyOutRef, _, tallyDatum) <- findTally
+  (tallyOutRef, _, tallyDatum) <- findConfigUtxo tallyNftTypedValidator dummyTallySymbol dummyTallyTokenName
   (voteOutRef, _, voteDatum) <- findVote
 
   user <- newUser $ amountOfAda 4_000_000
@@ -232,11 +238,17 @@ mkVoteValidatorCancelRedeemerTest
   tallyPeriod
   ownerSigns = do
     runInitConfig
+    runInitIndex
+    runInitVoteNft
 
-    when (tallyPeriod == TallyPeriodOver) runInitTallyWithEndTimeInPast -- Valid
-    when (tallyPeriod == StillInTallyPeriod) runInitTallyWithEndTimeInFuture -- Invalid
+    -- Use simplified dummy Tally initialization instead of real minting
+    when (tallyPeriod == TallyPeriodOver) $
+      runInitPayToScript tallyNftTypedValidator sampleUpgradeWithEndTimeInPastTallyStateDatum dummyTallyValue
+    when (tallyPeriod == StillInTallyPeriod) $
+      runInitPayToScript tallyNftTypedValidator sampleUpgradeWithEndTimeInFutureTallyStateDatum dummyTallyValue
+
     (configOutRef, _, _) <- findConfig
-    (tallyOutRef, _, tallyDatum) <- findTally
+    (tallyOutRef, _, tallyDatum) <- findConfigUtxo tallyNftTypedValidator dummyTallySymbol dummyTallyTokenName
 
     user <- newUser $ amountOfAda 4_000_000
     spend1 <- spend user $ amountOfAda 2_000_000

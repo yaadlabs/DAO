@@ -1,0 +1,15 @@
+module ApplicationTypes.Treasury
+
+import Prelude (Eq, Bool)
+import Plutus.V1 (PlutusData)
+
+-- | Treasury datum
+-- Simple marker type to ensure Treasury UTxOs have proper datums
+-- This prevents UTxOs from becoming unspendable
+-- The marker field is always set to True
+record TreasuryDatum = {
+  marker : Bool
+}
+
+derive Eq TreasuryDatum
+derive PlutusData TreasuryDatum

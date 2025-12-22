@@ -5,6 +5,7 @@ Description : Configuration scripts
 module Spec.Configuration.Script (
   -- * Validator
   upgradeConfigNftTypedValidator,
+  configurationValidatorScriptHash,
 
   -- * Minting policy
   configNftTypedMintingPolicy,
@@ -20,8 +21,10 @@ import Plutus.Model.V2 (
   mkTypedPolicy,
   mkTypedValidator,
   scriptCurrencySymbol,
+  scriptHash,
   toBuiltinPolicy,
  )
+import PlutusLedgerApi.V1.Scripts (ScriptHash)
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 import PlutusTx qualified
 import PlutusTx.Prelude (BuiltinData, ($), (.))
@@ -53,3 +56,6 @@ compiledConfigValidator ::
   PlutusTx.CompiledCode (ValidatorParams -> (BuiltinData -> BuiltinData -> BuiltinData -> ()))
 compiledConfigValidator =
   $$(PlutusTx.compile [||mkUntypedValidator . validateConfiguration||])
+
+configurationValidatorScriptHash :: ScriptHash
+configurationValidatorScriptHash = scriptHash upgradeConfigNftTypedValidator

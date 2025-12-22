@@ -1,7 +1,7 @@
 module ApplicationTypes.Configuration
 
 import Prelude (Eq, Integer)
-import Plutus.V1 (CurrencySymbol, PlutusData, ScriptHash, TokenName)
+import Plutus.V1 (CurrencySymbol, PlutusData, ScriptHash, TokenName, Address)
 
 -- | DynamicConfig Datum holds the main info needed for the contracts.
 record DynamicConfigDatum = {
@@ -56,6 +56,12 @@ record DynamicConfigDatum = {
   , voteFungibleTokenName : TokenName
   -- | Fungible token percentage (Percentage value is times a 1000)
   , fungibleVotePercent : Integer
+  -- | Minimum value threshold for treasury UTxO (in lovelaces)
+  -- If remaining value falls below this, it's sent to fallback address
+  , minTreasuryValue : Integer
+  -- | Protocol-controlled fallback address for small treasury remainders
+  -- Used when treasury value drops below minTreasuryValue threshold
+  , protocolFallbackAddress : Address
   }
 derive Eq DynamicConfigDatum
-derive PlutusData DynamicConfigDatum 
+derive PlutusData DynamicConfigDatum

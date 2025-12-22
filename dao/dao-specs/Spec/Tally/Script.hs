@@ -31,7 +31,7 @@ import PlutusLedgerApi.V1.Value (CurrencySymbol, Value, singleton)
 import PlutusTx qualified
 import PlutusTx.Prelude (BuiltinData, ($), (.))
 import Spec.Configuration.SampleData (sampleValidatorParams)
-import Spec.SpecUtils (mkUntypedValidator)
+import Spec.SpecUtils (mkTypedValidatorOptimized, mkUntypedValidator)
 
 -- Policy script and info
 tallyConfigNftTypedMintingPolicy :: TallyPolicyParams -> TypedPolicy ()
@@ -57,9 +57,9 @@ tallyValidatorScriptHash :: ScriptHash
 tallyValidatorScriptHash = scriptHash tallyNftTypedValidator
 
 tallyTypedValidator' :: ValidatorParams -> TallyValidatorScript
-tallyTypedValidator' config =
-  mkTypedValidator
-    (compiledTallyValidator `PlutusTx.applyCode` PlutusTx.liftCode config)
+tallyTypedValidator' =
+  mkTypedValidatorOptimized
+    (\config -> compiledTallyValidator `PlutusTx.applyCode` PlutusTx.liftCode config)
 
 compiledTallyValidator ::
   PlutusTx.CompiledCode (ValidatorParams -> (BuiltinData -> BuiltinData -> BuiltinData -> ()))

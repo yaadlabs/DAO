@@ -24,10 +24,10 @@ import Dao.ScriptArgument (
  )
 import Dao.Shared (
   convertDatum,
+  hasBurnedTokens,
   hasOneOfToken,
   hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
-  hasTokenInValue,
   hasTokenInValueNoErrors,
   untypedPolicy,
   untypedValidator,
@@ -55,7 +55,6 @@ import LambdaBuffers.ApplicationTypes.Tally (
 import PlutusLedgerApi.V1.Interval (before)
 import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
 import PlutusLedgerApi.V1.Value (Value)
-import PlutusLedgerApi.V2 (CurrencySymbol)
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (ScriptContext, scriptContextPurpose, scriptContextTxInfo),
   ScriptPurpose (Minting, Spending),
@@ -79,7 +78,7 @@ import PlutusTx (
   compile,
  )
 import PlutusTx.Prelude (
-  Bool,
+  Bool (True),
   BuiltinData,
   Integer,
   any,
@@ -195,20 +194,19 @@ validateConfiguration
       hasTallyNft :: Value -> Bool
       hasTallyNft = hasSymbolInValue dynamicConfigDatum'tallyNft
 
-      -- Ensure there is exactly one output that contains the 'TallyStateDatum' datum
-      -- The `convertDatum` helper will throw an error if the output datum is not found
+      -- Get TallyStateDatum from spent inputs (not reference)
+      -- The Tally NFT must be spent and burned during upgrades
       TallyStateDatum {tallyStateDatum'proposal = proposal, ..} =
-        case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
-          [] -> traceError "Should be exactly one tally NFT in the reference inputs. None found."
+        case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoInputs of
+          [] -> traceError "Should be exactly one tally NFT in the inputs. None found."
           [TxInInfo {txInInfoResolved = TxOut {..}}] ->
             convertDatum txInfoData txOutDatum
-          _ -> traceError "Should be exactly one tally NFT in the reference inputs. More than one found."
+          _ -> traceError "Should be exactly one tally NFT in the inputs. More than one found."
 
-      -- Ensure that the 'ProposalType' set in the 'tsProposal' field
-      -- of the 'TallyStateDatum' is 'Upgrade', and retrieve the upgrade symbol
-      upgradeMinter :: CurrencySymbol
-      upgradeMinter = case proposal of
-        ProposalType'Upgrade u -> u
+      -- Ensure that the 'ProposalType' is 'Upgrade'
+      isUpgradeProposal :: Bool
+      !isUpgradeProposal = case proposal of
+        ProposalType'Upgrade _ -> True
         _ -> traceError "Not an upgrade proposal"
 
       -- The total votes, for and against, in the 'TallyStateDatum'
@@ -233,9 +231,9 @@ validateConfiguration
             "majority is too small"
             (majorityPercent >= dynamicConfigDatum'upgradeMajorityPercent)
 
-      -- Make sure the upgrade token was minted
-      hasUpgradeMinterToken :: Bool
-      !hasUpgradeMinterToken = hasTokenInValue upgradeMinter "validateConfiguration, upgradeMinter" txInfoMint
+      -- Verify the Tally NFT is being burned (instead of checking for upgrade token)
+      tallyNftIsBurned :: Bool
+      !tallyNftIsBurned = hasBurnedTokens dynamicConfigDatum'tallyNft txInfoMint "Tally NFT must be burned for upgrade"
 
       -- Ensure the proposal has finished
       isAfterTallyEndTime :: Bool
@@ -244,8 +242,9 @@ validateConfiguration
           `before` txInfoValidRange
      in
       traceIfFalse "Should be exactly one configuration NFT in the inputs" hasConfigurationNft
+        && traceIfFalse "Not an upgrade proposal" isUpgradeProposal
         && traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
-        && traceIfFalse "Should be exactly one upgrade token minted" hasUpgradeMinterToken
+        && tallyNftIsBurned
         && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
 validateConfiguration _ _ _ _ = traceError "Wrong script purpose"
 

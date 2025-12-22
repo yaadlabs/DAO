@@ -11,6 +11,7 @@
             "ApplicationTypes/Configuration.lbf"
             "ApplicationTypes/Index.lbf"
             "ApplicationTypes/Tally.lbf"
+            "ApplicationTypes/Treasury.lbf"
           ];
       };
 
@@ -24,6 +25,7 @@
             "ApplicationTypes/Configuration.lbf"
             "ApplicationTypes/Index.lbf"
             "ApplicationTypes/Tally.lbf"
+            "ApplicationTypes/Treasury.lbf"
           ];
       };
 

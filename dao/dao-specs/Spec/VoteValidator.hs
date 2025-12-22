@@ -12,7 +12,9 @@ import Plutus.Model (
 import Spec.SpecUtils (amountOfAda, checkFails)
 import Spec.Values (
   dummyConfigNftValue,
+  dummyIndexConfigNftValue,
   dummyTallyValue,
+  dummyVoteNFTValue,
   dummyVoteValue,
  )
 import Spec.Vote.ContextValidator (
@@ -97,8 +99,10 @@ nftSpec config =
       mconcat
         [ amountOfAda 20_000_000
         , dummyConfigNftValue
+        , dummyIndexConfigNftValue
         , dummyVoteValue
         , dummyTallyValue
+        , dummyVoteNFTValue
         ]
     good = testNoErrors initialFunds config
     bad = checkFails config initialFunds

@@ -74,6 +74,7 @@ library dao-specs
   hs-source-dirs:  dao-specs
   build-depends:
     , dao-lb-types
+    , plutonomy
     , plutus-ledger-api
     , plutus-simple-model
     , plutus-tx

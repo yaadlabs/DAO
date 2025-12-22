@@ -3,6 +3,7 @@ module Spec.SpecUtils (
   runInitReferenceScript,
   checkFails,
   mkTypedValidator',
+  mkTypedValidatorOptimized,
   getFirstRefScript,
   minAda,
   amountOfAda,
@@ -16,6 +17,7 @@ module Spec.SpecUtils (
 ) where
 
 import Dao.Shared (hasOneOfToken)
+import Plutonomy (aggressiveOptimizerOptions, optimizeUPLCWith)
 import Plutus.Model (
   Ada (Lovelace),
   IsValidator,
@@ -128,6 +130,14 @@ mkTypedValidator' ::
   config ->
   TypedValidator datum redeemer
 mkTypedValidator' mkValidator = mkTypedValidator . mkValidator
+
+-- | Version with Plutonomy optimization applied (removes traces, optimizes code)
+mkTypedValidatorOptimized ::
+  (config -> CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())) ->
+  config ->
+  TypedValidator datum redeemer
+mkTypedValidatorOptimized mkValidator config =
+  mkTypedValidator $ optimizeUPLCWith aggressiveOptimizerOptions (mkValidator config)
 
 data ScriptType = Reference | Script
   deriving stock (Eq)

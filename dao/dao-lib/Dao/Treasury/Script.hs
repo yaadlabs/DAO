@@ -21,10 +21,11 @@ import Dao.ScriptArgument (
  )
 import Dao.Shared (
   convertDatum,
+  hasBurnedTokens,
+  hasExactAssetCount,
   hasOneOfToken,
   hasSingleTokenWithSymbolAndTokenName,
   hasSymbolInValue,
-  hasTokenInValue,
   isScriptCredential,
   lovelacesOf,
   untypedPolicy,
@@ -38,7 +39,9 @@ import LambdaBuffers.ApplicationTypes.Configuration (
     dynamicConfigDatum'generalRelativeMajorityPercent,
     dynamicConfigDatum'maxGeneralDisbursement,
     dynamicConfigDatum'maxTripDisbursement,
+    dynamicConfigDatum'minTreasuryValue,
     dynamicConfigDatum'proposalTallyEndOffset,
+    dynamicConfigDatum'protocolFallbackAddress,
     dynamicConfigDatum'tallyNft,
     dynamicConfigDatum'totalVotes,
     dynamicConfigDatum'tripMajorityPercent,
@@ -62,6 +65,9 @@ import LambdaBuffers.ApplicationTypes.Tally (
     tallyStateDatum'proposal,
     tallyStateDatum'proposalEndTime
   ),
+ )
+import LambdaBuffers.ApplicationTypes.Treasury (
+  TreasuryDatum (TreasuryDatum),
  )
 import PlutusLedgerApi.V1.Address (Address (Address, addressCredential))
 import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
@@ -119,15 +125,18 @@ import PlutusTx.Prelude (
   mapMaybe,
   mconcat,
   min,
+  not,
   otherwise,
   traceError,
   traceIfFalse,
+  ($),
   (&&),
   (*),
   (+),
   (-),
   (.),
   (/=),
+  (<),
   (==),
   (>=),
  )
@@ -193,18 +202,18 @@ import PlutusTx.Prelude (
           the 'proposalTallyEndOffset' of the 'DynamicConfigDatum' against
           the validity range of the transaction. Ensuring the sum of these values is less than the range.
 
-        - That exactly one 'upgradeMinter' token was minted. The CurrencySymbol for this token
-          is provided as the field of the 'Upgrade' constructor of the Proposal type.
+        - That the tally NFT is burned to prevent double-funding or reuse of the proposal.
+          (Previously ensured by minting a separate upgrade token.)
 -}
 validateTreasury ::
   ValidatorParams ->
-  BuiltinData ->
+  TreasuryDatum ->
   BuiltinData ->
   ScriptContext ->
   Bool
 validateTreasury
   ValidatorParams {..}
-  _treasury
+  _treasuryDatum
   _action
   ScriptContext
     { scriptContextTxInfo = TxInfo {..}
@@ -214,6 +223,56 @@ validateTreasury
       -- Check that there is only one of this script in the inputs
       (!inputValue, !thisValidator) :: (Value, ScriptHash) = ownValueAndValidator txInfoInputs thisTxRef
 
+      -- Get the full address of this treasury validator (including staking credential)
+      thisValidatorAddress :: Address
+      thisValidatorAddress = case filter (\TxInInfo {txInInfoOutRef} -> txInInfoOutRef == thisTxRef) txInfoInputs of
+        [TxInInfo {txInInfoResolved = TxOut {txOutAddress}}] -> txOutAddress
+        _ -> traceError "Treasury input"
+
+      validateRouting :: Value -> Bool
+      validateRouting remainingValue =
+        let
+          remainingLovelaces :: Integer
+          !remainingLovelaces = lovelacesOf remainingValue
+
+          isBelowThreshold :: Bool
+          !isBelowThreshold = remainingLovelaces < dynamicConfigDatum'minTreasuryValue
+         in
+          if isBelowThreshold
+            then
+              let
+                noContinuingOutput :: Bool
+                !noContinuingOutput = case getContinuingOutputs' thisValidatorAddress txInfoOutputs of
+                  [] -> True
+                  _ -> False
+
+                fallbackValue :: Value
+                !fallbackValue = valuePaidTo' txInfoOutputs dynamicConfigDatum'protocolFallbackAddress
+
+                sentToFallback :: Bool
+                !sentToFallback = fallbackValue `geq` remainingValue
+               in
+                traceIfFalse "Below threshold" noContinuingOutput
+                  && traceIfFalse "Fallback" sentToFallback
+            else case getContinuingOutputs' thisValidatorAddress txInfoOutputs of
+              [TxOut {txOutValue = val, txOutDatum = datum}] ->
+                let
+                  continuingDatum :: TreasuryDatum = convertDatum txInfoData datum
+
+                  validDatum :: Bool
+                  !validDatum = continuingDatum == TreasuryDatum True
+
+                  valueIsCorrect :: Bool
+                  !valueIsCorrect = val `geq` remainingValue
+
+                  noDustTokens :: Bool
+                  !noDustTokens = hasExactAssetCount val 1
+                 in
+                  traceIfFalse "Invalid continuing treasury datum" validDatum
+                    && traceIfFalse "Disbursing too much" valueIsCorrect
+                    && traceIfFalse "Continuing output contains dust tokens" noDustTokens
+              _ -> traceError "Should be exactly one continuing treasury output"
+
       -- Helper for filtering for config UTXO
       hasConfigurationNft :: Value -> Bool
       hasConfigurationNft = hasOneOfToken vpConfigSymbol vpConfigTokenName
@@ -222,18 +281,24 @@ validateTreasury
       DynamicConfigDatum {..} =
         case filter (hasConfigurationNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
-          _ -> traceError "Should be exactly one config in the reference inputs"
+          _ -> traceError "Config ref"
 
       -- Helper for filtering for tally UTXO
       hasTallyNft :: Value -> Bool
       hasTallyNft = hasSymbolInValue dynamicConfigDatum'tallyNft
 
-      -- Get the TallyStateDatum from the reference inputs, should be exactly one
+      -- Get the TallyStateDatum from the spent inputs (not reference), should be exactly one
+      -- This prevents the same proposal from being funded multiple times
       TallyStateDatum {..} =
-        case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoReferenceInputs of
-          [] -> traceError "Missing tally NFT"
+        case filter (hasTallyNft . txOutValue . txInInfoResolved) txInfoInputs of
+          [] -> traceError "Tally missing"
           [TxInInfo {txInInfoResolved = TxOut {..}}] -> convertDatum txInfoData txOutDatum
-          _ -> traceError "Too many tally NFT values"
+          _ -> traceError "Tally count"
+
+      -- Verify the Tally NFT is being burned
+      -- This ensures the proposal cannot be funded again
+      tallyNftIsBurned :: Bool
+      !tallyNftIsBurned = hasBurnedTokens dynamicConfigDatum'tallyNft txInfoMint "Tally NFT burn"
 
       -- Calculate the values needed for the corresponding checks
       totalVotes :: Integer
@@ -272,15 +337,11 @@ validateTreasury
               travelerLovelaces :: Integer
               !travelerLovelaces = totalTravelCost - travelAgentLovelaces
 
-              -- Make sure the disbursed amount is less than the max
-              -- Find the total value returned to the script address
-              outputValue :: Value
-              !outputValue = case getContinuingOutputs' thisValidator txInfoOutputs of
-                [TxOut {..}] -> txOutValue
-                _ -> traceError "Should be exactly one continuing treasury output"
+              remainingValue :: Value
+              !remainingValue = inputValue - disbursedAmount
 
-              outputValueIsLargeEnough :: Bool
-              !outputValueIsLargeEnough = outputValue `geq` (inputValue - disbursedAmount)
+              routingIsValid :: Bool
+              !routingIsValid = validateRouting remainingValue
 
               -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
               paidToTravelAgentAddress :: Bool
@@ -290,12 +351,24 @@ validateTreasury
               paidToTravelerAddress :: Bool
               !paidToTravelerAddress =
                 lovelacesOf (valuePaidTo' txInfoOutputs travelerAddress) >= travelerLovelaces
+
+              -- Ensure payment addresses are not script addresses
+              travelAgentIsNotScript :: Bool
+              !travelAgentIsNotScript =
+                not $ isScriptCredential (addressCredential travelAgentAddress)
+
+              travelerIsNotScript :: Bool
+              !travelerIsNotScript =
+                not $ isScriptCredential (addressCredential travelerAddress)
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
-                && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
+                && routingIsValid
                 && traceIfFalse "Not paying enough to the travel agent address" paidToTravelAgentAddress
                 && traceIfFalse "Not paying enough to the traveler address" paidToTravelerAddress
+                && traceIfFalse "Travel agent address cannot be script address" travelAgentIsNotScript
+                && traceIfFalse "Traveler address cannot be script address" travelerIsNotScript
                 && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
+                && tallyNftIsBurned
           ProposalType'General generalPaymentAddress generalPaymentValue ->
             let
               hasEnoughVotes :: Bool
@@ -315,26 +388,29 @@ validateTreasury
                   adaToken
                   (min dynamicConfigDatum'maxGeneralDisbursement generalPaymentValue)
 
-              -- Make sure the disbursed amount is less than the max
-              -- Find the total value returned to the script address
-              outputValue :: Value
-              !outputValue = case getContinuingOutputs' thisValidator txInfoOutputs of
-                [TxOut {..}] -> txOutValue
-                _ -> traceError "expected exactly one continuing output"
+              remainingValue :: Value
+              !remainingValue = inputValue - disbursedAmount
 
-              outputValueIsLargeEnough :: Bool
-              !outputValueIsLargeEnough = outputValue `geq` (inputValue - disbursedAmount)
+              routingIsValid :: Bool
+              !routingIsValid = validateRouting remainingValue
 
               -- Paid the ptGeneralPaymentAddress the ptGeneralPaymentValue
               paidToAddress :: Bool
               !paidToAddress =
                 lovelacesOf (valuePaidTo' txInfoOutputs generalPaymentAddress) >= generalPaymentValue
+
+              -- Ensure payment address is not a script address
+              generalPaymentIsNotScript :: Bool
+              !generalPaymentIsNotScript =
+                not $ isScriptCredential (addressCredential generalPaymentAddress)
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
-                && traceIfFalse "Disbursing too much" outputValueIsLargeEnough
+                && routingIsValid
                 && traceIfFalse "Not paying to the correct address" paidToAddress
+                && traceIfFalse "General payment address cannot be script address" generalPaymentIsNotScript
                 && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
-          ProposalType'Upgrade upgradeMinter ->
+                && tallyNftIsBurned
+          ProposalType'Upgrade maybeNewTreasuryAddress ->
             let
               hasEnoughVotes :: Bool
               !hasEnoughVotes =
@@ -345,13 +421,36 @@ validateTreasury
                     "majority is too small"
                     (majorityPercent >= dynamicConfigDatum'upgradeMajorityPercent)
 
-              -- Make sure the upgrade token was minted
-              hasUpgradeMinterToken :: Bool
-              !hasUpgradeMinterToken = hasTokenInValue upgradeMinter "Treasury Minter" txInfoMint
+              -- Validate treasury migration based on Maybe Address
+              treasuryMigrationValid :: Bool
+              !treasuryMigrationValid = case maybeNewTreasuryAddress of
+                Nothing ->
+                  -- Config-only upgrade: Treasury should NOT be spent
+                  -- This validator only runs if Treasury is being spent, so this should fail
+                  traceError "Upgrade does not allow Treasury spending (config-only upgrade)"
+                Just newTreasuryAddress ->
+                  -- Treasury migration: Validate all funds go to new address
+                  let
+                    -- Ensure no continuing output to old Treasury
+                    noContinuingOutput :: Bool
+                    !noContinuingOutput = case getContinuingOutputs' thisValidatorAddress txInfoOutputs of
+                      [] -> True
+                      _ -> False
+
+                    fundsToNewTreasury :: Value
+                    !fundsToNewTreasury = valuePaidTo' txInfoOutputs newTreasuryAddress
+
+                    -- Verify all funds sent to new treasury address
+                    fundsSentToNewTreasury :: Bool
+                    !fundsSentToNewTreasury = fundsToNewTreasury `geq` inputValue
+                   in
+                    traceIfFalse "Treasury migration: continuing output to old treasury detected" noContinuingOutput
+                      && traceIfFalse "Treasury migration: funds not fully transferred to new address" fundsSentToNewTreasury
              in
               traceIfFalse "The proposal doesn't have enough votes" hasEnoughVotes
-                && traceIfFalse "Not minting upgrade token" hasUpgradeMinterToken
+                && treasuryMigrationValid
                 && traceIfFalse "Tallying not over. Try again later" isAfterTallyEndTime
+                && tallyNftIsBurned
 validateTreasury _ _ _ _ = traceError "Wrong script purpose"
 
 addressOutputsAt :: Address -> [TxOut] -> [Value]
@@ -367,15 +466,11 @@ valuePaidTo' :: [TxOut] -> Address -> Value
 valuePaidTo' outs addr = mconcat (addressOutputsAt addr outs)
 
 getContinuingOutputs' ::
-  ScriptHash ->
+  Address ->
   [TxOut] ->
   [TxOut]
-getContinuingOutputs' vh =
-  filter
-    ( \TxOut {..} ->
-        addressCredential txOutAddress
-          == ScriptCredential vh
-    )
+getContinuingOutputs' expectedAddr =
+  filter (\TxOut {txOutAddress} -> txOutAddress == expectedAddr)
 
 ownValueAndValidator :: [TxInInfo] -> TxOutRef -> (Value, ScriptHash)
 ownValueAndValidator ins txOutRef = go ins

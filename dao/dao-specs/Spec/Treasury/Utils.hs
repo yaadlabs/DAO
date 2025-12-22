@@ -1,5 +1,6 @@
 module Spec.Treasury.Utils (findTreasury) where
 
+import LambdaBuffers.ApplicationTypes.Treasury (TreasuryDatum)
 import Plutus.Model (Run)
 import PlutusLedgerApi.V2.Tx (TxOut, TxOutRef)
 import Spec.SpecUtils (findConfigUtxo)
@@ -9,7 +10,7 @@ import Spec.Values (
   dummyTreasuryTokenName,
  )
 
-findTreasury :: Run (TxOutRef, TxOut, ())
+findTreasury :: Run (TxOutRef, TxOut, TreasuryDatum)
 findTreasury =
   findConfigUtxo
     treasuryTypedValidator

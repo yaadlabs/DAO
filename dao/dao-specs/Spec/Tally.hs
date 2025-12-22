@@ -20,7 +20,7 @@ import Spec.Tally.Context (
   invalidWrongTokenNameTallyConfigNftTest,
   validTallyConfigNftTest,
  )
-import Spec.Values (dummyConfigNftValue, dummyIndexConfigNftValue)
+import Spec.Values (dummyConfigNftValue, dummyIndexConfigNftValue, dummyVoteNFTValue)
 import Test.Tasty (TestTree, testGroup)
 import Prelude ((<>))
 
@@ -70,4 +70,4 @@ nftSpec config =
       bad
         "Doesn't spend index, should fail with balancing error"
         invalidDoesNotSpendIndexConfigNftTest
-    initialFunds = adaValue 10_000_000 <> dummyConfigNftValue <> dummyIndexConfigNftValue
+    initialFunds = adaValue 10_000_000 <> dummyConfigNftValue <> dummyIndexConfigNftValue <> dummyVoteNFTValue

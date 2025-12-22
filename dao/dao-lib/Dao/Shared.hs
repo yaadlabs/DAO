@@ -20,6 +20,7 @@ module Dao.Shared (
   integerToByteString,
   isScriptCredential,
   lovelacesOf,
+  hasExactAssetCount,
 ) where
 
 import Dao.ScriptArgument (ValidatorParams)
@@ -44,14 +45,17 @@ import PlutusTx.Prelude (
   Maybe (Just, Nothing),
   check,
   divide,
+  foldr,
   fromMaybe,
   isJust,
+  length,
   modulo,
   otherwise,
   traceError,
   traceIfFalse,
   ($),
   (&&),
+  (+),
   (.),
   (<),
   (<>),
@@ -138,6 +142,23 @@ countOfTokenInValue symbol tokenName (Value value) =
 -- | Get the count of lovelaces in the given `Value`
 lovelacesOf :: Value -> Integer
 lovelacesOf = countOfTokenInValue adaSymbol adaToken
+
+{-# INLINEABLE hasExactAssetCount #-}
+
+{- | Check if a Value contains exactly the expected number of distinct asset types
+ Used to prevent token dust attacks by ensuring no extra tokens are present
+-}
+hasExactAssetCount :: Value -> Integer -> Bool
+hasExactAssetCount (Value val) expectedCount =
+  let
+    -- Count total number of distinct token types across all currency symbols
+    countTokensInMap :: Map TokenName Integer -> Integer
+    countTokensInMap tokenMap = fromMaybe 0 $ Just (length (Map.toList tokenMap))
+
+    totalAssets :: Integer
+    totalAssets = foldr (\(_, tokenMap) acc -> acc + countTokensInMap tokenMap) 0 (Map.toList val)
+   in
+    totalAssets == expectedCount
 
 {-# INLINEABLE hasOneOfToken #-}
 hasOneOfToken :: CurrencySymbol -> TokenName -> Value -> Bool

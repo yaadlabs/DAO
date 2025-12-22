@@ -34,12 +34,14 @@ import LambdaBuffers.ApplicationTypes.Tally (
   ),
  )
 import PlutusLedgerApi.V1.Time (POSIXTime (POSIXTime))
+import PlutusTx.Prelude (
+  Maybe (Just),
+ )
 import Spec.Addresses (
   dummyGeneralPaymentAddress,
   dummyTravelAgentAddress,
   dummyTravelerPaymentAddress,
  )
-import Spec.AlwaysSucceed.Script (alwaysSucceedCurrencySymbol)
 
 sampleUpgradeWithEndTimeInPastTallyStateDatum :: TallyStateDatum
 sampleUpgradeWithEndTimeInPastTallyStateDatum =
@@ -150,7 +152,7 @@ sampleGeneralWithEndTimeInPastTallyStateDatum =
     }
 
 sampleUpgradeProposalType :: ProposalType
-sampleUpgradeProposalType = ProposalType'Upgrade alwaysSucceedCurrencySymbol
+sampleUpgradeProposalType = ProposalType'Upgrade (Just dummyGeneralPaymentAddress)
 
 sampleGeneralProposalType :: ProposalType
 sampleGeneralProposalType = ProposalType'General dummyGeneralPaymentAddress 1
