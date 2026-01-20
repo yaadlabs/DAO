@@ -12,7 +12,6 @@ common common-lang
 
 common common-extensions
   default-extensions:
-    NoImplicitPrelude
     BangPatterns
     CPP
     DataKinds
@@ -22,6 +21,7 @@ common common-extensions
     LambdaCase
     MultiParamTypeClasses
     NamedFieldPuns
+    NoImplicitPrelude
     NumericUnderscores
     OverloadedStrings
     RecordWildCards
@@ -29,6 +29,7 @@ common common-extensions
     TemplateHaskell
     TypeApplications
     TypeFamilies
+    ViewPatterns
 
 common common-options
   ghc-options:
@@ -58,12 +59,12 @@ library
     , dao-lb-types
     , lbr-plutus
     , lbr-prelude
-    , plutonomy
     , plutus-ledger-api
     , plutus-tx
     , plutus-tx-plugin
     , text
 
+  -- , plutonomy
   hs-source-dirs:  dao-lib
   ghc-options:
     -fobject-code -fno-ignore-interface-pragmas
@@ -75,11 +76,11 @@ library dao-specs
   build-depends:
     , dao-lb-types
     , plutus-ledger-api
-    , plutus-simple-model
     , plutus-tx
     , tasty
     , tasty-hunit
 
+  -- , plutus-simple-model
   exposed-modules:
     Spec.Addresses
     Spec.AlwaysSucceed.Script
@@ -140,11 +141,11 @@ executable create-scripts
     , dao-lb-config
     , lbr-prelude
     , optparse-applicative
-    , plutonomy
     , plutus-ledger-api
     , plutus-tx
     , plutus-tx-plugin
 
+-- , plutonomy
 test-suite dao-test
   import:
     common-lang, common-depends, common-options, common-extensions

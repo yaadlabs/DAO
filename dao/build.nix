@@ -2,7 +2,7 @@
 {
   perSystem = { config, system, inputs', ... }:
     let
-      hsFlake = inputs.lbf.lib.${system}.haskellPlutusFlake {
+      hsFlake = inputs.flake-lang.lib.${system}.haskellPlutusFlake {
         src = ./.;
 
         name = "dao";
@@ -11,13 +11,13 @@
 
         dependencies = [
           # PSM
-          "${inputs.psm}/cardano-simple"
-          "${inputs.psm}/psm"
-          "${inputs.plutarch}/plutarch-extra"
-          "${inputs.plutarch}"
+          # "${inputs.psm}/cardano-simple"
+          # "${inputs.psm}/psm"
+          # "${inputs.plutarch}/plutarch-extra"
+          # "${inputs.plutarch}"
 
           # Plutonomy
-          "${inputs.plutonomy}"
+          # "${inputs.plutonomy}"
 
           # Lambda Buffers types
           "${config.packages.dao-lb-types}"
